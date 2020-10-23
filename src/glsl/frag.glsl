@@ -112,6 +112,7 @@ float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) 
    int index;
 
    float res = 1.0;
+   float prev_dist = 1e20;
 
    for (float total_dist = min_dist; total_dist < max_dist;) {
       float dist = closest_primitive(from + dir * total_dist, index);
@@ -120,7 +121,11 @@ float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) 
          return 0.0;
       }
 
-      res = min(res, k * dist / total_dist);
+      float y = dist * dist / (2.0 * prev_dist);
+      float d = sqrt(dist * dist - y * y);
+      res = min(res, k * d / max(0.0, total_dist - y));
+
+      prev_dist = dist;
       total_dist += dist;
    }
    return res;
