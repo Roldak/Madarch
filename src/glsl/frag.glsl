@@ -83,11 +83,17 @@ vec3 primitive_normal(vec3 x, Primitive prim) {
    }
 }
 
-#define PRIM_COUNT 3
+#define PRIM_COUNT 8
 const Primitive prims[PRIM_COUNT] = Primitive[](
-   Primitive(SPHERE, vec3(0.5, 0.5, 1.0), 1.0, vec3(1, 0, 0), 0.0),
-   Primitive(CUBE,   vec3(-0.5, 0, 2.0),  0.8, vec3(0, 0, 1), 0.0),
-   Primitive(PLANE,  vec3(0.0, 1.0, 0),   1.0, vec3(0, 1, 0), 0.3)
+   Primitive(SPHERE, vec3(0.5, 0.5, 1.0), 1.0, vec3(1, 0, 0), 0),
+   Primitive(CUBE,   vec3(-0.5, 0, 2.0),  0.8, vec3(0, 0, 1), 0),
+
+   Primitive(PLANE,  vec3(0, 1, 0),   1.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE,  vec3(0, -1, 0), 5.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE,  vec3(1, 0, 0),  5.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE,  vec3(-1, 0, 0),  5.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE,  vec3(0, 0, 1),  5.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE,  vec3(0, 0, -1),  5.0, vec3(0.5, 0.5, 0.5), 0)
 );
 
 float closest_primitive(vec3 x, out int index) {
