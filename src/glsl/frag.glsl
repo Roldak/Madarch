@@ -108,53 +108,55 @@ float closest_primitive(vec3 x, out int index) {
    return closest;
 }
 
-bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll, out float closest) {
-   float total_dist = 0;
+float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) {
+   int index;
 
-   closest = max_dist;
+   float res = 1.0;
 
-   for (int i = 0; i < max_steps; ++i) {
+   for (float total_dist = min_dist; total_dist < max_dist;) {
+      float dist = closest_primitive(from + dir * total_dist, index);
+
+      if (dist < epsilon) {
+         return 0.0;
+      }
+
+      res = min(res, k * dist / total_dist);
+      total_dist += dist;
+   }
+   return res;
+}
+
+bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll) {
+   for (float total_dist = 0; total_dist < max_dist;) {
       float dist = closest_primitive(from, index);
 
       if (dist < epsilon) {
          coll = from + dir * dist;
-         closest = 0;
          return true;
       }
 
-      closest = min(closest, dist);
-      float step = max(dist, min_step_size);
-      from += dir * step;
-      total_dist += step;
-
-      if (total_dist > max_dist) {
-         return false;
-      }
-
+      from += dir * dist;
+      total_dist += dist;
    }
    return false;
 }
 
 vec3 shade(vec3 pos, vec3 color, vec3 normal, vec3 light_pos) {
    // shadow cast
-   int dummy_index;
-   vec3 occluder_pos;
-   vec3 shadow_ray_dir = normalize(light_pos - pos);
+   vec3 light_dir = light_pos - pos;
+   float light_distance = length(light_dir);
+   vec3 shadow_ray_dir = light_dir / light_distance;
    vec3 shadow_ray_pos = pos + normal * min_step_size * 5;
-   float closest;
 
-   raycast(shadow_ray_pos, shadow_ray_dir, dummy_index, occluder_pos, closest);
-
-   float shadows = max((0.1 - closest) * 10, 0);
+   float shadows = softshadows(shadow_ray_pos, shadow_ray_dir, min_step_size, light_distance, 32);
 
    // lambert
-   vec3 light_dir = normalize(light_pos - pos);
-   float NoL = max(dot(normal, light_dir), 0.0);
+   float NoL = max(dot(normal, shadow_ray_dir), 0.0);
    vec3 LDirectional = vec3(0.9, 0.9, 0.8) * NoL;
    vec3 LAmbient = vec3(0.03, 0.04, 0.1);
    vec3 diffuse = color * (LDirectional + LAmbient);
 
-   return mix(diffuse, diffuse * 0.1, shadows);
+   return mix(diffuse * 0.1, diffuse, shadows);
 }
 
 vec3 fog(vec3 from, vec3 pos, vec3 col, vec3 bg) {
@@ -168,8 +170,7 @@ vec3 pixel_color_0(vec3 from, vec3 dir, vec3 light_pos) {
 
    int prim_index;
    vec3 pos;
-   float closest_dist;
-   if (raycast(from, dir, prim_index, pos, closest_dist)) {
+   if (raycast(from, dir, prim_index, pos)) {
       vec3 color = prims[prim_index].color;
       vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 result = shade(pos, color, normal, light_pos);
@@ -184,8 +185,7 @@ vec3 pixel_color_1(vec3 from, vec3 dir, vec3 light_pos) {
 
    int prim_index;
    vec3 pos;
-   float closest_dist;
-   if (raycast(from, dir, prim_index, pos, closest_dist)) {
+   if (raycast(from, dir, prim_index, pos)) {
       vec3 color = prims[prim_index].color;
       vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 result = shade(pos, color, normal, light_pos);
@@ -215,8 +215,7 @@ vec3 pixel_color_2(vec3 from, vec3 dir, vec3 light_pos) {
 
    int prim_index;
    vec3 pos;
-   float closest_dist;
-   if (raycast(from, dir, prim_index, pos, closest_dist)) {
+   if (raycast(from, dir, prim_index, pos)) {
       vec3 color = prims[prim_index].color;
       vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 result = shade(pos, color, normal, light_pos);
