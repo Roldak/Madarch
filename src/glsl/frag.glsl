@@ -88,12 +88,12 @@ const Primitive prims[PRIM_COUNT] = Primitive[](
    Primitive(SPHERE, vec3(0.5, 0.5, 1.0), 1.0, vec3(1, 0, 0), 0),
    Primitive(CUBE,   vec3(-0.5, 0, 2.0),  0.8, vec3(0, 0, 1), 0),
 
-   Primitive(PLANE,  vec3(0, 1, 0),   1.0, vec3(0.5, 0.5, 0.5), 0),
-   Primitive(PLANE,  vec3(0, -1, 0), 5.0, vec3(0.5, 0.5, 0.5), 0),
-   Primitive(PLANE,  vec3(1, 0, 0),  5.0, vec3(0.5, 0.5, 0.5), 0),
-   Primitive(PLANE,  vec3(-1, 0, 0),  5.0, vec3(0.5, 0.5, 0.5), 0),
-   Primitive(PLANE,  vec3(0, 0, 1),  5.0, vec3(0.5, 0.5, 0.5), 0),
-   Primitive(PLANE,  vec3(0, 0, -1),  5.0, vec3(0.5, 0.5, 0.5), 0)
+   Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE, vec3(0, -1, 0), 5.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE, vec3(1, 0, 0),  5.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE, vec3(-1, 0, 0), 5.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE, vec3(0, 0, 1),  5.0, vec3(0.5, 0.5, 0.5), 0),
+   Primitive(PLANE, vec3(0, 0, -1), 5.0, vec3(0.5, 0.5, 0.5), 0)
 );
 
 float closest_primitive(vec3 x, out int index) {
@@ -153,7 +153,13 @@ vec3 shade(vec3 pos, vec3 color, vec3 normal, vec3 light_pos) {
    vec3 shadow_ray_dir = light_dir / light_distance;
    vec3 shadow_ray_pos = pos + normal * min_step_size * 5;
 
-   float shadows = softshadows(shadow_ray_pos, shadow_ray_dir, min_step_size, light_distance, 32);
+   float shadows = softshadows(
+      shadow_ray_pos,
+      shadow_ray_dir,
+      min_step_size,
+      light_distance,
+      64
+   );
 
    // lambert
    float NoL = max(dot(normal, shadow_ray_dir), 0.0);
