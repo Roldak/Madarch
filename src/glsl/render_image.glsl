@@ -70,11 +70,11 @@ vec3 uniform_vector(in float seed) {
  * Cook-Terrance BRDF helpers *
  ******************************/
 
-vec3 fresnelSchlick(float cosTheta, vec3 F0) {
+vec3 fresnel_schlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-float DistributionGGX(vec3 N, vec3 H, float roughness)
+float distribution_GGX(vec3 N, vec3 H, float roughness)
 {
     float a      = roughness*roughness;
     float a2     = a*a;
@@ -88,7 +88,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness)
     return num / denom;
 }
 
-float GeometrySchlickGGX(float NdotV, float roughness)
+float geometry_schlick_GGX(float NdotV, float roughness)
 {
     float r = (roughness + 1.0);
     float k = (r*r) / 8.0;
@@ -98,12 +98,12 @@ float GeometrySchlickGGX(float NdotV, float roughness)
 
     return num / denom;
 }
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+float geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);
-    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
+    float ggx2  = geometry_schlick_GGX(NdotV, roughness);
+    float ggx1  = geometry_schlick_GGX(NdotL, roughness);
 
     return ggx1 * ggx2;
 }
@@ -278,9 +278,9 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    vec3 radiance     = vec3(0.9, 0.9, 0.8) * attenuation;
 
    // cook-torrance BRDF
-   float NDF = DistributionGGX(N, H, roughness);
-   float G   = GeometrySmith(N, V, L, roughness);
-   vec3  F   = fresnelSchlick(max(dot(H, V), 0.0), F0);
+   float NDF = distribution_GGX(N, H, roughness);
+   float G   = geometry_smith(N, V, L, roughness);
+   vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), F0);
 
    vec3 kS = F;
    vec3 kD = vec3(1.0) - kS;
@@ -312,12 +312,6 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    return Lo;
 }
 
-vec3 fog(vec3 from, vec3 pos, vec3 col, vec3 bg) {
-   float dist = length(pos - from);
-   float offset = dist - 0.8 * max_dist;
-   return mix(col, bg, max(offset / (0.2 * max_dist), 0));
-}
-
 vec3 pixel_color_direct(vec3 from, vec3 dir, vec3 light_pos) {
    vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
 
@@ -329,9 +323,10 @@ vec3 pixel_color_direct(vec3 from, vec3 dir, vec3 light_pos) {
       float roughness = prims[prim_index].roughness;
       vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
-      return fog(from, pos, result, background_color);
+      return result;
 
    }
+
    return background_color;
 }
 
@@ -363,7 +358,7 @@ vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
             dir = normalize(reflected + offset * roughness);
          }
       } else {
-         return background_color;
+         result += background_color;
       }
    }
    return result;
@@ -405,8 +400,7 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
    return result + acc / gi_samples;
 }
 
-void main(void)
-{
+void main(void) {
    vec3 frag_pos = vec3(pos.xy, 0);
    vec3 dir = normalize(frag_pos - vec3(0, 0, -1.5));
    vec3 light_pos = vec3(cos(time), 2, sin(time));
