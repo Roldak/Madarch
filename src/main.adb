@@ -233,8 +233,8 @@ begin
 
    -- load shader sources and compile shaders
 
-   Load_Shader (Vertex_Shader,     "src/glsl/vert.glsl");
-   Load_Shader (Image_Shader,      "src/glsl/frag.glsl");
+   Load_Shader (Vertex_Shader,     "src/glsl/identity.glsl");
+   Load_Shader (Image_Shader,      "src/glsl/render_image.glsl");
    Load_Shader (Irradiance_Shader, "src/glsl/compute_irradiance.glsl");
 
    Prepare_Irradiance;

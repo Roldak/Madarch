@@ -1,6 +1,5 @@
 #version 120
 
-uniform float time;
 varying vec4 pos;
 
 void main(void)
