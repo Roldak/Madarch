@@ -22,16 +22,88 @@ procedure Main is
    use GL.Fixed.Matrix;
    use GL.Immediate;
 
+   Program : GL.Objects.Programs.Program;
+
+   procedure List_Shaders is
+   begin
+      Ada.Text_IO.Put_Line ("Listing shaders attached to program...");
+      declare
+         use type GL.Objects.Shaders.Lists.Cursor;
+
+         List : constant GL.Objects.Shaders.Lists.List
+           := Program.Attached_Shaders;
+         Cursor : GL.Objects.Shaders.Lists.Cursor := List.First;
+      begin
+         while Cursor /= GL.Objects.Shaders.Lists.No_Element loop
+            declare
+               Shader : constant GL.Objects.Shaders.Shader
+                 := GL.Objects.Shaders.Lists.Element (Cursor);
+            begin
+               Ada.Text_IO.Put_Line ("----------------------------");
+               Ada.Text_IO.Put_Line ("Kind: " & Shader.Kind'Img);
+               Ada.Text_IO.Put_Line ("Status: " & Shader.Compile_Status'Img);
+            end;
+            Cursor := GL.Objects.Shaders.Lists.Next (Cursor);
+         end loop;
+      end;
+      Ada.Text_IO.Put_Line ("-----------[Done.]----------");
+   end List_Shaders;
+
    Vertex_Shader   : GL.Objects.Shaders.Shader
      (Kind => GL.Objects.Shaders.Vertex_Shader);
    Fragment_Shader : GL.Objects.Shaders.Shader
      (Kind => GL.Objects.Shaders.Fragment_Shader);
-   Program         : GL.Objects.Programs.Program;
 
    Time_Uniform    : GL.Uniforms.Uniform;
    Time            : GL.Types.Single := 0.0;
    Cam_Pos_Uniform : GL.Uniforms.Uniform;
-   Cam_Pos         : Singles.Vector3 := (others => 0.0);
+   Cam_Pos         : Singles.Vector3 := (-2.0, 0.0, -3.0);
+
+   function Handle_Events return Boolean is
+   begin
+      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Escape) then
+         return True;
+      end if;
+
+      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.S) then
+         Cam_Pos (Z) := Cam_Pos (Z) - 0.1;
+      elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.W) then
+         Cam_Pos (Z) := Cam_Pos (Z) + 0.1;
+      end if;
+
+      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.A) then
+         Cam_Pos (X) := Cam_Pos (X) - 0.1;
+      elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.D) then
+         Cam_Pos (X) := Cam_Pos (X) + 0.1;
+      end if;
+
+      Time := Time + 0.01;
+
+      return False;
+   end Handle_Events;
+
+   procedure Draw is
+   begin
+      GL.Uniforms.Set_Single (Time_Uniform, Time);
+      GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);
+
+      Clear (Buffer_Bits'(Color => True, others => False));
+      declare
+         Token : Input_Token := Start (Quads);
+      begin
+         Set_Color (Colors.Color'(1.0, 0.0, 0.0, 0.0));
+         Token.Add_Vertex (Doubles.Vector4'(1.0, 1.0, 0.0, 1.0));
+         Set_Color (Colors.Color'(0.0, 1.0, 0.0, 0.0));
+         Token.Add_Vertex (Doubles.Vector4'(1.0, -1.0, 0.0, 1.0));
+         Set_Color (Colors.Color'(0.0, 0.0, 1.0, 0.0));
+         Token.Add_Vertex (Doubles.Vector4'(-1.0, -1.0, 0.0, 1.0));
+         Set_Color (Colors.Color'(1.0, 0.0, 1.0, 0.0));
+         Token.Add_Vertex (Doubles.Vector4'(-1.0, 1.0, 0.0, 1.0));
+      end;
+
+      GL.Flush;
+      GLFW_Utils.Swap_Buffers;
+   end Draw;
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -75,27 +147,7 @@ begin
    Cam_Pos (Y) := 2.0;
 
    -- test iteration over program shaders
-   Ada.Text_IO.Put_Line ("Listing shaders attached to program...");
-   declare
-      use type GL.Objects.Shaders.Lists.Cursor;
-
-      List : constant GL.Objects.Shaders.Lists.List
-        := Program.Attached_Shaders;
-      Cursor : GL.Objects.Shaders.Lists.Cursor := List.First;
-   begin
-      while Cursor /= GL.Objects.Shaders.Lists.No_Element loop
-         declare
-            Shader : constant GL.Objects.Shaders.Shader
-              := GL.Objects.Shaders.Lists.Element (Cursor);
-         begin
-            Ada.Text_IO.Put_Line ("----------------------------");
-            Ada.Text_IO.Put_Line ("Kind: " & Shader.Kind'Img);
-            Ada.Text_IO.Put_Line ("Status: " & Shader.Compile_Status'Img);
-         end;
-         Cursor := GL.Objects.Shaders.Lists.Next (Cursor);
-      end loop;
-   end;
-   Ada.Text_IO.Put_Line ("-----------[Done.]----------");
+   List_Shaders;
 
    -- set up matrices
    Projection.Load_Identity;
@@ -103,44 +155,8 @@ begin
    Modelview.Load_Identity;
 
    while GLFW_Utils.Window_Opened loop
-      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Escape) then
-         exit;
-      end if;
-
-      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.S) then
-         Cam_Pos (Z) := Cam_Pos (Z) - 0.1;
-      elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.W) then
-         Cam_Pos (Z) := Cam_Pos (Z) + 0.1;
-      end if;
-
-      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.A) then
-         Cam_Pos (X) := Cam_Pos (X) - 0.1;
-      elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.D) then
-         Cam_Pos (X) := Cam_Pos (X) + 0.1;
-      end if;
-
-      Time := Time + 0.01;
-
-      Clear (Buffer_Bits'(Color => True, others => False));
-      GL.Uniforms.Set_Single (Time_Uniform, Time);
-      GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);
-
-      declare
-         Token : Input_Token := Start (Quads);
-      begin
-         Set_Color (Colors.Color'(1.0, 0.0, 0.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(1.0, 1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(0.0, 1.0, 0.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(1.0, -1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(0.0, 0.0, 1.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(-1.0, -1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(1.0, 0.0, 1.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(-1.0, 1.0, 0.0, 1.0));
-      end;
-
-      GL.Flush;
-      GLFW_Utils.Swap_Buffers;
-
+      exit when Handle_Events;
+      Draw;
       GLFW_Utils.Poll_Events;
    end loop;
 
