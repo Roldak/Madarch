@@ -64,6 +64,19 @@ procedure Main is
       Ada.Text_IO.Put_Line ("-----------[Done.]----------");
    end List_Shaders;
 
+   procedure Draw_Fullscreen_Quad is
+      Token : Input_Token := Start (Quads);
+   begin
+      Set_Color (Colors.Color'(1.0, 0.0, 0.0, 0.0));
+      Token.Add_Vertex (Doubles.Vector4'(1.0, 1.0, 0.0, 1.0));
+      Set_Color (Colors.Color'(0.0, 1.0, 0.0, 0.0));
+      Token.Add_Vertex (Doubles.Vector4'(1.0, -1.0, 0.0, 1.0));
+      Set_Color (Colors.Color'(0.0, 0.0, 1.0, 0.0));
+      Token.Add_Vertex (Doubles.Vector4'(-1.0, -1.0, 0.0, 1.0));
+      Set_Color (Colors.Color'(1.0, 0.0, 1.0, 0.0));
+      Token.Add_Vertex (Doubles.Vector4'(-1.0, 1.0, 0.0, 1.0));
+   end Draw_Fullscreen_Quad;
+
    Time            : GL.Types.Single := 0.0;
    Cam_Pos         : Singles.Vector3 := (-2.0, 0.0, -3.0);
 
@@ -156,18 +169,7 @@ procedure Main is
       GL.Buffers.Set_Active_Buffer (GL.Buffers.Color_Attachment0);
 
       Clear (Buffer_Bits'(Color => True, others => False));
-      declare
-         Token : Input_Token := Start (Quads);
-      begin
-         Set_Color (Colors.Color'(1.0, 0.0, 0.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(1.0, 1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(0.0, 1.0, 0.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(1.0, -1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(0.0, 0.0, 1.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(-1.0, -1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(1.0, 0.0, 1.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(-1.0, 1.0, 0.0, 1.0));
-      end;
+      Draw_Fullscreen_Quad;
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind
         (GL.Objects.Framebuffers.Default_Framebuffer);
@@ -206,18 +208,7 @@ procedure Main is
       GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);
 
       Clear (Buffer_Bits'(Color => True, others => False));
-      declare
-         Token : Input_Token := Start (Quads);
-      begin
-         Set_Color (Colors.Color'(1.0, 0.0, 0.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(1.0, 1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(0.0, 1.0, 0.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(1.0, -1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(0.0, 0.0, 1.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(-1.0, -1.0, 0.0, 1.0));
-         Set_Color (Colors.Color'(1.0, 0.0, 1.0, 0.0));
-         Token.Add_Vertex (Doubles.Vector4'(-1.0, 1.0, 0.0, 1.0));
-      end;
+      Draw_Fullscreen_Quad;
 
       GL.Flush;
       GLFW_Utils.Swap_Buffers;
@@ -232,11 +223,11 @@ begin
    Modelview.Load_Identity;
 
    -- load shader sources and compile shaders
-
    Load_Shader (Vertex_Shader,     "src/glsl/identity.glsl");
    Load_Shader (Image_Shader,      "src/glsl/render_image.glsl");
    Load_Shader (Irradiance_Shader, "src/glsl/compute_irradiance.glsl");
 
+   -- prepare data structures
    Prepare_Irradiance;
    Prepare_Image;
 
