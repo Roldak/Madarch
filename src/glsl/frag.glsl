@@ -7,9 +7,39 @@ const float epsilon = 0.001f;
 const float min_step_size = 0.005f;
 const float max_dist = 20;
 const int max_steps = 300;
-const float PI = 3.1415926535897932;
+const float PI   = 3.14159265358;
+const float PI_2 = 6.28318530718;
 
-varying vec4 pos;
+/****************
+ * Random utils *
+ ****************/
+
+float hash(float seed) {
+    return fract(sin(seed)*43758.5453 );
+}
+
+vec3 cosine_direction(in float seed, in vec3 nor) {
+    // compute basis from normal
+    vec3 tc = vec3(1.0 + nor.z - nor.xy * nor.xy, -nor.x * nor.y) / (1.0 + nor.z);
+    vec3 uu = vec3(tc.x, tc.z, -nor.x);
+    vec3 vv = vec3(tc.z, tc.y, -nor.y);
+
+    float u = hash(78.233 + seed);
+    float v = hash(10.873 + seed);
+    float a = 6.283185 * v;
+
+    return  sqrt(u) * (cos(a) * uu + sin(a) * vv) + sqrt(1.0 - u) * nor;
+}
+
+vec3 uniform_vector(in float seed) {
+    float a = PI   * hash(78.233 + seed);
+    float b = PI_2 * hash(10.873 + seed);
+    return vec3(sin(b) * sin(a), cos(b) * sin(a), cos(a));
+}
+
+/******************************
+ * Cook-Terrance BRDF helpers *
+ ******************************/
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
@@ -48,6 +78,10 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
     return ggx1 * ggx2;
 }
+
+/**************************
+ * Signed distance fields *
+ **************************/
 
 //sphere
 
@@ -88,9 +122,6 @@ vec3 cube_normal(vec3 x, vec3 center, float size) {
    ));
 }
 
-uniform float time;
-uniform vec3 camera_position;
-
 struct Primitive {
    int kind;
    vec3 vec3_param_1;
@@ -123,6 +154,14 @@ vec3 primitive_normal(vec3 x, Primitive prim) {
          return cube_normal(x, prim.vec3_param_1, prim.float_param_1);
    }
 }
+
+/**********************
+ * Program definition *
+ **********************/
+
+varying vec4 pos;
+uniform float time;
+uniform vec3 camera_position;
 
 #define PRIM_COUNT 8
 const Primitive prims[PRIM_COUNT] = Primitive[](
