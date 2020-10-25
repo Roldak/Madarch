@@ -157,7 +157,6 @@ struct Primitive {
    float float_param_1;
 
    vec3 color;
-   float mirror;
    float metallic;
    float roughness;
 };
@@ -195,15 +194,15 @@ uniform vec3 camera_position;
 
 #define PRIM_COUNT 8
 const Primitive prims[PRIM_COUNT] = Primitive[](
-   Primitive(SPHERE, vec3(0.5, 0.5, 1.0), 1.0, vec3(1, 0, 0), 0, 0.1, 0.1),
-   Primitive(CUBE,   vec3(-0.5, 0, 2.0),  0.8, vec3(0, 0, 1), 0, 0.8, 0.8),
+   Primitive(SPHERE, vec3(0.5, 0.5, 1.0), 1.0, vec3(1, 0, 0), 0.1, 0.0),
+   Primitive(CUBE,   vec3(-0.5, 0, 2.0),  0.8, vec3(0, 0, 1), 0.8, 0.8),
 
-   Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.5, 0.5, 0.5), 0, 0, 0.6),
-   Primitive(PLANE, vec3(0, -1, 0), 5.0, vec3(0.5, 0.5, 0.5), 0, 0, 0.6),
-   Primitive(PLANE, vec3(1, 0, 0),  5.0, vec3(0.5, 0.5, 0.5), 0, 0, 0.6),
-   Primitive(PLANE, vec3(-1, 0, 0), 5.0, vec3(0.5, 0.5, 0.5), 0, 0, 0.6),
-   Primitive(PLANE, vec3(0, 0, 1),  5.0, vec3(0.5, 0.5, 0.5), 0, 0, 0.6),
-   Primitive(PLANE, vec3(0, 0, -1), 5.0, vec3(0.5, 0.5, 0.5), 0, 0, 0.6)
+   Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
+   Primitive(PLANE, vec3(0, -1, 0), 5.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
+   Primitive(PLANE, vec3(1, 0, 0),  5.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
+   Primitive(PLANE, vec3(-1, 0, 0), 5.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
+   Primitive(PLANE, vec3(0, 0, 1),  5.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
+   Primitive(PLANE, vec3(0, 0, -1), 5.0, vec3(0.5, 0.5, 0.5), 0, 0.6)
 );
 
 float closest_primitive(vec3 x, out int index) {
@@ -319,7 +318,7 @@ vec3 fog(vec3 from, vec3 pos, vec3 col, vec3 bg) {
    return mix(col, bg, max(offset / (0.2 * max_dist), 0));
 }
 
-vec3 pixel_color_0(vec3 from, vec3 dir, vec3 light_pos) {
+vec3 pixel_color_direct(vec3 from, vec3 dir, vec3 light_pos) {
    vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
 
    int prim_index;
@@ -332,70 +331,6 @@ vec3 pixel_color_0(vec3 from, vec3 dir, vec3 light_pos) {
       vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
       return fog(from, pos, result, background_color);
 
-   }
-   return background_color;
-}
-
-vec3 pixel_color_1(vec3 from, vec3 dir, vec3 light_pos) {
-   vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
-
-   int prim_index;
-   vec3 pos;
-   if (raycast(from, dir, prim_index, pos)) {
-      vec3 albedo = prims[prim_index].color;
-      float metallic = prims[prim_index].metallic;
-      float roughness = prims[prim_index].roughness;
-      vec3 normal = primitive_normal(pos, prims[prim_index]);
-      vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
-
-      // reflection
-
-      float mirror = prims[prim_index].mirror;
-      if (mirror > 0) {
-         result = mix(
-            result,
-            pixel_color_0(
-               pos + normal * min_step_size * 5,
-               reflect(dir, normal),
-               light_pos
-            ),
-            mirror
-         );
-      }
-
-      return fog(from, pos, result, background_color);
-   }
-   return background_color;
-}
-
-vec3 pixel_color_2(vec3 from, vec3 dir, vec3 light_pos) {
-   vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
-
-   int prim_index;
-   vec3 pos;
-   if (raycast(from, dir, prim_index, pos)) {
-      vec3 albedo = prims[prim_index].color;
-      float metallic = prims[prim_index].metallic;
-      float roughness = prims[prim_index].roughness;
-      vec3 normal = primitive_normal(pos, prims[prim_index]);
-      vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
-
-      // reflection
-
-      float mirror = prims[prim_index].mirror;
-      if (mirror > 0) {
-         result = mix(
-            result,
-            pixel_color_1(
-               pos + normal * min_step_size * 5,
-               reflect(dir, normal),
-               light_pos
-            ),
-            mirror
-         );
-      }
-
-      return fog(from, pos, result, background_color);
    }
    return background_color;
 }
@@ -425,7 +360,7 @@ vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
          } else {
             vec3 reflected = reflect(dir, normal);
             vec3 offset = uniform_vector(sa + time * 111.123 + 65.2 * float(bounce));
-            dir = normalize(reflected + offset * (1 - roughness));
+            dir = normalize(reflected + offset * roughness);
          }
       } else {
          return background_color;
@@ -464,7 +399,7 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
          vec3 offset = uniform_vector(sa + time * 111.123 + 65.2 * float(sample));
          dir = normalize(reflected + offset * roughness);
       }
-      acc += pixel_color_0(from, dir, light_pos) * abs(dot(dir, normal));
+      acc += pixel_color_direct(from, dir, light_pos) * abs(dot(dir, normal));
    }
 
    return result + acc / gi_samples;
