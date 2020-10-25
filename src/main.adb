@@ -7,8 +7,11 @@ with GL.Buffers;
 with GL.Files;
 with GL.Fixed.Matrix;
 with GL.Immediate;
+with GL.Objects.Framebuffers;
 with GL.Objects.Programs;
 with GL.Objects.Shaders.Lists;
+with GL.Objects.Textures.Targets;
+with GL.Pixels;
 with GL.Types.Colors;
 with GL.Uniforms;
 with GLFW_Utils;
@@ -22,9 +25,21 @@ procedure Main is
    use GL.Fixed.Matrix;
    use GL.Immediate;
 
-   Program : GL.Objects.Programs.Program;
+   procedure Load_Shader
+     (Shader : in out GL.Objects.Shaders.Shader;
+      Source_File : String)
+   is
+   begin
+      Shader.Initialize_Id;
+      GL.Files.Load_Shader_Source_From_File (Shader, Source_File);
+      Shader.Compile;
+      if not Shader.Compile_Status then
+         Ada.Text_IO.Put_Line ("Compilation of " & Source_File & " failed. log:");
+         Ada.Text_IO.Put_Line (Shader.Info_Log);
+      end if;
+   end Load_Shader;
 
-   procedure List_Shaders is
+   procedure List_Shaders (Program : GL.Objects.Programs.Program) is
    begin
       Ada.Text_IO.Put_Line ("Listing shaders attached to program...");
       declare
@@ -49,14 +64,7 @@ procedure Main is
       Ada.Text_IO.Put_Line ("-----------[Done.]----------");
    end List_Shaders;
 
-   Vertex_Shader   : GL.Objects.Shaders.Shader
-     (Kind => GL.Objects.Shaders.Vertex_Shader);
-   Fragment_Shader : GL.Objects.Shaders.Shader
-     (Kind => GL.Objects.Shaders.Fragment_Shader);
-
-   Time_Uniform    : GL.Uniforms.Uniform;
    Time            : GL.Types.Single := 0.0;
-   Cam_Pos_Uniform : GL.Uniforms.Uniform;
    Cam_Pos         : Singles.Vector3 := (-2.0, 0.0, -3.0);
 
    function Handle_Events return Boolean is
@@ -80,10 +88,120 @@ procedure Main is
       return False;
    end Handle_Events;
 
-   procedure Draw is
+   Vertex_Shader   : GL.Objects.Shaders.Shader
+     (Kind => GL.Objects.Shaders.Vertex_Shader);
+   Image_Shader : GL.Objects.Shaders.Shader
+     (Kind => GL.Objects.Shaders.Fragment_Shader);
+   Irradiance_Shader : GL.Objects.Shaders.Shader
+     (Kind => GL.Objects.Shaders.Fragment_Shader);
+
+   Irradiance_Program : GL.Objects.Programs.Program;
+
+   Irradiance_Data : GL.Objects.Textures.Texture;
+   Irradiance_FB   : GL.Objects.Framebuffers.Framebuffer;
+
+   Probe_Resolution : constant GL.Types.Int := 10;
+   Probe_Count      : constant GL.Types.Int := 8;
+
+   procedure Prepare_Irradiance is
+      use GL.Objects.Textures.Targets;
+      use type GL.Objects.Framebuffers.Framebuffer_Status;
+   begin
+      Irradiance_Data.Initialize_Id;
+      Irradiance_Fb.Initialize_Id;
+
+      Texture_2D.Bind(Irradiance_Data);
+      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Repeat);
+      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Repeat);
+      Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Nearest);
+      Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Nearest);
+      Texture_2D.Load_Empty_Texture
+        (0, GL.Pixels.RGB8,
+         Probe_Resolution * Probe_Count,
+         Probe_Resolution * Probe_Count);
+
+      GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Irradiance_FB);
+      GL.Objects.Framebuffers.Read_And_Draw_Target.Attach_Texture
+        (GL.Objects.Framebuffers.Color_Attachment_0, Irradiance_Data, 0);
+
+      if GL.Objects.Framebuffers.Read_And_Draw_Target.Status
+            /= GL.Objects.Framebuffers.Complete
+      then
+         Ada.Text_IO.Put_Line
+           ("Error: Framebuffer status is " &
+              GL.Objects.Framebuffers.Read_And_Draw_Target.Status'Img);
+         return;
+      end if;
+
+      GL.Objects.Framebuffers.Read_And_Draw_Target.Bind
+        (GL.Objects.Framebuffers.Default_Framebuffer);
+
+      -- set up program
+      Irradiance_Program.Initialize_Id;
+      Irradiance_Program.Attach (Vertex_Shader);
+      Irradiance_Program.Attach (Irradiance_Shader);
+      Irradiance_Program.Link;
+      if not Irradiance_Program.Link_Status then
+         Ada.Text_IO.Put_Line ("Irradiance program linking failed. Log:");
+         Ada.Text_IO.Put_Line (Irradiance_Program.Info_Log);
+         return;
+      end if;
+   end Prepare_Irradiance;
+
+   procedure Update_Irradiance is
+   begin
+      Irradiance_Program.Use_Program;
+
+      GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Irradiance_FB);
+      GL.Buffers.Set_Active_Buffer (GL.Buffers.Color_Attachment0);
+
+      Clear (Buffer_Bits'(Color => True, others => False));
+      declare
+         Token : Input_Token := Start (Quads);
+      begin
+         Set_Color (Colors.Color'(1.0, 0.0, 0.0, 0.0));
+         Token.Add_Vertex (Doubles.Vector4'(1.0, 1.0, 0.0, 1.0));
+         Set_Color (Colors.Color'(0.0, 1.0, 0.0, 0.0));
+         Token.Add_Vertex (Doubles.Vector4'(1.0, -1.0, 0.0, 1.0));
+         Set_Color (Colors.Color'(0.0, 0.0, 1.0, 0.0));
+         Token.Add_Vertex (Doubles.Vector4'(-1.0, -1.0, 0.0, 1.0));
+         Set_Color (Colors.Color'(1.0, 0.0, 1.0, 0.0));
+         Token.Add_Vertex (Doubles.Vector4'(-1.0, 1.0, 0.0, 1.0));
+      end;
+
+      GL.Objects.Framebuffers.Read_And_Draw_Target.Bind
+        (GL.Objects.Framebuffers.Default_Framebuffer);
+   end Update_Irradiance;
+
+   Image_Program   : GL.Objects.Programs.Program;
+   Time_Uniform    : GL.Uniforms.Uniform;
+   Cam_Pos_Uniform : GL.Uniforms.Uniform;
+
+   procedure Prepare_Image is
+   begin
+      -- set up program
+      Image_Program.Initialize_Id;
+      Image_Program.Attach (Vertex_Shader);
+      Image_Program.Attach (Image_Shader);
+      Image_Program.Link;
+      if not Image_Program.Link_Status then
+         Ada.Text_IO.Put_Line ("Image program linking failed. Log:");
+         Ada.Text_IO.Put_Line (Image_Program.Info_Log);
+         return;
+      end if;
+
+      Time_Uniform :=
+         GL.Objects.Programs.Uniform_Location (Image_Program, "time");
+
+      Cam_Pos_Uniform :=
+         GL.Objects.Programs.Uniform_Location (Image_Program, "camera_position");
+   end Prepare_Image;
+
+   procedure Draw_Image is
    begin
       Time := Time + 1.0;
 
+      Image_Program.Use_Program;
       GL.Uniforms.Set_Single (Time_Uniform, Time);
       GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);
 
@@ -103,61 +221,32 @@ procedure Main is
 
       GL.Flush;
       GLFW_Utils.Swap_Buffers;
-   end Draw;
+   end Draw_Image;
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
-
-   Vertex_Shader.Initialize_Id;
-   Fragment_Shader.Initialize_Id;
-   Program.Initialize_Id;
-
-   -- load shader sources and compile shaders
-
-   GL.Files.Load_Shader_Source_From_File
-     (Vertex_Shader, "src/glsl/vert.glsl");
-   GL.Files.Load_Shader_Source_From_File
-     (Fragment_Shader, "src/glsl/frag.glsl");
-
-   Vertex_Shader.Compile;
-   Fragment_Shader.Compile;
-
-   if not Vertex_Shader.Compile_Status then
-      Ada.Text_IO.Put_Line ("Compilation of vertex shader failed. log:");
-      Ada.Text_IO.Put_Line (Vertex_Shader.Info_Log);
-   end if;
-   if not Fragment_Shader.Compile_Status then
-      Ada.Text_IO.Put_Line ("Compilation of fragment shader failed. log:");
-      Ada.Text_IO.Put_Line (Fragment_Shader.Info_Log);
-   end if;
-
-   -- set up program
-   Program.Attach (Vertex_Shader);
-   Program.Attach (Fragment_Shader);
-   Program.Link;
-   if not Program.Link_Status then
-      Ada.Text_IO.Put_Line ("Program linking failed. Log:");
-      Ada.Text_IO.Put_Line (Program.Info_Log);
-      return;
-   end if;
-   Program.Use_Program;
-
-   Time_Uniform    := GL.Objects.Programs.Uniform_Location (Program, "time");
-   Cam_Pos_Uniform := GL.Objects.Programs.Uniform_Location (Program, "camera_position");
-   Cam_Pos (Y) := 2.0;
-
-   -- test iteration over program shaders
-   List_Shaders;
 
    -- set up matrices
    Projection.Load_Identity;
    Projection.Apply_Orthogonal (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
    Modelview.Load_Identity;
 
+   -- load shader sources and compile shaders
+
+   Load_Shader (Vertex_Shader,     "src/glsl/vert.glsl");
+   Load_Shader (Image_Shader,      "src/glsl/frag.glsl");
+   Load_Shader (Irradiance_Shader, "src/glsl/compute_irradiance.glsl");
+
+   Prepare_Irradiance;
+   Prepare_Image;
+
+   Cam_Pos (Y) := 2.0;
+
    while GLFW_Utils.Window_Opened loop
       exit when Handle_Events;
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
-         Draw;
+         Update_Irradiance;
+         Draw_Image;
       end if;
       GLFW_Utils.Poll_Events;
    end loop;
