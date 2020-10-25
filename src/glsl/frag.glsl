@@ -10,12 +10,25 @@ const int max_steps = 300;
 const float PI   = 3.14159265358;
 const float PI_2 = 6.28318530718;
 
+const int gi_bounces = 3;
+const int gi_samples = 1;
+
 /****************
  * Random utils *
  ****************/
 
 float hash(float seed) {
-    return fract(sin(seed)*43758.5453 );
+    return fract(sin(seed) * 43758.5453);
+}
+
+highp float rand(vec2 co)
+{
+    highp float a  = 12.9898;
+    highp float b  = 78.233;
+    highp float c  = 43758.5453;
+    highp float dt = dot(co.xy, vec2(a,b));
+    highp float sn = mod(dt, PI);
+    return fract(sin(sn) * c);
 }
 
 vec3 cosine_direction(in float seed, in vec3 nor) {
@@ -26,7 +39,7 @@ vec3 cosine_direction(in float seed, in vec3 nor) {
 
     float u = hash(78.233 + seed);
     float v = hash(10.873 + seed);
-    float a = 6.283185 * v;
+    float a = PI_2 * v;
 
     return  sqrt(u) * (cos(a) * uu + sin(a) * vv) + sqrt(1.0 - u) * nor;
 }
@@ -160,6 +173,7 @@ vec3 primitive_normal(vec3 x, Primitive prim) {
  **********************/
 
 varying vec4 pos;
+uniform float seed;
 uniform float time;
 uniform vec3 camera_position;
 
@@ -277,8 +291,8 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    Lo += (kD * albedo / PI + specular) * radiance * NdotL * mix(0.1, 1, shadows);
 
    // compute ambient
-   vec3 ambient = vec3(0.03, 0.04, 0.1) * albedo * 0.1;
-   Lo += ambient;
+   // vec3 ambient = vec3(0.03, 0.04, 0.1) * albedo * 0.2;
+   // Lo += ambient;
 
    return Lo;
 }
@@ -370,6 +384,40 @@ vec3 pixel_color_2(vec3 from, vec3 dir, vec3 light_pos) {
    return background_color;
 }
 
+vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
+   vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
+   vec3 result = vec3(0.0);
+   vec3 mask = vec3(1.0);
+
+   for (int bounce = 0; bounce < gi_bounces + 1; ++bounce) {
+      int prim_index;
+      vec3 pos;
+      if (raycast(from, dir, prim_index, pos)) {
+         vec3 albedo = prims[prim_index].color;
+         float metallic = prims[prim_index].metallic;
+         float roughness = prims[prim_index].roughness;
+         vec3 normal = primitive_normal(pos, prims[prim_index]);
+
+         result += mask * shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
+         mask *= albedo;
+
+         from = pos;
+
+         // BRDF
+         if (rand(vec2(sa + time * 127.2, sa + 7.7 * float(bounce))) < roughness) {
+            dir = cosine_direction(sa + 76.2 + 73.1 * float(bounce) + 17.7 * time, normal);
+         } else {
+            vec3 reflected = reflect(dir, normal);
+            vec3 offset = uniform_vector(sa + time * 111.123 + 65.2 * float(bounce));
+            dir = normalize(reflected + offset * (1 - roughness));
+         }
+      } else {
+         return background_color;
+      }
+   }
+   return result;
+}
+
 void main(void)
 {
    vec3 frag_pos = vec3(pos.xy, 0);
@@ -377,6 +425,8 @@ void main(void)
    vec3 light_pos = vec3(cos(time), 2, sin(time));
    vec3 initial_pos = frag_pos + camera_position;
 
-   vec3 col = pixel_color_1(initial_pos, dir, light_pos);
+   float sa = rand(pos.xy * 1113.1 * time);
+
+   vec3 col = pixel_color_path(initial_pos, dir, light_pos, sa);
    gl_FragColor = vec4(pow(col / (col + vec3(1.0)), vec3(0.4545)), 1);
 }

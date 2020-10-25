@@ -77,13 +77,13 @@ procedure Main is
          Cam_Pos (X) := Cam_Pos (X) + 0.1;
       end if;
 
-      Time := Time + 0.01;
-
       return False;
    end Handle_Events;
 
    procedure Draw is
    begin
+      Time := Time + 0.01;
+
       GL.Uniforms.Set_Single (Time_Uniform, Time);
       GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);
 
@@ -156,7 +156,9 @@ begin
 
    while GLFW_Utils.Window_Opened loop
       exit when Handle_Events;
-      Draw;
+      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
+         Draw;
+      end if;
       GLFW_Utils.Poll_Events;
    end loop;
 
