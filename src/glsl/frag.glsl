@@ -242,6 +242,7 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    float light_distance = length(light_dir);
    vec3 L = light_dir / light_distance;
    vec3 H = normalize(V + L);
+   float NdotL = max(dot(N, L), 0.0);
 
    // calculate light radiance
    float attenuation = 1.0; // / (light_distance * light_distance);
@@ -257,21 +258,22 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    kD *= 1.0 - metallic;
 
    vec3 numerator    = NDF * G * F;
-   float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+   float denominator = 4.0 * max(dot(N, V), 0.0) * NdotL;
    vec3 specular     = numerator / max(denominator, 0.001);
 
    // shadow cast
-
-   float shadows = softshadows(
-      pos + normal * min_step_size * 5,
-      L,
-      min_step_size,
-      light_distance,
-      64
-   );
+   float shadows = 0.0;
+   if (NdotL > epsilon) {
+      shadows = softshadows(
+         pos + normal * min_step_size * 5,
+         L,
+         min_step_size,
+         light_distance,
+         64
+      );
+   }
 
    // add to outgoing radiance Lo
-   float NdotL = max(dot(N, L), 0.0);
    Lo += (kD * albedo / PI + specular) * radiance * NdotL * mix(0.1, 1, shadows);
 
    // finally
