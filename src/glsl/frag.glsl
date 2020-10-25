@@ -276,11 +276,11 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    // add to outgoing radiance Lo
    Lo += (kD * albedo / PI + specular) * radiance * NdotL * mix(0.1, 1, shadows);
 
-   // finally
+   // compute ambient
    vec3 ambient = vec3(0.03, 0.04, 0.1) * albedo * 0.1;
    Lo += ambient;
 
-   return Lo + ambient;
+   return Lo;
 }
 
 vec3 fog(vec3 from, vec3 pos, vec3 col, vec3 bg) {
