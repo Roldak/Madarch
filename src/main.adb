@@ -82,7 +82,7 @@ procedure Main is
 
    procedure Draw is
    begin
-      Time := Time + 0.01;
+      Time := Time + 1.0;
 
       GL.Uniforms.Set_Single (Time_Uniform, Time);
       GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);

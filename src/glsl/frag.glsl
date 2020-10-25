@@ -11,7 +11,7 @@ const float PI   = 3.14159265358;
 const float PI_2 = 6.28318530718;
 
 const int gi_bounces = 3;
-const int gi_samples = 1;
+const int gi_samples = 100;
 
 /****************
  * Random utils *
@@ -29,6 +29,22 @@ highp float rand(vec2 co)
     highp float dt = dot(co.xy, vec2(a,b));
     highp float sn = mod(dt, PI);
     return fract(sin(sn) * c);
+}
+
+vec3 random_sphere_point(float seed) {
+   float ang1 = hash(78.233 + seed) * PI_2; // [0..1) -> [0..2*PI)
+   float u = hash(10.873 + seed) * 2 - 1; // [0..1) -> [-1..1)
+   float u2 = u * u;
+   float sqrt1MinusU2 = sqrt(1.0 - u2);
+   float x = sqrt1MinusU2 * cos(ang1);
+   float y = sqrt1MinusU2 * sin(ang1);
+   float z = u;
+   return vec3(x, y, z);
+}
+
+vec3 random_hemisphere_point(float seed, vec3 n) {
+   vec3 v = random_sphere_point(seed);
+   return v * sign(dot(v, n));
 }
 
 vec3 cosine_direction(in float seed, in vec3 nor) {
@@ -418,6 +434,42 @@ vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
    return result;
 }
 
+vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
+   vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
+
+   int prim_index;
+   vec3 pos;
+
+   vec3 result;
+   if (!raycast(from, dir, prim_index, pos)) {
+      return background_color;
+   }
+
+   vec3 albedo = prims[prim_index].color;
+   float metallic = prims[prim_index].metallic;
+   float roughness = prims[prim_index].roughness;
+   vec3 normal = primitive_normal(pos, prims[prim_index]);
+   result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
+
+   from = pos + normal * min_step_size * 5;
+   vec3 reflected = reflect(dir, normal);
+
+   vec3 acc = vec3(0.0);
+
+   for (int sample = 0; sample < gi_samples; ++sample) {
+      // BRDF
+      if (rand(vec2(sa + time * 127.2, sa + 7.7 * float(sample))) < roughness) {
+         dir = random_hemisphere_point(sa + 76.2 + 73.1 * float(sample) + 17.7 * time, normal);
+      } else {
+         vec3 offset = uniform_vector(sa + time * 111.123 + 65.2 * float(sample));
+         dir = normalize(reflected + offset * roughness);
+      }
+      acc += pixel_color_0(from, dir, light_pos) * abs(dot(dir, normal));
+   }
+
+   return result + acc / gi_samples;
+}
+
 void main(void)
 {
    vec3 frag_pos = vec3(pos.xy, 0);
@@ -427,6 +479,6 @@ void main(void)
 
    float sa = rand(pos.xy * 1113.1 * time);
 
-   vec3 col = pixel_color_path(initial_pos, dir, light_pos, sa);
+   vec3 col = pixel_color_many(initial_pos, dir, light_pos, sa);
    gl_FragColor = vec4(pow(col / (col + vec3(1.0)), vec3(0.4545)), 1);
 }
