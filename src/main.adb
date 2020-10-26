@@ -112,8 +112,9 @@ procedure Main is
    Irradiance_Program : GL.Objects.Programs.Program;
    Rnd_Uniform        : GL.Uniforms.Uniform;
 
-   Irradiance_Data : GL.Objects.Textures.Texture;
-   Irradiance_FB   : GL.Objects.Framebuffers.Framebuffer;
+   Irradiance_Data_1 : GL.Objects.Textures.Texture;
+   Irradiance_Data_2 : GL.Objects.Textures.Texture;
+   Irradiance_FB     : GL.Objects.Framebuffers.Framebuffer;
 
    Probe_Resolution : constant GL.Types.Int := 10;
    Probe_Count_X    : constant GL.Types.Int := 4;
@@ -122,23 +123,34 @@ procedure Main is
    procedure Prepare_Irradiance is
       use GL.Objects.Textures.Targets;
       use type GL.Objects.Framebuffers.Framebuffer_Status;
+
+      procedure Prepare_Irradiance_Texture is
+      begin
+         Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Repeat);
+         Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Repeat);
+         Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Nearest);
+         Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Nearest);
+         Texture_2D.Load_Empty_Texture
+           (0, GL.Pixels.RGB8,
+            Probe_Resolution * Probe_Count_X,
+            Probe_Resolution * Probe_Count_Y);
+      end Prepare_Irradiance_Texture;
    begin
-      Irradiance_Data.Initialize_Id;
+      Irradiance_Data_1.Initialize_Id;
+      Irradiance_Data_2.Initialize_Id;
       Irradiance_Fb.Initialize_Id;
 
-      Texture_2D.Bind(Irradiance_Data);
-      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Repeat);
-      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Repeat);
-      Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Nearest);
-      Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Nearest);
-      Texture_2D.Load_Empty_Texture
-        (0, GL.Pixels.RGB8,
-         Probe_Resolution * Probe_Count_X,
-         Probe_Resolution * Probe_Count_Y);
+      Texture_2D.Bind (Irradiance_Data_1);
+      Prepare_Irradiance_Texture;
+
+      Texture_2D.Bind (Irradiance_Data_2);
+      Prepare_Irradiance_Texture;
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Irradiance_FB);
       GL.Objects.Framebuffers.Read_And_Draw_Target.Attach_Texture
-        (GL.Objects.Framebuffers.Color_Attachment_0, Irradiance_Data, 0);
+        (GL.Objects.Framebuffers.Color_Attachment_0, Irradiance_Data_1, 0);
+      GL.Objects.Framebuffers.Read_And_Draw_Target.Attach_Texture
+        (GL.Objects.Framebuffers.Color_Attachment_1, Irradiance_Data_2, 0);
 
       if GL.Objects.Framebuffers.Read_And_Draw_Target.Status
             /= GL.Objects.Framebuffers.Complete
@@ -166,13 +178,28 @@ procedure Main is
       Rnd_Uniform := GL.Objects.Programs.Uniform_Location (Irradiance_Program, "time");
    end Prepare_Irradiance;
 
+   Swap : GL.Types.Int := 0;
+
    procedure Update_Irradiance is
+      use GL.Objects.Textures.Targets;
    begin
       Irradiance_Program.Use_Program;
       GL.Uniforms.Set_Single (Rnd_Uniform, Time);
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Irradiance_FB);
-      GL.Buffers.Set_Active_Buffer (GL.Buffers.Color_Attachment0);
+
+      if Swap = 0 then
+         GL.Buffers.Set_Active_Buffer (GL.Buffers.Color_Attachment0);
+      else
+         GL.Buffers.Set_Active_Buffer (GL.Buffers.Color_Attachment1);
+      end if;
+
+      GL.Objects.Textures.Set_Active_Unit (Swap);
+      Texture_2D.Bind (Irradiance_Data_2);
+      GL.Objects.Textures.Set_Active_Unit (1 - Swap);
+      Texture_2D.Bind (Irradiance_Data_1);
+
+      Swap := 1 - Swap;
 
       GL.Window.Set_Viewport
         (0, 0,
