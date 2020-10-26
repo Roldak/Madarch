@@ -19,6 +19,9 @@ with GLFW_Utils;
 
 with Glfw.Input.Keys;
 
+with GNATCOLL.VFS;
+with GNATCOLL.Strings;
+
 procedure Main is
    use GL;
    use GL.Buffers;
@@ -30,9 +33,15 @@ procedure Main is
      (Shader : in out GL.Objects.Shaders.Shader;
       Source_File : String)
    is
+      use GNATCOLL;
+
+      Source_Path : VFS.Virtual_File :=
+         VFS.Create (VFS.Filesystem_String (Source_File));
+
+      Content : Strings.XString := VFS.Read_File (Source_Path);
    begin
       Shader.Initialize_Id;
-      GL.Files.Load_Shader_Source_From_File (Shader, Source_File);
+      GL.Objects.Shaders.Set_Source (Shader, Content.To_String);
       Shader.Compile;
       if not Shader.Compile_Status then
          Ada.Text_IO.Put_Line ("Compilation of " & Source_File & " failed. log:");

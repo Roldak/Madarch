@@ -2,9 +2,6 @@
 
 varying vec4 pos;
 
-uniform float time;
-uniform sampler2D irradiance_data;
-
 const float PI_2 = 6.28318530718;
 
 const int probe_resolution = 10;
@@ -68,8 +65,5 @@ void main(void) {
    vec2 ray_id = coord_to_ray_id(normalized_coord);
    vec3 ray_dir = ray_id_to_ray_dir(ray_id);
 
-   vec4 last = texture2D(irradiance_data, normalized_coord);
-   vec4 curr = vec4(ray_dir, 1);
-
-   gl_FragColor = curr - last;
+   gl_FragColor = vec4(1, 0, 0, 0);
 }
