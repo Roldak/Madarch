@@ -1,8 +1,8 @@
 #version 120
 
-varying vec4 pos;
+#include "raymarch.glsl"
 
-const float PI_2 = 6.28318530718;
+varying vec4 pos;
 
 const int probe_resolution = 10;
 const ivec2 probe_count = ivec2(4, 4);
