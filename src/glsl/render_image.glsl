@@ -400,6 +400,8 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
    return result + acc / gi_samples;
 }
 
+uniform sampler2D irradiance_data;
+
 void main(void) {
    vec3 frag_pos = vec3(pos.xy, 0);
    vec3 dir = normalize(frag_pos - vec3(0, 0, -1.5));

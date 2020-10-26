@@ -14,6 +14,7 @@ with GL.Objects.Textures.Targets;
 with GL.Pixels;
 with GL.Types.Colors;
 with GL.Uniforms;
+with GL.Window;
 with GLFW_Utils;
 
 with Glfw.Input.Keys;
@@ -109,12 +110,14 @@ procedure Main is
      (Kind => GL.Objects.Shaders.Fragment_Shader);
 
    Irradiance_Program : GL.Objects.Programs.Program;
+   Rnd_Uniform        : GL.Uniforms.Uniform;
 
    Irradiance_Data : GL.Objects.Textures.Texture;
    Irradiance_FB   : GL.Objects.Framebuffers.Framebuffer;
 
    Probe_Resolution : constant GL.Types.Int := 10;
-   Probe_Count      : constant GL.Types.Int := 8;
+   Probe_Count_X    : constant GL.Types.Int := 4;
+   Probe_Count_Y    : constant GL.Types.Int := 4;
 
    procedure Prepare_Irradiance is
       use GL.Objects.Textures.Targets;
@@ -130,8 +133,8 @@ procedure Main is
       Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Nearest);
       Texture_2D.Load_Empty_Texture
         (0, GL.Pixels.RGB8,
-         Probe_Resolution * Probe_Count,
-         Probe_Resolution * Probe_Count);
+         Probe_Resolution * Probe_Count_X,
+         Probe_Resolution * Probe_Count_Y);
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Irradiance_FB);
       GL.Objects.Framebuffers.Read_And_Draw_Target.Attach_Texture
@@ -159,14 +162,22 @@ procedure Main is
          Ada.Text_IO.Put_Line (Irradiance_Program.Info_Log);
          return;
       end if;
+
+      Rnd_Uniform := GL.Objects.Programs.Uniform_Location (Irradiance_Program, "time");
    end Prepare_Irradiance;
 
    procedure Update_Irradiance is
    begin
       Irradiance_Program.Use_Program;
+      GL.Uniforms.Set_Single (Rnd_Uniform, Time);
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Irradiance_FB);
       GL.Buffers.Set_Active_Buffer (GL.Buffers.Color_Attachment0);
+
+      GL.Window.Set_Viewport
+        (0, 0,
+         Probe_Resolution * Probe_Count_X,
+         Probe_Resolution * Probe_Count_Y);
 
       Clear (Buffer_Bits'(Color => True, others => False));
       Draw_Fullscreen_Quad;
@@ -207,6 +218,7 @@ procedure Main is
       GL.Uniforms.Set_Single (Time_Uniform, Time);
       GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);
 
+      GL.Window.Set_Viewport (0, 0, 1000, 1000);
       Clear (Buffer_Bits'(Color => True, others => False));
       Draw_Fullscreen_Quad;
 
