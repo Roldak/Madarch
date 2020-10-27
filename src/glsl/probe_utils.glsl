@@ -35,6 +35,12 @@ int grid_position_to_probe_id(ivec3 grid_position) {
        +  grid_position.x;
 }
 
+vec2 probe_id_to_coord(int probe_id) {
+   int y_coord = probe_id / probe_count.x;
+   int x_coord = probe_id - y_coord * probe_count.x;
+   return vec2(x_coord, y_coord) / probe_count;
+}
+
 // Returns ±1
 vec2 sign_not_zero(vec2 v) {
    return vec2((v.x >= 0.0) ? +1.0 : -1.0, (v.y >= 0.0) ? +1.0 : -1.0);
