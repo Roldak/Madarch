@@ -1,5 +1,7 @@
 #include "probe_utils.glsl"
 
+#extension GL_EXT_gpu_shader4 : enable
+
 #define SPHERE 0
 #define PLANE 1
 #define CUBE 2
@@ -195,15 +197,35 @@ uniform sampler2D irradiance_data;
 
 #define PRIM_COUNT 8
 const Primitive prims[PRIM_COUNT] = Primitive[](
-   Primitive(SPHERE, vec3(0.5, 0.5, 1.0), 1.0, vec3(1, 0, 0), 0.1, 0.0),
-   Primitive(CUBE,   vec3(-0.5, 0, 2.0),  0.8, vec3(0, 0, 1), 0.8, 0.8),
+   Primitive(SPHERE, vec3(6.5, 2.5, 3.0), 1.0, vec3(1, 0, 0), 0.1, 0.0),
+   Primitive(CUBE,   vec3(2.5, 0, 2.0),  1.5, vec3(0, 0, 1), 0.8, 0.8),
 
-   Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
-   Primitive(PLANE, vec3(0, -1, 0), 5.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
-   Primitive(PLANE, vec3(1, 0, 0),  5.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
-   Primitive(PLANE, vec3(-1, 0, 0), 5.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
-   Primitive(PLANE, vec3(0, 0, 1),  5.0, vec3(0.5, 0.5, 0.5), 0, 0.6),
-   Primitive(PLANE, vec3(0, 0, -1), 5.0, vec3(0.5, 0.5, 0.5), 0, 0.6)
+   Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
+   Primitive(PLANE, vec3(0, -1, 0), 5.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
+   Primitive(PLANE, vec3(1, 0, 0),  2.0, vec3(1.0, 0.0, 0.0), 0, 0.6),
+   Primitive(PLANE, vec3(-1, 0, 0), 8.0, vec3(0.0, 0.0, 1.0), 0, 0.6),
+   Primitive(PLANE, vec3(0, 0, 1),  5.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
+   Primitive(PLANE, vec3(0, 0, -1), 5.0, vec3(0.0, 0.0, 0.0), 0, 0.6) /*,
+
+   Primitive(SPHERE, vec3(0, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(2, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(4, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(6, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+
+   Primitive(SPHERE, vec3(0, 4, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(2, 4, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(4, 4, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(6, 4, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+
+   Primitive(SPHERE, vec3(0, 0, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(2, 0, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(4, 0, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(6, 0, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+
+   Primitive(SPHERE, vec3(0, 4, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(2, 4, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(4, 4, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
+   Primitive(SPHERE, vec3(6, 4, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0)*/
 );
 
 float closest_primitive(vec3 x, out int index) {
@@ -412,8 +434,35 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
       float roughness = prims[prim_index].roughness;
       vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
-      return result;
 
+      ivec3 grid_position = world_position_to_grid_position(pos);
+      vec3 irradiance = vec3(0);
+      float total_weight = 0.0;
+
+      vec3 alpha = (pos - grid_position) / grid_spacing;
+      int total_probe_count = probe_count.x * probe_count.y;
+
+      for (int i = 0; i < 8; ++i) {
+         ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
+
+         int probe_id = grid_position_to_probe_id(grid_position + offset);
+
+         if (probe_id > total_probe_count) {
+            continue;
+         }
+
+         vec2 irr_base_coord = probe_id_to_coord(probe_id);
+
+         vec2 irr_ray_dir_id = ray_dir_to_ray_id(normal);
+         vec2 irr_coord = irr_base_coord + irr_ray_dir_id * irradiance_step;
+
+         vec3 trilinear = mix(1.0 - alpha, alpha, offset);
+         float weight = trilinear.x * trilinear.y * trilinear.z;
+         irradiance += texture2D(irradiance_data, irr_coord).rgb * weight;
+         total_weight += weight;
+      }
+
+      return irradiance / total_weight + result;
    }
 
    return background_color;

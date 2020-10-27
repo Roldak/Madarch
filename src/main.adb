@@ -333,7 +333,7 @@ procedure Main is
    procedure Draw_Image is
       use GL.Objects.Textures.Targets;
    begin
-      Time := Time + 1.0;
+      Time := Time + 0.01;
 
       Image_Program.Use_Program;
       GL.Uniforms.Set_Single (Time_Uniform, Time);
@@ -375,7 +375,7 @@ begin
 
    while GLFW_Utils.Window_Opened loop
       exit when Handle_Events;
-      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
+      if not GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
          Compute_Radiance;
          Update_Irradiance;
          Draw_Image;

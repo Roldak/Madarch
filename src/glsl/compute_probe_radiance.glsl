@@ -14,7 +14,7 @@ void main(void) {
    vec2 ray_id = coord_to_ray_id(normalized_coord);
    vec3 ray_dir = ray_id_to_ray_dir(ray_id);
 
-   vec3 light_pos = vec3(cos(time), 2, sin(time));
+   vec3 light_pos = vec3(3.0 + cos(time), 2, sin(time));
    vec3 col = pixel_color_direct(world_position, ray_dir, light_pos);
 
    gl_FragColor = vec4(col, 1);

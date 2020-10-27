@@ -1,6 +1,19 @@
 const ivec2 probe_count = ivec2(4, 4);
 const ivec3 grid_dimensions = ivec3(4, 2, 2);
-const vec3 grid_spacing = vec3(1.0, 1.0, 1.0);
+const vec3 grid_spacing = vec3(2.0, 4.0, 4.0);
+
+const int radiance_resolution = 10;
+const int irradiance_resolution = 4;
+
+const vec2 radiance_step = vec2(1) / vec2(
+   probe_count.x * radiance_resolution,
+   probe_count.y * radiance_resolution
+);
+
+const vec2 irradiance_step = vec2(1) / vec2(
+   probe_count.x,
+   probe_count.y
+);
 
 int coord_to_probe_id(vec2 normalized_coord) {
    ivec2 probe_id = ivec2(
@@ -74,5 +87,10 @@ vec2 coord_to_ray_id(vec2 normalized_coord) {
 vec3 ray_id_to_ray_dir(vec2 ray_id) {
    vec2 norm = ray_id * 2 - vec2(1);
    return oct_to_float32x3(norm);
+}
+
+vec2 ray_dir_to_ray_id(vec3 ray_dir) {
+   vec2 raw = float32x3_to_oct(ray_dir);
+   return (raw + vec2(1)) / 2;
 }
 
