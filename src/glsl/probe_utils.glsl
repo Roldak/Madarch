@@ -1,4 +1,3 @@
-const int probe_resolution = 10;
 const ivec2 probe_count = ivec2(4, 4);
 const ivec3 grid_dimensions = ivec3(4, 2, 2);
 const vec3 grid_spacing = vec3(1.0, 1.0, 1.0);
@@ -34,5 +33,40 @@ int grid_position_to_probe_id(ivec3 grid_position) {
    return grid_position.z * grid_dimensions.x * grid_dimensions.y
        +  grid_position.y * grid_dimensions.x
        +  grid_position.x;
+}
+
+// Returns ±1
+vec2 sign_not_zero(vec2 v) {
+   return vec2((v.x >= 0.0) ? +1.0 : -1.0, (v.y >= 0.0) ? +1.0 : -1.0);
+}
+
+//Assume normalized input.  Output is on [-1, 1] for each component.
+vec2 float32x3_to_oct(in vec3 v) {
+   //Project the sphere onto the octahedron, and then onto the xy plane
+   vec2 p = v.xy * (1.0 / (abs(v.x) + abs(v.y) + abs(v.z)));
+
+   //Reflect the folds of the lower hemisphere over the diagonals
+   return (v.z <= 0.0) ? ((1.0 - abs(p.yx)) * sign_not_zero(p)) : p;
+}
+
+vec3 oct_to_float32x3(vec2 e) {
+   vec3 v = vec3(e.xy, 1.0 - abs(e.x) - abs(e.y));
+   if (v.z < 0) {
+       v.xy = (1.0 - abs(v.yx)) * sign_not_zero(v.xy);
+   }
+   return normalize(v);
+}
+
+vec2 coord_to_ray_id(vec2 normalized_coord) {
+   vec2 scaled = vec2(
+      normalized_coord.x * probe_count.x,
+      normalized_coord.y * probe_count.y
+   );
+   return scaled - ivec2(scaled);
+}
+
+vec3 ray_id_to_ray_dir(vec2 ray_id) {
+   vec2 norm = ray_id * 2 - vec2(1);
+   return oct_to_float32x3(norm);
 }
 

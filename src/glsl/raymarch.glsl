@@ -1,4 +1,4 @@
-#include "grid_utils.glsl"
+#include "probe_utils.glsl"
 
 #define SPHERE 0
 #define PLANE 1
