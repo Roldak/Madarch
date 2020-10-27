@@ -1,3 +1,5 @@
+#include "grid_utils.glsl"
+
 #define SPHERE 0
 #define PLANE 1
 #define CUBE 2
@@ -397,5 +399,23 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
    }
 
    return result + acc / gi_samples;
+}
+
+vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
+   vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
+
+   int prim_index;
+   vec3 pos;
+   if (raycast(from, dir, prim_index, pos)) {
+      vec3 albedo = prims[prim_index].color;
+      float metallic = prims[prim_index].metallic;
+      float roughness = prims[prim_index].roughness;
+      vec3 normal = primitive_normal(pos, prims[prim_index]);
+      vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
+      return result;
+
+   }
+
+   return background_color;
 }
 
