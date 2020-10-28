@@ -5,16 +5,6 @@ const vec3 grid_spacing = vec3(2.0, 4.0, 4.0);
 const int radiance_resolution = 10;
 const int irradiance_resolution = 4;
 
-const vec2 radiance_step = vec2(1) / vec2(
-   probe_count.x * radiance_resolution,
-   probe_count.y * radiance_resolution
-);
-
-const vec2 irradiance_step = vec2(1) / vec2(
-   probe_count.x,
-   probe_count.y
-);
-
 int coord_to_probe_id(vec2 normalized_coord) {
    ivec2 probe_id = ivec2(
       int(normalized_coord.x * probe_count.x),
