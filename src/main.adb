@@ -179,10 +179,10 @@ procedure Main is
       Radiance_Fb.Initialize_Id;
 
       Texture_2D.Bind (Radiance_Data);
-      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Repeat);
-      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Repeat);
-      Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Nearest);
-      Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Nearest);
+      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Clamp);
+      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Clamp);
+      Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
+      Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Load_Empty_Texture
         (0, GL.Pixels.RGB8,
          Probe_Radiance_Resolution * Probe_Count_X,
@@ -251,10 +251,10 @@ procedure Main is
       Irradiance_Fb.Initialize_Id;
 
       Texture_2D.Bind (Irradiance_Data);
-      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Repeat);
-      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Repeat);
-      Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Nearest);
-      Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Nearest);
+      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Clamp);
+      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Clamp);
+      Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
+      Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Load_Empty_Texture
         (0, GL.Pixels.RGB8,
          Probe_Irradiance_Resolution * Probe_Count_X,
