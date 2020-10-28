@@ -197,8 +197,8 @@ uniform sampler2D irradiance_data;
 
 #define PRIM_COUNT 8
 const Primitive prims[PRIM_COUNT] = Primitive[](
-   Primitive(SPHERE, vec3(6.5, 2.5, 3.0), 1.0, vec3(1, 0, 0), 0.1, 0.0),
-   Primitive(CUBE,   vec3(2.5, 0, 2.0),  1.5, vec3(0, 0, 1), 0.8, 0.8),
+   Primitive(SPHERE, vec3(3.5, 3.5, 3.0), 1.0, vec3(1, 0, 0), 0.1, 0.0),
+   Primitive(CUBE,   vec3(2.5, 0, 2.0),  1.5, vec3(0, 1, 0), 0.8, 0.8),
 
    Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
    Primitive(PLANE, vec3(0, -1, 0), 5.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
@@ -433,28 +433,29 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
       float metallic = prims[prim_index].metallic;
       float roughness = prims[prim_index].roughness;
       vec3 normal = primitive_normal(pos, prims[prim_index]);
-      vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
+      vec3 direct = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
 
       ivec3 grid_position = world_position_to_grid_position(pos);
       vec3 irradiance = vec3(0);
       float total_weight = 0.0;
 
-      vec3 alpha = (pos - grid_position) / grid_spacing;
+      vec3 alpha = pos / grid_spacing - grid_position;
       int total_probe_count = probe_count.x * probe_count.y;
 
       for (int i = 0; i < 8; ++i) {
          ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
 
-         int probe_id = grid_position_to_probe_id(grid_position + offset);
-
-         if (probe_id > total_probe_count) {
-            continue;
-         }
+         ivec3 offseted = clamp(
+            grid_position + offset,
+            ivec3(0),
+            ivec3(grid_dimensions) - ivec3(1)
+         );
+         int probe_id = grid_position_to_probe_id(offseted);
 
          vec2 irr_base_coord = probe_id_to_coord(probe_id);
 
          vec2 irr_ray_dir_id = ray_dir_to_ray_id(normal);
-         vec2 irr_coord = irr_base_coord + irr_ray_dir_id * irradiance_step;
+         vec2 irr_coord = irr_base_coord + irr_ray_dir_id / probe_count;
 
          vec3 trilinear = mix(1.0 - alpha, alpha, offset);
          float weight = trilinear.x * trilinear.y * trilinear.z;
@@ -462,7 +463,10 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
          total_weight += weight;
       }
 
-      return irradiance / total_weight + result;
+      irradiance /= total_weight;
+      vec3 indirect = irradiance * 0.5;
+
+      return indirect + direct;
    }
 
    return background_color;

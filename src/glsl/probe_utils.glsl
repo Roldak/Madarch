@@ -91,6 +91,6 @@ vec3 ray_id_to_ray_dir(vec2 ray_id) {
 
 vec2 ray_dir_to_ray_id(vec3 ray_dir) {
    vec2 raw = float32x3_to_oct(ray_dir);
-   return (raw + vec2(1)) / 2;
+   return (raw + vec2(1)) * 0.5;
 }
 
