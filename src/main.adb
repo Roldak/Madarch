@@ -126,7 +126,7 @@ procedure Main is
    end Draw_Fullscreen_Quad;
 
    Time            : GL.Types.Single := 0.0;
-   Cam_Pos         : Singles.Vector3 := (-2.0, 0.0, -3.0);
+   Cam_Pos         : Singles.Vector3 := (1.0, 2.0, -4.0);
 
    function Handle_Events return Boolean is
    begin
@@ -164,10 +164,10 @@ procedure Main is
    Radiance_Data : GL.Objects.Textures.Texture;
    Radiance_FB   : GL.Objects.Framebuffers.Framebuffer;
 
-   Probe_Radiance_Resolution   : constant GL.Types.Int := 10;
+   Probe_Radiance_Resolution   : constant GL.Types.Int := 30;
 
-   Probe_Count_X    : constant GL.Types.Int := 4;
-   Probe_Count_Y    : constant GL.Types.Int := 4;
+   Probe_Count_X    : constant GL.Types.Int := 6;
+   Probe_Count_Y    : constant GL.Types.Int := 6;
 
    Irradiance_Data : GL.Objects.Textures.Texture;
 
@@ -179,8 +179,8 @@ procedure Main is
       Radiance_Fb.Initialize_Id;
 
       Texture_2D.Bind (Radiance_Data);
-      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Clamp);
-      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Clamp);
+      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
+      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
       Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Load_Empty_Texture
@@ -241,7 +241,7 @@ procedure Main is
    Irradiance_Program : GL.Objects.Programs.Program;
    Irradiance_FB   : GL.Objects.Framebuffers.Framebuffer;
 
-   Probe_Irradiance_Resolution : constant GL.Types.Int := 4;
+   Probe_Irradiance_Resolution : constant GL.Types.Int := 8;
 
    procedure Prepare_Irradiance is
       use GL.Objects.Textures.Targets;
@@ -251,8 +251,8 @@ procedure Main is
       Irradiance_Fb.Initialize_Id;
 
       Texture_2D.Bind (Irradiance_Data);
-      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Clamp);
-      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Clamp);
+      Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
+      Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
       Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Load_Empty_Texture
@@ -371,11 +371,9 @@ begin
    Prepare_Irradiance;
    Prepare_Image;
 
-   Cam_Pos (Y) := 2.0;
-
    while GLFW_Utils.Window_Opened loop
       exit when Handle_Events;
-      if not GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
+      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
          Compute_Radiance;
          Update_Irradiance;
          Draw_Image;

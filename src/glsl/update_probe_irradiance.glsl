@@ -17,15 +17,19 @@ void main(void) {
    vec3 irradiance = vec3(0.0);
    float total_weight = 0.0;
 
-   const vec2 step = vec2(1) / vec2(
-      probe_count.x * radiance_resolution,
-      probe_count.y * radiance_resolution
-   );
+   const vec2 step = vec2(1) / probe_count / radiance_resolution;
+
+   const vec2 min_coord = vec2(1) / radiance_resolution;
+   const vec2 max_coord = vec2(1) - min_coord;
 
    for (int y = 0; y < radiance_resolution; ++y) {
       for (int x = 0; x < radiance_resolution; ++x) {
          vec2 offset = vec2(x, y) * step;
-         vec2 rad_normalized_coord = rad_coord + offset;
+         vec2 rad_normalized_coord = clamp(
+            rad_coord + offset,
+            step,
+            vec2(1) - step
+         );
          vec3 radiance = texture2D(radiance_data, rad_normalized_coord).rgb;
          vec2 rad_ray_id = coord_to_ray_id(rad_normalized_coord);
          vec3 rad_ray_dir = ray_id_to_ray_dir(rad_ray_id);

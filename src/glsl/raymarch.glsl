@@ -6,12 +6,13 @@
 #define PLANE 1
 #define CUBE 2
 
+const float PI   = 3.14159265358;
+const float PI_2 = 6.28318530718;
+
 const float epsilon = 0.001f;
 const float min_step_size = 0.005f;
 const float max_dist = 20;
 const int max_steps = 300;
-const float PI   = 3.14159265358;
-const float PI_2 = 6.28318530718;
 
 const int gi_bounces = 3;
 const int gi_samples = 100;
@@ -197,15 +198,15 @@ uniform sampler2D irradiance_data;
 
 #define PRIM_COUNT 8
 const Primitive prims[PRIM_COUNT] = Primitive[](
-   Primitive(SPHERE, vec3(3.5, 3.5, 3.0), 1.0, vec3(1, 0, 0), 0.1, 0.0),
-   Primitive(CUBE,   vec3(2.5, 0, 2.0),  1.5, vec3(0, 1, 0), 0.8, 0.8),
+   Primitive(SPHERE, vec3(3.5, 3.0, 3.0), 1.0, vec3(1, 0, 0), 0.1, 0.0),
+   Primitive(CUBE,   vec3(3.0, 0.0, 4.0), 1.5, vec3(0, 1, 0), 0.8, 0.8),
 
    Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
-   Primitive(PLANE, vec3(0, -1, 0), 5.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
-   Primitive(PLANE, vec3(1, 0, 0),  2.0, vec3(1.0, 0.0, 0.0), 0, 0.6),
-   Primitive(PLANE, vec3(-1, 0, 0), 8.0, vec3(0.0, 0.0, 1.0), 0, 0.6),
-   Primitive(PLANE, vec3(0, 0, 1),  5.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
-   Primitive(PLANE, vec3(0, 0, -1), 5.0, vec3(0.0, 0.0, 0.0), 0, 0.6) /*,
+   Primitive(PLANE, vec3(0, -1, 0), 7.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
+   Primitive(PLANE, vec3(1, 0, 0),  1.0, vec3(1.0, 0.0, 0.0), 0, 0.6),
+   Primitive(PLANE, vec3(-1, 0, 0), 7.0, vec3(0.0, 0.0, 1.0), 0, 0.6),
+   Primitive(PLANE, vec3(0, 0, 1),  6.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
+   Primitive(PLANE, vec3(0, 0, -1), 7.0, vec3(0.0, 0.0, 0.0), 0, 0.6)/*,
 
    Primitive(SPHERE, vec3(0, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
    Primitive(SPHERE, vec3(2, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
@@ -440,7 +441,9 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
       float total_weight = 0.0;
 
       vec3 alpha = pos / grid_spacing - grid_position;
-      int total_probe_count = probe_count.x * probe_count.y;
+
+      const vec2 min_coord = vec2(0.5) / irradiance_resolution;
+      const vec2 max_coord = vec2(1.0) - min_coord;
 
       for (int i = 0; i < 8; ++i) {
          ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
@@ -450,15 +453,21 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
             ivec3(0),
             ivec3(grid_dimensions) - ivec3(1)
          );
-         int probe_id = grid_position_to_probe_id(offseted);
 
+         int probe_id = grid_position_to_probe_id(offseted);
          vec2 irr_base_coord = probe_id_to_coord(probe_id);
 
-         vec2 irr_ray_dir_id = ray_dir_to_ray_id(normal);
+         vec2 irr_ray_dir_id = clamp(
+            ray_dir_to_ray_id(normal),
+            min_coord,
+            max_coord
+         );
+
          vec2 irr_coord = irr_base_coord + irr_ray_dir_id / probe_count;
 
          vec3 trilinear = mix(1.0 - alpha, alpha, offset);
          float weight = trilinear.x * trilinear.y * trilinear.z;
+
          irradiance += texture2D(irradiance_data, irr_coord).rgb * weight;
          total_weight += weight;
       }

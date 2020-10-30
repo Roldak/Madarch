@@ -11,7 +11,8 @@ void main(void) {
    vec3 light_pos = vec3(3.0 + cos(time), 2, sin(time));
    vec3 initial_pos = frag_pos + camera_position;
 
+   float sa = rand(pos.xy * 1113.1 * time);
+
    vec3 col = pixel_color_irradiance_probes(initial_pos, dir, light_pos);
    gl_FragColor = vec4(pow(col / (col + vec3(1.0)), vec3(0.4545)), 1);
-   //gl_FragColor = texture2D(irradiance_data, (frag_pos.xy + vec2(1)) * 0.5);
 }
