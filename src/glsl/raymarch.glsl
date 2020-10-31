@@ -327,11 +327,7 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    }
 
    // add to outgoing radiance Lo
-   Lo += (kD * albedo / PI + specular) * radiance * NdotL * mix(0.1, 1, shadows);
-
-   // compute ambient
-   // vec3 ambient = vec3(0.03, 0.04, 0.1) * albedo * 0.2;
-   // Lo += ambient;
+   Lo += (kD * albedo / PI + specular) * radiance * NdotL * mix(0.1, 1.0, shadows);
 
    return Lo;
 }
@@ -454,6 +450,36 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
             ivec3(grid_dimensions) - ivec3(1)
          );
 
+         vec3 hit_to_probe = grid_position_to_world_position(offseted) - pos;
+         float probe_distance = length(hit_to_probe);
+         vec3 dir_to_probe = hit_to_probe / probe_distance;
+
+         float weight = 1.0;
+
+         // backface test
+         float angle = (dot(dir_to_probe, normal) + 1.0) * 0.5;
+         weight *= angle * angle + 0.2;
+
+         // visibility test
+         weight *= softshadows(
+            pos + normal * min_step_size * 5.0,
+            dir_to_probe,
+            min_step_size,
+            probe_distance,
+            16
+         );
+
+         // crush tiny weights
+         const float crushThreshold = 0.2;
+         if (weight < crushThreshold) {
+             weight *= weight * weight * (1.0 / (crushThreshold * crushThreshold));
+         }
+
+         // trilinear weights
+         vec3 trilinear = mix(1.0 - alpha, alpha, offset);
+         weight *= trilinear.x * trilinear.y * trilinear.z;
+
+         // retrieve irradiance
          int probe_id = grid_position_to_probe_id(offseted);
          vec2 irr_base_coord = probe_id_to_coord(probe_id);
 
@@ -465,15 +491,12 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
 
          vec2 irr_coord = irr_base_coord + irr_ray_dir_id / probe_count;
 
-         vec3 trilinear = mix(1.0 - alpha, alpha, offset);
-         float weight = trilinear.x * trilinear.y * trilinear.z;
-
-         irradiance += texture2D(irradiance_data, irr_coord).rgb * weight;
+         irradiance += sqrt(texture2D(irradiance_data, irr_coord).rgb) * weight;
          total_weight += weight;
       }
 
       irradiance /= total_weight;
-      vec3 indirect = irradiance * 0.5;
+      vec3 indirect = irradiance * irradiance * 0.5;
 
       return indirect + direct;
    }
