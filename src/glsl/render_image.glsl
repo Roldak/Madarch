@@ -1,8 +1,10 @@
-#version 120
+#version 140
 
 #include "raymarch.glsl"
 
-varying vec4 pos;
+in vec4 pos;
+out vec3 color;
+
 uniform vec3 camera_position;
 
 void main(void) {
@@ -13,6 +15,6 @@ void main(void) {
 
    float sa = rand(pos.xy * 1113.1 * time);
 
-   vec3 col = pixel_color_irradiance_probes(initial_pos, dir, light_pos);
-   gl_FragColor = vec4(pow(col / (col + vec3(1.0)), vec3(0.4545)), 1);
+   color = pixel_color_irradiance_probes(initial_pos, dir, light_pos);
+   color = pow(color / (color + vec3(1.0)), vec3(0.4545));
 }

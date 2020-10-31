@@ -1,8 +1,9 @@
-#version 120
+#version 140
 
 #include "probe_utils.glsl"
 
-varying vec4 pos;
+in vec4 pos;
+out vec3 irradiance;
 
 uniform sampler2D radiance_data;
 
@@ -14,7 +15,7 @@ void main(void) {
    int probe_id = coord_to_probe_id(normalized_coord);
    vec2 rad_coord = probe_id_to_coord(probe_id);
 
-   vec3 irradiance = vec3(0.0);
+   irradiance = vec3(0.0);
    float total_weight = 0.0;
 
    const vec2 step = vec2(1) / probe_count / radiance_resolution;
@@ -41,6 +42,4 @@ void main(void) {
    }
 
    irradiance /= total_weight;
-
-   gl_FragColor = vec4(irradiance, 1);
 }
