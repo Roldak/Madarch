@@ -25,31 +25,6 @@ procedure Main is
    use GL.Fixed.Matrix;
    use GL.Immediate;
 
-   procedure List_Shaders (Program : GL.Objects.Programs.Program) is
-   begin
-      Ada.Text_IO.Put_Line ("Listing shaders attached to program...");
-      declare
-         use type GL.Objects.Shaders.Lists.Cursor;
-
-         List : constant GL.Objects.Shaders.Lists.List
-           := Program.Attached_Shaders;
-         Cursor : GL.Objects.Shaders.Lists.Cursor := List.First;
-      begin
-         while Cursor /= GL.Objects.Shaders.Lists.No_Element loop
-            declare
-               Shader : constant GL.Objects.Shaders.Shader
-                 := GL.Objects.Shaders.Lists.Element (Cursor);
-            begin
-               Ada.Text_IO.Put_Line ("----------------------------");
-               Ada.Text_IO.Put_Line ("Kind: " & Shader.Kind'Img);
-               Ada.Text_IO.Put_Line ("Status: " & Shader.Compile_Status'Img);
-            end;
-            Cursor := GL.Objects.Shaders.Lists.Next (Cursor);
-         end loop;
-      end;
-      Ada.Text_IO.Put_Line ("-----------[Done.]----------");
-   end List_Shaders;
-
    procedure Draw_Fullscreen_Quad is
       Token : Input_Token := Start (Quads);
    begin
