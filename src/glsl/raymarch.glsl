@@ -198,7 +198,7 @@ uniform sampler2D irradiance_data;
 
 #define PRIM_COUNT 8
 const Primitive prims[PRIM_COUNT] = Primitive[](
-   Primitive(SPHERE, vec3(3.5, 3.0, 3.0), 1.0, vec3(1, 0, 0), 0.1, 0.0),
+   Primitive(SPHERE, vec3(3.5, 3.0, 3.0), 1.0, vec3(1, 0, 0), 0.5, 0.4),
    Primitive(CUBE,   vec3(3.0, 0.0, 4.0), 1.5, vec3(0, 1, 0), 0.8, 0.8),
 
    Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
@@ -496,7 +496,7 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
       }
 
       irradiance /= total_weight;
-      vec3 indirect = irradiance * irradiance * 0.5;
+      vec3 indirect = irradiance * irradiance * 0.3;
 
       return indirect + direct;
    }
