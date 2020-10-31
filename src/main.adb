@@ -1,9 +1,12 @@
 with Ada.Text_IO;
 
+with Interfaces.C.Pointers;
+
 with GL.Buffers;
 with GL.Files;
 with GL.Fixed.Matrix;
 with GL.Immediate;
+with GL.Objects.Buffers;
 with GL.Objects.Framebuffers;
 with GL.Objects.Programs;
 with GL.Objects.Shaders.Lists;
@@ -24,6 +27,11 @@ procedure Main is
    use GL.Types;
    use GL.Fixed.Matrix;
    use GL.Immediate;
+
+   procedure Set_Uniform_Int_Data is
+      new Objects.Buffers.Set_Sub_Data (Int_Pointers);
+   procedure Set_Uniform_Float_Data is
+      new Objects.Buffers.Set_Sub_Data (Single_Pointers);
 
    procedure Draw_Fullscreen_Quad is
       Token : Input_Token := Start (Quads);
@@ -264,6 +272,56 @@ procedure Main is
       GL.Flush;
       GLFW_Utils.Swap_Buffers;
    end Draw_Image;
+
+   Probes_Uniform_Buffer : GL.Objects.Buffers.Buffer;
+   Null_Buffer           : Objects.Buffers.Buffer;
+
+   procedure Create_UBO
+     (Buffer  : GL.Objects.Buffers.Buffer;
+      Binding : Natural;
+      Size    : Natural)
+   is
+      use Objects.Buffers;
+   begin
+      Buffer.Initialize_Id;
+
+      Bind (Uniform_Buffer, Buffer);
+      Allocate (Uniform_Buffer, 48, Static_Draw);
+      Bind (Uniform_Buffer, Null_Buffer);
+
+      Bind_Buffer_Base (Uniform_Buffer, 0, Buffer);
+   end Create_UBO;
+
+   procedure Setup_Probe_Layout (X, Y, Z : Int; SX, SY, SZ : Single) is
+      use Objects.Buffers;
+   begin
+      if X * Y * Z /= Probe_Count_X * Probe_Count_Y then
+         raise Program_Error with "Probe_Count should match grid dimensions.";
+      end if;
+
+      Bind (Uniform_Buffer, Probes_Uniform_Buffer);
+
+      --  Set ivec2 probe_count and grid_dimensions
+      Set_Uniform_Int_Data
+        (Uniform_Buffer,
+         0,
+         (0 => Probe_Count_X,
+          1 => Probe_Count_Y,
+          2 .. 3 => 0,
+          4 => X,
+          5 => Y,
+          6 => Z));
+
+      --  Set vec2 grid_spacing
+      Set_Uniform_Float_Data
+        (Uniform_Buffer,
+         32,
+         (0 => SX,
+          1 => SY,
+          2 => SZ));
+
+      Bind (Uniform_Buffer, Null_Buffer);
+   end Setup_Probe_Layout;
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -278,6 +336,12 @@ begin
    Load_Shader (Image_Shader,      "src/glsl/render_image.glsl");
    Load_Shader (Radiance_Shader,   "src/glsl/compute_probe_radiance.glsl");
    Load_Shader (Irradiance_Shader, "src/glsl/update_probe_irradiance.glsl");
+
+   Null_Buffer.Initialize_Id;
+
+   Create_UBO (Probes_Uniform_Buffer, 0, 48);
+   Setup_Probe_Layout (X  => 4,   Y  => 3,   Z  => 3,
+                       SX => 2.0, SY => 3.0, SZ => 3.0);
 
    -- prepare data structures
    Prepare_Radiance;

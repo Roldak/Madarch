@@ -1,6 +1,9 @@
-const ivec2 probe_count = ivec2(6, 6);
-const ivec3 grid_dimensions = ivec3(4, 3, 3);
-const vec3 grid_spacing = vec3(2.0, 3.0, 3.0);
+
+layout(std140, binding = 0) uniform probes_layout {
+   ivec2 probe_count;
+   ivec3 grid_dimensions;
+   vec3 grid_spacing;
+};
 
 const int radiance_resolution = 30;
 const int irradiance_resolution = 8;
