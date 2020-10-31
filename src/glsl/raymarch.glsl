@@ -161,9 +161,7 @@ struct Primitive {
    vec3 vec3_param_1;
    float float_param_1;
 
-   vec3 color;
-   float metallic;
-   float roughness;
+   int material_id;
 };
 
 float dist_to_primitive(vec3 x, Primitive prim) {
@@ -188,6 +186,12 @@ vec3 primitive_normal(vec3 x, Primitive prim) {
    }
 }
 
+struct Material {
+   vec3 albedo;
+   float metallic;
+   float roughness;
+};
+
 /**********************
  * Program definition *
  **********************/
@@ -198,35 +202,23 @@ uniform sampler2D irradiance_data;
 
 #define PRIM_COUNT 8
 const Primitive prims[PRIM_COUNT] = Primitive[](
-   Primitive(SPHERE, vec3(3.5, 3.0, 3.0), 1.0, vec3(1, 0, 0), 0.5, 0.4),
-   Primitive(CUBE,   vec3(3.0, 0.0, 4.0), 1.5, vec3(0, 1, 0), 0.8, 0.8),
+   Primitive(SPHERE, vec3(3.5, 3.0, 3.0), 1.0, 0),
+   Primitive(CUBE,   vec3(3.0, 0.0, 4.0), 1.5, 1),
 
-   Primitive(PLANE, vec3(0, 1, 0),  1.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
-   Primitive(PLANE, vec3(0, -1, 0), 7.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
-   Primitive(PLANE, vec3(1, 0, 0),  1.0, vec3(1.0, 0.0, 0.0), 0, 0.6),
-   Primitive(PLANE, vec3(-1, 0, 0), 7.0, vec3(0.0, 0.0, 1.0), 0, 0.6),
-   Primitive(PLANE, vec3(0, 0, 1),  6.0, vec3(0.0, 0.0, 0.0), 0, 0.6),
-   Primitive(PLANE, vec3(0, 0, -1), 7.0, vec3(0.0, 0.0, 0.0), 0, 0.6)/*,
+   Primitive(PLANE, vec3(0, 1, 0),  1.0, 2),
+   Primitive(PLANE, vec3(0, -1, 0), 7.0, 2),
+   Primitive(PLANE, vec3(1, 0, 0),  1.0, 3),
+   Primitive(PLANE, vec3(-1, 0, 0), 7.0, 4),
+   Primitive(PLANE, vec3(0, 0, 1),  6.0, 2),
+   Primitive(PLANE, vec3(0, 0, -1), 7.0, 2)
+);
 
-   Primitive(SPHERE, vec3(0, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(2, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(4, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(6, 0, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-
-   Primitive(SPHERE, vec3(0, 4, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(2, 4, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(4, 4, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(6, 4, 0), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-
-   Primitive(SPHERE, vec3(0, 0, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(2, 0, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(4, 0, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(6, 0, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-
-   Primitive(SPHERE, vec3(0, 4, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(2, 4, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(4, 4, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0),
-   Primitive(SPHERE, vec3(6, 4, 4), 0.2, vec3(1, 1, 1), 0.0, 1.0)*/
+const Material materials[5] = Material[](
+   Material(vec3(1, 0, 0), 0.5, 0.4),
+   Material(vec3(0, 1, 0), 0.8, 0.8),
+   Material(vec3(0, 0, 0), 0.0, 0.6),
+   Material(vec3(1, 0, 0), 0.0, 0.6),
+   Material(vec3(0, 0, 1), 0.0, 0.6)
 );
 
 float closest_primitive(vec3 x, out int index) {
@@ -338,9 +330,10 @@ vec3 pixel_color_direct(vec3 from, vec3 dir, vec3 light_pos) {
    int prim_index;
    vec3 pos;
    if (raycast(from, dir, prim_index, pos)) {
-      vec3 albedo = prims[prim_index].color;
-      float metallic = prims[prim_index].metallic;
-      float roughness = prims[prim_index].roughness;
+      int material_id = prims[prim_index].material_id;
+      vec3 albedo = materials[material_id].albedo;
+      float metallic = materials[material_id].metallic;
+      float roughness = materials[material_id].roughness;
       vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
       return result;
@@ -359,9 +352,10 @@ vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
       int prim_index;
       vec3 pos;
       if (raycast(from, dir, prim_index, pos)) {
-         vec3 albedo = prims[prim_index].color;
-         float metallic = prims[prim_index].metallic;
-         float roughness = prims[prim_index].roughness;
+         int material_id = prims[prim_index].material_id;
+         vec3 albedo = materials[material_id].albedo;
+         float metallic = materials[material_id].metallic;
+         float roughness = materials[material_id].roughness;
          vec3 normal = primitive_normal(pos, prims[prim_index]);
 
          result += mask * shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
@@ -395,9 +389,10 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
       return background_color;
    }
 
-   vec3 albedo = prims[prim_index].color;
-   float metallic = prims[prim_index].metallic;
-   float roughness = prims[prim_index].roughness;
+   int material_id = prims[prim_index].material_id;
+   vec3 albedo = materials[material_id].albedo;
+   float metallic = materials[material_id].metallic;
+   float roughness = materials[material_id].roughness;
    vec3 normal = primitive_normal(pos, prims[prim_index]);
    result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
 
@@ -426,9 +421,10 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
    int prim_index;
    vec3 pos;
    if (raycast(from, dir, prim_index, pos)) {
-      vec3 albedo = prims[prim_index].color;
-      float metallic = prims[prim_index].metallic;
-      float roughness = prims[prim_index].roughness;
+      int material_id = prims[prim_index].material_id;
+      vec3 albedo = materials[material_id].albedo;
+      float metallic = materials[material_id].metallic;
+      float roughness = materials[material_id].roughness;
       vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 direct = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
 
