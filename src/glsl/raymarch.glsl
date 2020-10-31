@@ -406,12 +406,12 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
 
    vec3 acc = vec3(0.0);
 
-   for (int sample = 0; sample < gi_samples; ++sample) {
+   for (int s = 0; s < gi_samples; ++s) {
       // BRDF
-      if (rand(vec2(sa + time * 127.2, sa + 7.7 * float(sample))) < roughness) {
-         dir = random_hemisphere_point(sa + 76.2 + 73.1 * float(sample) + 17.7 * time, normal);
+      if (rand(vec2(sa + time * 127.2, sa + 7.7 * float(s))) < roughness) {
+         dir = random_hemisphere_point(sa + 76.2 + 73.1 * float(s) + 17.7 * time, normal);
       } else {
-         vec3 offset = uniform_vector(sa + time * 111.123 + 65.2 * float(sample));
+         vec3 offset = uniform_vector(sa + time * 111.123 + 65.2 * float(s));
          dir = normalize(reflected + offset * roughness);
       }
       acc += pixel_color_direct(from, dir, light_pos) * abs(dot(dir, normal));

@@ -1,4 +1,4 @@
-#version 140
+#version 420
 
 #include "probe_utils.glsl"
 
