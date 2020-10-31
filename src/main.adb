@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+with Ada.Calendar;
 
 with Interfaces.C.Pointers;
 
@@ -330,6 +331,8 @@ procedure Main is
    Probe_Layout_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_RADIANCE_RESOLUTION", "30"),
       Create_Macro_Definition ("M_IRRADIANCE_RESOLUTION", "8"));
+
+   FPS_Clock : Ada.Calendar.Time;
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -370,9 +373,14 @@ begin
    while GLFW_Utils.Window_Opened loop
       exit when Handle_Events;
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
+         FPS_Clock := Ada.Calendar.Clock;
+
          Compute_Radiance;
          Update_Irradiance;
          Draw_Image;
+
+         Ada.Text_IO.Put_Line
+           (Ada.Calendar."-"(Ada.Calendar.Clock, FPS_Clock)'Image);
       end if;
       GLFW_Utils.Poll_Events;
    end loop;
