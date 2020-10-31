@@ -1,5 +1,3 @@
-#version 420
-
 #include "raymarch.glsl"
 
 in vec4 pos;

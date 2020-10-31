@@ -5,8 +5,8 @@ layout(std140, binding = 0) uniform probes_layout {
    vec3 grid_spacing;
 };
 
-const int radiance_resolution = 30;
-const int irradiance_resolution = 8;
+const int radiance_resolution = M_RADIANCE_RESOLUTION;
+const int irradiance_resolution = M_IRRADIANCE_RESOLUTION;
 
 int coord_to_probe_id(vec2 normalized_coord) {
    ivec2 probe_id = ivec2(

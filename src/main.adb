@@ -2,6 +2,8 @@ with Ada.Text_IO;
 
 with Interfaces.C.Pointers;
 
+with GNATCOLL.Strings;
+
 with GL.Buffers;
 with GL.Files;
 with GL.Fixed.Matrix;
@@ -19,9 +21,11 @@ with GLFW_Utils;
 
 with Glfw.Input.Keys;
 
-with Load_Shader;
+with Shader_Loader; use Shader_Loader;
 
 procedure Main is
+   use GNATCOLL;
+
    use GL;
    use GL.Buffers;
    use GL.Types;
@@ -277,7 +281,7 @@ procedure Main is
    Null_Buffer           : Objects.Buffers.Buffer;
 
    procedure Create_UBO
-     (Buffer  : GL.Objects.Buffers.Buffer;
+     (Buffer  : in out GL.Objects.Buffers.Buffer;
       Binding : Natural;
       Size    : Natural)
    is
@@ -322,6 +326,10 @@ procedure Main is
 
       Bind (Uniform_Buffer, Null_Buffer);
    end Setup_Probe_Layout;
+
+   Probe_Layout_Macros : Macro_Definition_Array :=
+     (Create_Macro_Definition ("M_RADIANCE_RESOLUTION", "30"),
+      Create_Macro_Definition ("M_IRRADIANCE_RESOLUTION", "8"));
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -332,10 +340,21 @@ begin
    Modelview.Load_Identity;
 
    -- load shader sources and compile shaders
-   Load_Shader (Vertex_Shader,     "src/glsl/identity.glsl");
-   Load_Shader (Image_Shader,      "src/glsl/render_image.glsl");
-   Load_Shader (Radiance_Shader,   "src/glsl/compute_probe_radiance.glsl");
-   Load_Shader (Irradiance_Shader, "src/glsl/update_probe_irradiance.glsl");
+   Load_Shader (Vertex_Shader,
+                "src/glsl/identity.glsl",
+                No_Macro_Definition_Array, "120");
+
+   Load_Shader (Image_Shader,
+                "src/glsl/render_image.glsl",
+                Probe_Layout_Macros, "420");
+
+   Load_Shader (Radiance_Shader,
+                "src/glsl/compute_probe_radiance.glsl",
+                Probe_Layout_Macros, "420");
+
+   Load_Shader (Irradiance_Shader,
+                "src/glsl/update_probe_irradiance.glsl",
+                Probe_Layout_Macros, "420");
 
    Null_Buffer.Initialize_Id;
 

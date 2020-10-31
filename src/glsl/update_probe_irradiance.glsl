@@ -1,5 +1,3 @@
-#version 420
-
 #include "probe_utils.glsl"
 
 in vec4 pos;
