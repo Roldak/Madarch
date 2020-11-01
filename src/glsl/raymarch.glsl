@@ -119,33 +119,51 @@ float geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
 
 //sphere
 
-float dist_to_sphere(vec3 x, vec3 center, float radius) {
-   return length(center - x) - radius;
+struct Sphere {
+   vec3 center;
+   float radius;
+   int material_id;
+};
+
+float dist_to_sphere(vec3 x, Sphere s) {
+   return length(s.center - x) - s.radius;
 }
 
-vec3 sphere_normal(vec3 x, vec3 center, float radius) {
-   return normalize(x - center);
+vec3 sphere_normal(vec3 x, Sphere s) {
+   return normalize(x - s.center);
 }
 
 //plane
 
-float dist_to_plane(vec3 x, vec3 normal, float height) {
-   return dot(x, normal) + height;
+struct Plane {
+   vec3 normal;
+   float offset;
+   int material_id;
+};
+
+float dist_to_plane(vec3 x, Plane p) {
+   return dot(x, p.normal) + p.offset;
 }
 
-vec3 plane_normal(vec3 x, vec3 normal, float height) {
-   return normal;
+vec3 plane_normal(vec3 x, Plane p) {
+   return p.normal;
 }
 
 //cube
 
-float dist_to_cube(vec3 x, vec3 center, float size) {
-   vec3 q = abs(center - x) - vec3(size);
+struct Cube {
+   vec3 center;
+   float side;
+   int material_id;
+};
+
+float dist_to_cube(vec3 x, Cube c) {
+   vec3 q = abs(c.center - x) - vec3(c.side);
    return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
 }
 
-vec3 cube_normal(vec3 x, vec3 center, float size) {
-   vec3 d = x - center;
+vec3 cube_normal(vec3 x, Cube c) {
+   vec3 d = x - c.center;
    float rx = abs(d.x);
    float ry = abs(d.y);
    float rz = abs(d.z);
@@ -154,36 +172,6 @@ vec3 cube_normal(vec3 x, vec3 center, float size) {
       float(ry >= rx - epsilon) * float(ry >= rz - epsilon) * sign(d.y),
       float(rz >= rx - epsilon) * float(rz >= ry - epsilon) * sign(d.z)
    ));
-}
-
-struct Primitive {
-   int kind;
-   vec3 vec3_param_1;
-   float float_param_1;
-
-   int material_id;
-};
-
-float dist_to_primitive(vec3 x, Primitive prim) {
-   switch (prim.kind) {
-      case SPHERE:
-         return dist_to_sphere(x, prim.vec3_param_1, prim.float_param_1);
-      case PLANE:
-         return dist_to_plane(x, prim.vec3_param_1, prim.float_param_1);
-      case CUBE:
-         return dist_to_cube(x, prim.vec3_param_1, prim.float_param_1);
-   }
-}
-
-vec3 primitive_normal(vec3 x, Primitive prim) {
-   switch (prim.kind) {
-      case SPHERE:
-         return sphere_normal(x, prim.vec3_param_1, prim.float_param_1);
-      case PLANE:
-         return plane_normal(x, prim.vec3_param_1, prim.float_param_1);
-      case CUBE:
-         return cube_normal(x, prim.vec3_param_1, prim.float_param_1);
-   }
 }
 
 struct Material {
@@ -201,8 +189,14 @@ uniform float time;
 uniform sampler2D irradiance_data;
 
 layout(std140, binding = 1) uniform scene_description {
-   int primitive_count;
-   Primitive prims[40];
+   int prim_sphere_count;
+   Sphere prim_spheres[M_MAX_SPHERE_COUNT];
+
+   int prim_plane_count;
+   Plane prim_planes[M_MAX_PLANE_COUNT];
+
+   int prim_cube_count;
+   Cube prim_cubes[M_MAX_CUBE_COUNT];
 };
 
 layout(std140, binding = 2) uniform material_description {
@@ -210,26 +204,72 @@ layout(std140, binding = 2) uniform material_description {
    Material materials[20];
 };
 
-float closest_primitive(vec3 x, out int index) {
+float closest_primitive(vec3 x) {
    float closest = max_dist;
-   for (int i = 0; i < primitive_count; ++i) {
-      float dist = dist_to_primitive (x, prims[i]);
+   for (int i = 0; i < prim_sphere_count; ++i) {
+      closest = min(closest, dist_to_sphere (x, prim_spheres[i]));
+   }
+   for (int i = 0; i < prim_plane_count; ++i) {
+      closest = min(closest, dist_to_plane (x, prim_planes[i]));
+   }
+   for (int i = 0; i < prim_cube_count; ++i) {
+      closest = min(closest, dist_to_cube (x, prim_cubes[i]));
+   }
+   return closest;
+}
+
+float closest_primitive_info(vec3 x, out int index) {
+   float closest = max_dist;
+   for (int i = 0; i < prim_sphere_count; ++i) {
+      float dist = dist_to_sphere (x, prim_spheres[i]);
       if (dist < closest) {
          closest = dist;
          index = i;
       }
    }
+   for (int i = 0; i < prim_plane_count; ++i) {
+      float dist = dist_to_plane (x, prim_planes[i]);
+      if (dist < closest) {
+         closest = dist;
+         index = M_MAX_SPHERE_COUNT + i;
+      }
+   }
+   for (int i = 0; i < prim_cube_count; ++i) {
+      float dist = dist_to_cube (x, prim_cubes[i]);
+      if (dist < closest) {
+         closest = dist;
+         index = M_MAX_SPHERE_COUNT + M_MAX_PLANE_COUNT + i;
+      }
+   }
    return closest;
 }
 
-float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) {
-   int index;
+void primitive_info(vec3 pos, int index, out vec3 normal, out int material_id) {
+   if (index < M_MAX_SPHERE_COUNT) {
+      normal = sphere_normal(pos, prim_spheres[index]);
+      material_id = prim_spheres[index].material_id;
+      return;
+   }
+   index -= M_MAX_SPHERE_COUNT;
+   if (index < M_MAX_PLANE_COUNT) {
+      normal = plane_normal(pos, prim_planes[index]);
+      material_id = prim_planes[index].material_id;
+      return;
+   }
+   index -= M_MAX_PLANE_COUNT;
+   if (index < M_MAX_CUBE_COUNT) {
+      normal = cube_normal(pos, prim_cubes[index]);
+      material_id = prim_cubes[index].material_id;
+      return;
+   }
+}
 
+float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) {
    float res = 1.0;
    float prev_dist = 1e20;
 
    for (float total_dist = min_dist; total_dist < max_dist;) {
-      float dist = closest_primitive(from + dir * total_dist, index);
+      float dist = closest_primitive(from + dir * total_dist);
 
       if (dist < epsilon) {
          return 0.0;
@@ -247,7 +287,7 @@ float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) 
 
 bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll) {
    for (float total_dist = 0; total_dist < max_dist;) {
-      float dist = closest_primitive(from, index);
+      float dist = closest_primitive_info(from, index);
 
       if (dist < epsilon) {
          coll = from + dir * dist;
@@ -319,11 +359,12 @@ vec3 pixel_color_direct(vec3 from, vec3 dir, vec3 light_pos) {
    int prim_index;
    vec3 pos;
    if (raycast(from, dir, prim_index, pos)) {
-      int material_id = prims[prim_index].material_id;
+      int material_id;
+      vec3 normal;
+      primitive_info (pos, prim_index, normal, material_id);
       vec3 albedo = materials[material_id].albedo;
       float metallic = materials[material_id].metallic;
       float roughness = materials[material_id].roughness;
-      vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
       return result;
 
@@ -341,11 +382,12 @@ vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
       int prim_index;
       vec3 pos;
       if (raycast(from, dir, prim_index, pos)) {
-         int material_id = prims[prim_index].material_id;
+         int material_id;
+         vec3 normal;
+         primitive_info (pos, prim_index, normal, material_id);
          vec3 albedo = materials[material_id].albedo;
          float metallic = materials[material_id].metallic;
          float roughness = materials[material_id].roughness;
-         vec3 normal = primitive_normal(pos, prims[prim_index]);
 
          result += mask * shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
          mask *= albedo;
@@ -378,11 +420,12 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
       return background_color;
    }
 
-   int material_id = prims[prim_index].material_id;
+   int material_id;
+   vec3 normal;
+   primitive_info (pos, prim_index, normal, material_id);
    vec3 albedo = materials[material_id].albedo;
    float metallic = materials[material_id].metallic;
    float roughness = materials[material_id].roughness;
-   vec3 normal = primitive_normal(pos, prims[prim_index]);
    result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
 
    from = pos + normal * min_step_size * 5;
@@ -410,11 +453,12 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
    int prim_index;
    vec3 pos;
    if (raycast(from, dir, prim_index, pos)) {
-      int material_id = prims[prim_index].material_id;
+      int material_id;
+      vec3 normal;
+      primitive_info (pos, prim_index, normal, material_id);
       vec3 albedo = materials[material_id].albedo;
       float metallic = materials[material_id].metallic;
       float roughness = materials[material_id].roughness;
-      vec3 normal = primitive_normal(pos, prims[prim_index]);
       vec3 direct = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
 
       ivec3 grid_position = world_position_to_grid_position(pos);

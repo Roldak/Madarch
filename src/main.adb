@@ -306,29 +306,74 @@ procedure Main is
 
    Scene_UBO  : UBOs.UBO;
 
+   Max_Sphere_Count : constant Size := 40;
+   Max_Plane_Count  : constant Size := 40;
+   Max_Cube_Count   : constant Size := 40;
+
    procedure Update_Scene_Description
      (Prims : Primitives.Primitive_Array)
    is
       W : UBOs.Writer := UBOs.Start (Scene_UBO);
+
+      Sphere_Count : Size := 0;
+      Plane_Count  : Size := 0;
+      Cube_Count   : Size := 0;
+
+      procedure Write_Sphere (X : Primitives.Primitive) is
+      begin
+         W.Seek
+           (16 + Sphere_Count * 32);
+
+         W.Write_Vec3 (X.Sphere_Center);
+         W.Write_Float (X.Sphere_Radius);
+         W.Write_Int (X.Material);
+         Sphere_Count := Sphere_Count + 1;
+      end Write_Sphere;
+
+      procedure Write_Plane (X : Primitives.Primitive) is
+      begin
+         W.Seek
+           (16 + Max_Sphere_Count * 32 +
+            16 + Plane_Count * 32);
+
+         W.Write_Vec3 (X.Plane_Normal);
+         W.Write_Float (X.Plane_Offset);
+         W.Write_Int (X.Material);
+         Plane_Count := Plane_Count + 1;
+      end Write_Plane;
+
+      procedure Write_Cube (X : Primitives.Primitive) is
+      begin
+         W.Seek
+           (16 + Max_Sphere_Count * 32 +
+            16 + Max_Plane_Count * 32 +
+            16 + Cube_Count * 32);
+
+         W.Write_Vec3 (X.Cube_Center);
+         W.Write_Float (X.Cube_Side);
+         W.Write_Int (X.Material);
+         Cube_Count := Cube_Count + 1;
+      end Write_Cube;
    begin
       W.Write_Int (Int (Prims'Length));
 
       for Prim of Prims loop
-         W.Pad (16);
-         W.Write_Int (Int (Prim.Kind'Enum_Rep));
          case Prim.Kind is
             when Primitives.Sphere =>
-               W.Write_Vec3 (Prim.Sphere_Center);
-               W.Write_Float (Prim.Sphere_Radius);
-            when Primitives.Cube =>
-               W.Write_Vec3 (Prim.Cube_Center);
-               W.Write_Float (Prim.Cube_Side);
+               Write_Sphere (Prim);
             when Primitives.Plane =>
-               W.Write_Vec3 (Prim.Normal);
-               W.Write_Float (Prim.Offset);
+               Write_Plane (Prim);
+            when Primitives.Cube =>
+               Write_Cube (Prim);
          end case;
-         W.Write_Int (Prim.Material);
       end loop;
+
+      W.Seek (0);
+      W.Write_Int (Int (Sphere_Count));
+      W.Seek (16 + Max_Sphere_Count * 32);
+      W.Write_Int (Int (Plane_Count));
+      W.Seek (16 + Max_Sphere_Count * 32 + 16 + Max_Plane_Count * 32);
+      W.Write_Int (Int (Cube_Count));
    end Update_Scene_Description;
 
    Materials_UBO : UBOs.UBO;
@@ -351,6 +396,11 @@ procedure Main is
    Probe_Layout_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_RADIANCE_RESOLUTION", "30"),
       Create_Macro_Definition ("M_IRRADIANCE_RESOLUTION", "8"));
+
+   Scene_Macros : Macro_Definition_Array :=
+     (Create_Macro_Definition ("M_MAX_SPHERE_COUNT", Max_Sphere_Count'Image),
+      Create_Macro_Definition ("M_MAX_PLANE_COUNT", Max_Plane_Count'Image),
+      Create_Macro_Definition ("M_MAX_CUBE_COUNT", Max_Cube_Count'Image));
 
    FPS_Clock : Ada.Calendar.Time;
 
@@ -398,11 +448,11 @@ begin
 
    Load_Shader (Image_Shader,
                 "src/glsl/render_image.glsl",
-                Probe_Layout_Macros, "420");
+                Probe_Layout_Macros & Scene_Macros, "420");
 
    Load_Shader (Radiance_Shader,
                 "src/glsl/compute_probe_radiance.glsl",
-                Probe_Layout_Macros, "420");
+                Probe_Layout_Macros & Scene_Macros, "420");
 
    Load_Shader (Irradiance_Shader,
                 "src/glsl/update_probe_irradiance.glsl",
@@ -414,7 +464,8 @@ begin
                        SX => 2.0, SY => 3.0, SZ => 3.0);
 
    -- setup scene
-   Scene_UBO := UBOs.Create (1, 16 + 48 * 40);
+   Scene_UBO := UBOs.Create
+     (1, 16 * 3 + 32 * Long (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count));
    Update_Scene_Description (Scene_Descr.all);
 
    -- setup materials

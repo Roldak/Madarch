@@ -13,6 +13,7 @@ package UBOs is
    function Start (Buffer : UBO) return Writer;
 
    procedure Pad         (Self : in out Writer; X : Size);
+   procedure Seek        (Self : in out Writer; X : Size);
    procedure Write_Int   (Self : in out Writer; X : Int);
    procedure Write_Float (Self : in out Writer; X : Single);
    procedure Write_Vec3  (Self : in out Writer; V : Singles.Vector3);

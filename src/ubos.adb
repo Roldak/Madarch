@@ -60,6 +60,11 @@ package body UBOs is
       end loop;
    end Pad;
 
+   procedure Seek (Self : in out Writer; X : Size) is
+   begin
+      Self.Offset := X;
+   end Seek;
+
    procedure Write_Int (Self : in out Writer; X : Int) is
       use GL.Objects.Buffers;
    begin

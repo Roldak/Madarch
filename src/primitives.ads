@@ -12,12 +12,12 @@ package Primitives is
          when Sphere =>
             Sphere_Center : Singles.Vector3;
             Sphere_Radius : Single;
+         when Plane =>
+            Plane_Normal : Singles.Vector3;
+            Plane_Offset : Single;
          when Cube =>
             Cube_Center : Singles.Vector3;
             Cube_Side   : Single;
-         when Plane =>
-            Normal : Singles.Vector3;
-            Offset : Single;
       end case;
    end record;
 
