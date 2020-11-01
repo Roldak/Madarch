@@ -1,3 +1,5 @@
+with Ada.Text_IO;
+
 package body UBOs is
    use GL;
    use GL.Objects;
@@ -43,8 +45,12 @@ package body UBOs is
 
    function Start (Buffer : UBO) return Writer is
    begin
-      return (Ada.Finalization.Limited_Controlled
-                with Offset => 0, Buffer => Buffer);
+      return X : Writer :=
+        (Ada.Finalization.Limited_Controlled
+           with Offset => 0, Buffer => Buffer)
+      do
+         X.Initialize; --  :/
+      end return;
    end Start;
 
    procedure Pad (Self : in out Writer; X : Size) is
