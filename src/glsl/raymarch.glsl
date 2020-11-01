@@ -180,9 +180,10 @@ struct Material {
    float roughness;
 };
 
-/**********************
- * Program definition *
- **********************/
+struct PointLight {
+   vec3 position;
+   vec3 color;
+};
 
 uniform float time;
 
@@ -197,6 +198,8 @@ layout(std140, binding = 1) uniform scene_description {
 
    int prim_cube_count;
    Cube prim_cubes[M_MAX_CUBE_COUNT];
+
+   PointLight point_light;
 };
 
 layout(std140, binding = 2) uniform material_description {
@@ -300,7 +303,7 @@ bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll) {
    return false;
 }
 
-vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
+vec3 shade(vec3 pos, vec3 normal, vec3 dir,
            vec3 albedo, float metallic, float roughness) {
 
    // reflectance
@@ -312,7 +315,7 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    vec3 Lo = vec3(0.0);
 
    // do for each light:
-   vec3 light_dir = light_pos - pos;
+   vec3 light_dir = point_light.position - pos;
    float light_distance = length(light_dir);
    vec3 L = light_dir / light_distance;
    vec3 H = normalize(V + L);
@@ -320,7 +323,7 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
 
    // calculate light radiance
    float attenuation = 1.0; // / (light_distance * light_distance);
-   vec3 radiance     = vec3(0.9, 0.9, 0.8) * attenuation;
+   vec3 radiance     = point_light.color * attenuation;
 
    // cook-torrance BRDF
    float NDF = distribution_GGX(N, H, roughness);
@@ -353,7 +356,7 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir, vec3 light_pos,
    return Lo;
 }
 
-vec3 pixel_color_direct(vec3 from, vec3 dir, vec3 light_pos) {
+vec3 pixel_color_direct(vec3 from, vec3 dir) {
    vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
 
    int prim_index;
@@ -365,7 +368,7 @@ vec3 pixel_color_direct(vec3 from, vec3 dir, vec3 light_pos) {
       vec3 albedo = materials[material_id].albedo;
       float metallic = materials[material_id].metallic;
       float roughness = materials[material_id].roughness;
-      vec3 result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
+      vec3 result = shade(pos, normal, dir, albedo, metallic, roughness);
       return result;
 
    }
@@ -373,7 +376,7 @@ vec3 pixel_color_direct(vec3 from, vec3 dir, vec3 light_pos) {
    return background_color;
 }
 
-vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
+vec3 pixel_color_path(vec3 from, vec3 dir, float sa) {
    vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
    vec3 result = vec3(0.0);
    vec3 mask = vec3(1.0);
@@ -389,7 +392,7 @@ vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
          float metallic = materials[material_id].metallic;
          float roughness = materials[material_id].roughness;
 
-         result += mask * shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
+         result += mask * shade(pos, normal, dir, albedo, metallic, roughness);
          mask *= albedo;
 
          from = pos;
@@ -409,7 +412,7 @@ vec3 pixel_color_path(vec3 from, vec3 dir, vec3 light_pos, float sa) {
    return result;
 }
 
-vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
+vec3 pixel_color_many(vec3 from, vec3 dir, float sa) {
    vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
 
    int prim_index;
@@ -426,7 +429,7 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
    vec3 albedo = materials[material_id].albedo;
    float metallic = materials[material_id].metallic;
    float roughness = materials[material_id].roughness;
-   result = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
+   result = shade(pos, normal, dir, albedo, metallic, roughness);
 
    from = pos + normal * min_step_size * 5;
    vec3 reflected = reflect(dir, normal);
@@ -441,13 +444,13 @@ vec3 pixel_color_many(vec3 from, vec3 dir, vec3 light_pos, float sa) {
          vec3 offset = uniform_vector(sa + time * 111.123 + 65.2 * float(s));
          dir = normalize(reflected + offset * roughness);
       }
-      acc += pixel_color_direct(from, dir, light_pos) * abs(dot(dir, normal));
+      acc += pixel_color_direct(from, dir) * abs(dot(dir, normal));
    }
 
    return result + acc / gi_samples;
 }
 
-vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
+vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
    vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
 
    int prim_index;
@@ -459,7 +462,7 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir, vec3 light_pos) {
       vec3 albedo = materials[material_id].albedo;
       float metallic = materials[material_id].metallic;
       float roughness = materials[material_id].roughness;
-      vec3 direct = shade(pos, normal, dir, light_pos, albedo, metallic, roughness);
+      vec3 direct = shade(pos, normal, dir, albedo, metallic, roughness);
 
       ivec3 grid_position = world_position_to_grid_position(pos);
       vec3 irradiance = vec3(0);

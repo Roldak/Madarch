@@ -14,6 +14,5 @@ void main() {
    vec2 ray_id = coord_to_ray_id(normalized_coord);
    vec3 ray_dir = ray_id_to_ray_dir(ray_id);
 
-   vec3 light_pos = vec3(3.0 + cos(time), 2, sin(time));
-   color = pixel_color_irradiance_probes(world_position, ray_dir, light_pos);
+   color = pixel_color_irradiance_probes(world_position, ray_dir);
 }

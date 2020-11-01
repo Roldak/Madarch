@@ -23,6 +23,7 @@ with GLFW_Utils;
 with Glfw.Input.Keys;
 
 with Materials;
+with Lights;
 with Primitives;
 with Shader_Loader; use Shader_Loader;
 with UBOs;
@@ -56,6 +57,9 @@ procedure Main is
 
    Time            : GL.Types.Single := 0.0;
    Cam_Pos         : Singles.Vector3 := (1.0, 2.0, -4.0);
+
+   Light : Lights.Light :=
+     (Lights.Point, (0.9, 0.9, 0.8), (4.0, 2.0, 0.0));
 
    function Handle_Events return Boolean is
    begin
@@ -310,7 +314,7 @@ procedure Main is
    Max_Plane_Count  : constant Size := 40;
    Max_Cube_Count   : constant Size := 40;
 
-   procedure Update_Scene_Description
+   procedure Update_Scene_Primitives
      (Prims : Primitives.Primitive_Array)
    is
       W : UBOs.Writer := UBOs.Start (Scene_UBO);
@@ -372,9 +376,17 @@ procedure Main is
       W.Write_Int (Int (Sphere_Count));
       W.Seek (16 + Max_Sphere_Count * 32);
       W.Write_Int (Int (Plane_Count));
-      W.Seek (16 + Max_Sphere_Count * 32 + 16 + Max_Plane_Count * 32);
+      W.Seek (16 * 2 + 32 * (Max_Sphere_Count + Max_Plane_Count));
       W.Write_Int (Int (Cube_Count));
-   end Update_Scene_Description;
+   end Update_Scene_Primitives;
+
+   procedure Update_Scene_Light (X : Lights.Light) is
+      W : UBOs.Writer := UBOs.Start (Scene_UBO);
+   begin
+      W.Seek (16 * 3 + 32 * (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count));
+      W.Write_Vec3 (X.Point_Light_Pos);
+      W.Write_Vec3 (X.Light_Color);
+   end Update_Scene_Light;
 
    Materials_UBO : UBOs.UBO;
 
@@ -421,7 +433,7 @@ procedure Main is
       Scene_Descr := new Primitives.Primitive_Array'
         (Scene_Descr.all &
            (Primitives.Primitive'(Primitives.Sphere, 2, Cam_Pos, 0.5)));
-      Update_Scene_Description (Scene_Descr.all);
+      Update_Scene_Primitives (Scene_Descr.all);
    end Add_Sphere;
 
    Mat_Descr : Materials.Material_Array :=
@@ -465,8 +477,10 @@ begin
 
    -- setup scene
    Scene_UBO := UBOs.Create
-     (1, 16 * 3 + 32 * Long (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count));
-   Update_Scene_Description (Scene_Descr.all);
+     (1, 16 * 3 + 32 * Long (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count + 1));
+   Update_Scene_Primitives (Scene_Descr.all);
+   Update_Scene_Light (Light);
+
 
    -- setup materials
    Materials_UBO := UBOs.Create (2, 16 + 32 * 20);
