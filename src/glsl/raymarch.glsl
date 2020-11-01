@@ -200,8 +200,7 @@ uniform float time;
 
 uniform sampler2D irradiance_data;
 
-#define PRIM_COUNT 8
-const Primitive prims[PRIM_COUNT] = Primitive[](
+const Primitive prims[8] = Primitive[](
    Primitive(SPHERE, vec3(3.5, 3.0, 3.0), 1.0, 0),
    Primitive(CUBE,   vec3(3.0, 0.0, 4.0), 1.5, 1),
 
@@ -221,9 +220,13 @@ const Material materials[5] = Material[](
    Material(vec3(0, 0, 1), 0.0, 0.6)
 );
 
+layout(std140, binding = 1) uniform scene_description {
+   int primitive_count;
+};
+
 float closest_primitive(vec3 x, out int index) {
    float closest = max_dist;
-   for (int i = 0; i < PRIM_COUNT; ++i) {
+   for (int i = 0; i < primitive_count; ++i) {
       float dist = dist_to_primitive (x, prims[i]);
       if (dist < closest) {
          closest = dist;

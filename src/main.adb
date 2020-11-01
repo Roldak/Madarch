@@ -278,24 +278,25 @@ procedure Main is
       GLFW_Utils.Swap_Buffers;
    end Draw_Image;
 
-   Probes_Uniform_Buffer : GL.Objects.Buffers.Buffer;
    Null_Buffer           : Objects.Buffers.Buffer;
 
    procedure Create_UBO
      (Buffer  : in out GL.Objects.Buffers.Buffer;
-      Binding : Natural;
-      Size    : Natural)
+      Binding : UInt;
+      Size    : Long)
    is
       use Objects.Buffers;
    begin
       Buffer.Initialize_Id;
 
       Bind (Uniform_Buffer, Buffer);
-      Allocate (Uniform_Buffer, 48, Static_Draw);
+      Allocate (Uniform_Buffer, Size, Static_Draw);
       Bind (Uniform_Buffer, Null_Buffer);
 
-      Bind_Buffer_Base (Uniform_Buffer, 0, Buffer);
+      Bind_Buffer_Base (Uniform_Buffer, Binding, Buffer);
    end Create_UBO;
+
+   Probes_UBO : Objects.Buffers.Buffer;
 
    procedure Setup_Probe_Layout (X, Y, Z : Int; SX, SY, SZ : Single) is
       use Objects.Buffers;
@@ -304,7 +305,7 @@ procedure Main is
          raise Program_Error with "Probe_Count should match grid dimensions.";
       end if;
 
-      Bind (Uniform_Buffer, Probes_Uniform_Buffer);
+      Bind (Uniform_Buffer, Probes_UBO);
 
       --  Set ivec2 probe_count and grid_dimensions
       Set_Uniform_Int_Data
@@ -327,6 +328,24 @@ procedure Main is
 
       Bind (Uniform_Buffer, Null_Buffer);
    end Setup_Probe_Layout;
+
+   Scene_UBO  : Objects.Buffers.Buffer;
+
+   procedure Update_Scene_Description
+     (Primitive_Count : Int)
+   is
+      use Objects.Buffers;
+   begin
+      Bind (Uniform_Buffer, Scene_UBO);
+
+      --  Set primitive_count and material_count;
+      Set_Uniform_Int_Data
+        (Uniform_Buffer,
+         0,
+         (0 => Primitive_Count));
+
+      Bind (Uniform_Buffer, Null_Buffer);
+   end Update_Scene_Description;
 
    Probe_Layout_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_RADIANCE_RESOLUTION", "30"),
@@ -361,9 +380,12 @@ begin
 
    Null_Buffer.Initialize_Id;
 
-   Create_UBO (Probes_Uniform_Buffer, 0, 48);
+   Create_UBO (Probes_UBO, 0, 48);
    Setup_Probe_Layout (X  => 4,   Y  => 3,   Z  => 3,
                        SX => 2.0, SY => 3.0, SZ => 3.0);
+
+   Create_UBO (Scene_UBO, 1, 4);
+   Update_Scene_Description (8);
 
    -- prepare data structures
    Prepare_Radiance;
