@@ -202,7 +202,7 @@ uniform sampler2D irradiance_data;
 
 layout(std140, binding = 1) uniform scene_description {
    int primitive_count;
-   Primitive prims[20];
+   Primitive prims[40];
 };
 
 layout(std140, binding = 2) uniform material_description {

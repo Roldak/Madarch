@@ -354,15 +354,25 @@ procedure Main is
 
    FPS_Clock : Ada.Calendar.Time;
 
-   Scene_Descr : Primitives.Primitive_Array :=
-     ((Primitives.Sphere, 0, ( 3.5,  3.0,  3.0), 1.0),
-      (Primitives.Cube,   1, ( 3.0,  0.0,  4.0), 1.5),
-      (Primitives.Plane,  2, ( 0.0,  1.0,  0.0), 1.0),
-      (Primitives.Plane,  2, ( 0.0, -1.0,  0.0), 7.0),
-      (Primitives.Plane,  3, ( 1.0,  0.0,  0.0), 1.0),
-      (Primitives.Plane,  4, (-1.0,  0.0,  0.0), 7.0),
-      (Primitives.Plane,  2, ( 0.0,  0.0,  1.0), 6.0),
-      (Primitives.Plane,  2, ( 0.0,  0.0, -1.0), 7.0));
+   Scene_Descr : Primitives.Primitive_Array_Access :=
+      new Primitives.Primitive_Array'
+        ((Primitives.Sphere, 0, ( 3.5,  3.0,  3.0), 1.0),
+         (Primitives.Cube,   1, ( 3.0,  0.0,  4.0), 1.5),
+         (Primitives.Plane,  2, ( 0.0,  1.0,  0.0), 1.0),
+         (Primitives.Plane,  2, ( 0.0, -1.0,  0.0), 7.0),
+         (Primitives.Plane,  3, ( 1.0,  0.0,  0.0), 1.0),
+         (Primitives.Plane,  4, (-1.0,  0.0,  0.0), 7.0),
+         (Primitives.Plane,  2, ( 0.0,  0.0,  1.0), 6.0),
+         (Primitives.Plane,  2, ( 0.0,  0.0, -1.0), 7.0));
+
+   procedure Add_Sphere is
+      use type Primitives.Primitive_Array;
+   begin
+      Scene_Descr := new Primitives.Primitive_Array'
+        (Scene_Descr.all &
+           (Primitives.Primitive'(Primitives.Sphere, 2, Cam_Pos, 0.5)));
+      Update_Scene_Description (Scene_Descr.all);
+   end Add_Sphere;
 
    Mat_Descr : Materials.Material_Array :=
       (((1.0, 0.0, 0.0), 0.5, 0.4),
@@ -404,8 +414,8 @@ begin
                        SX => 2.0, SY => 3.0, SZ => 3.0);
 
    -- setup scene
-   Scene_UBO := UBOs.Create (1, 16 + 48 * 20);
-   Update_Scene_Description (Scene_Descr);
+   Scene_UBO := UBOs.Create (1, 16 + 48 * 40);
+   Update_Scene_Description (Scene_Descr.all);
 
    -- setup materials
    Materials_UBO := UBOs.Create (2, 16 + 32 * 20);
@@ -433,6 +443,7 @@ begin
          if not Q_Pressed then
             Mat_Descr (4).Albedo (X) := 1.0 - Mat_Descr (4).Albedo (X);
             Update_Materials_Description (Mat_Descr);
+            Add_Sphere;
          end if;
          Q_Pressed := True;
       else

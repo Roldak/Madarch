@@ -22,4 +22,5 @@ package Primitives is
    end record;
 
    type Primitive_Array is array (Positive range <>) of Primitive;
+   type Primitive_Array_Access is access all Primitive_Array;
 end Primitives;
