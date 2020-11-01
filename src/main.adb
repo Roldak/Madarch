@@ -370,6 +370,8 @@ procedure Main is
        ((0.0, 0.0, 0.0), 0.0, 0.6),
        ((1.0, 0.0, 0.0), 0.0, 0.6),
        ((0.0, 0.0, 1.0), 0.0, 0.6));
+
+   Q_Pressed : Boolean := False;
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -425,6 +427,16 @@ begin
 
          Ada.Text_IO.Put_Line
            (Ada.Calendar."-"(Ada.Calendar.Clock, FPS_Clock)'Image);
+      end if;
+
+      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Q) then
+         if not Q_Pressed then
+            Mat_Descr (4).Albedo (X) := 1.0 - Mat_Descr (4).Albedo (X);
+            Update_Materials_Description (Mat_Descr);
+         end if;
+         Q_Pressed := True;
+      else
+         Q_Pressed := False;
       end if;
       GLFW_Utils.Poll_Events;
    end loop;
