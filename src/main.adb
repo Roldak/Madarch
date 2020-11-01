@@ -79,6 +79,18 @@ procedure Main is
          Cam_Pos (X) := Cam_Pos (X) + 0.1;
       end if;
 
+      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.K) then
+         Light.Point_Light_Pos (Z) := Light.Point_Light_Pos (Z) - 0.1;
+      elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.I) then
+         Light.Point_Light_Pos (Z) := Light.Point_Light_Pos (Z) + 0.1;
+      end if;
+
+      if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.J) then
+         Light.Point_Light_Pos (X) := Light.Point_Light_Pos (X) - 0.1;
+      elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.L) then
+         Light.Point_Light_Pos (X) := Light.Point_Light_Pos (X) + 0.1;
+      end if;
+
       return False;
    end Handle_Events;
 
@@ -496,6 +508,7 @@ begin
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
          FPS_Clock := Ada.Calendar.Clock;
 
+         Update_Scene_Light (Light);
          Compute_Radiance;
          Update_Irradiance;
          Draw_Image;
