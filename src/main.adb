@@ -24,6 +24,7 @@ with Glfw.Input.Keys;
 
 with Primitives;
 with Shader_Loader; use Shader_Loader;
+with UBOs;
 
 procedure Main is
    use GNATCOLL;
@@ -279,123 +280,54 @@ procedure Main is
       GLFW_Utils.Swap_Buffers;
    end Draw_Image;
 
-   Null_Buffer           : Objects.Buffers.Buffer;
-
-   procedure Create_UBO
-     (Buffer  : in out GL.Objects.Buffers.Buffer;
-      Binding : UInt;
-      Size    : Long)
-   is
-      use Objects.Buffers;
-   begin
-      Buffer.Initialize_Id;
-
-      Bind (Uniform_Buffer, Buffer);
-      Allocate (Uniform_Buffer, Size, Static_Draw);
-      Bind (Uniform_Buffer, Null_Buffer);
-
-      Bind_Buffer_Base (Uniform_Buffer, Binding, Buffer);
-   end Create_UBO;
-
-   Probes_UBO : Objects.Buffers.Buffer;
+   Probes_UBO : UBOs.UBO;
 
    procedure Setup_Probe_Layout (X, Y, Z : Int; SX, SY, SZ : Single) is
-      use Objects.Buffers;
+      W : UBOs.Writer := UBOs.Start (Probes_UBO);
    begin
       if X * Y * Z /= Probe_Count_X * Probe_Count_Y then
          raise Program_Error with "Probe_Count should match grid dimensions.";
       end if;
 
-      Bind (Uniform_Buffer, Probes_UBO);
+      W.Write_Int (Probe_Count_X);
+      W.Write_Int (Probe_Count_Y);
 
-      --  Set ivec2 probe_count and grid_dimensions
-      Set_Uniform_Int_Data
-        (Uniform_Buffer,
-         0,
-         (0 => Probe_Count_X,
-          1 => Probe_Count_Y,
-          2 .. 3 => 0,
-          4 => X,
-          5 => Y,
-          6 => Z));
+      W.Pad (16);
+      W.Write_Int (X);
+      W.Write_Int (Y);
+      W.Write_Int (Z);
 
-      --  Set vec2 grid_spacing
-      Set_Uniform_Float_Data
-        (Uniform_Buffer,
-         32,
-         (0 => SX,
-          1 => SY,
-          2 => SZ));
-
-      Bind (Uniform_Buffer, Null_Buffer);
+      W.Pad (32);
+      W.Write_Float (SX);
+      W.Write_Float (SY);
+      W.Write_Float (SZ);
    end Setup_Probe_Layout;
 
-   Scene_UBO  : Objects.Buffers.Buffer;
+   Scene_UBO  : UBOs.UBO;
 
    procedure Update_Scene_Description
      (Prims : Primitives.Primitive_Array)
    is
-      use Objects.Buffers;
-
-      Offset : Types.Size := 0;
-
-      procedure Pad (Amount : Types.Size) is
-      begin
-         while Offset mod Amount /= 0 loop
-            Offset := Offset + 1;
-         end loop;
-      end Pad;
-
-      procedure Add_Int (X : Int) is
-      begin
-        Set_Uniform_Int_Data
-          (Uniform_Buffer,
-           Offset, (0 => X));
-        Offset := Offset + 4;
-      end Add_Int;
-
-      procedure Add_Float (X : Single) is
-      begin
-        Set_Uniform_Float_Data
-          (Uniform_Buffer,
-           Offset, (0 => X));
-        Offset := Offset + 4;
-      end Add_Float;
-
-      procedure Add_Vec3 (V : Singles.Vector3) is
-      begin
-         Pad (16);
-         Set_Uniform_Float_Data
-           (Uniform_Buffer,
-            Offset,
-            (0 => V (X),
-             1 => V (Y),
-             2 => V (Z)));
-         Offset := Offset + 12;
-      end Add_Vec3;
+      W : UBOs.Writer := UBOs.Start (Scene_UBO);
    begin
-      Bind (Uniform_Buffer, Scene_UBO);
-
-      Add_Int (Int (Prims'Length));
+      W.Write_Int (Int (Prims'Length));
 
       for Prim of Prims loop
-         Pad (16);
-         Add_Int (Int (Prim.Kind'Enum_Rep));
+         W.Pad (16);
+         W.Write_Int (Int (Prim.Kind'Enum_Rep));
          case Prim.Kind is
             when Primitives.Sphere =>
-               Add_Vec3 (Prim.Sphere_Center);
-               Add_Float (Prim.Sphere_Radius);
+               W.Write_Vec3 (Prim.Sphere_Center);
+               W.Write_Float (Prim.Sphere_Radius);
             when Primitives.Cube =>
-               Add_Vec3 (Prim.Cube_Center);
-               Add_Float (Prim.Cube_Side);
+               W.Write_Vec3 (Prim.Cube_Center);
+               W.Write_Float (Prim.Cube_Side);
             when Primitives.Plane =>
-               Add_Vec3 (Prim.Normal);
-               Add_Float (Prim.Offset);
+               W.Write_Vec3 (Prim.Normal);
+               W.Write_Float (Prim.Offset);
          end case;
-         Add_Int (Prim.Material);
+         W.Write_Int (Prim.Material);
       end loop;
-
-      Bind (Uniform_Buffer, Null_Buffer);
    end Update_Scene_Description;
 
    Probe_Layout_Macros : Macro_Definition_Array :=
@@ -405,14 +337,14 @@ procedure Main is
    FPS_Clock : Ada.Calendar.Time;
 
    Scene_Descr : Primitives.Primitive_Array :=
-     (0 => (Primitives.Sphere, 0, ( 3.5,  3.0,  3.0), 1.0),
-      1 => (Primitives.Cube,   1, ( 3.0,  0.0,  4.0), 1.5),
-      2 => (Primitives.Plane,  2, ( 0.0,  1.0,  0.0), 1.0),
-      3 => (Primitives.Plane,  2, ( 0.0, -1.0,  0.0), 7.0),
-      4 => (Primitives.Plane,  3, ( 1.0,  0.0,  0.0), 1.0),
-      5 => (Primitives.Plane,  4, (-1.0,  0.0,  0.0), 7.0),
-      6 => (Primitives.Plane,  2, ( 0.0,  0.0,  1.0), 6.0),
-      7 => (Primitives.Plane,  2, ( 0.0,  0.0, -1.0), 7.0));
+     ((Primitives.Sphere, 0, ( 3.5,  3.0,  3.0), 1.0),
+      (Primitives.Cube,   1, ( 3.0,  0.0,  4.0), 1.5),
+      (Primitives.Plane,  2, ( 0.0,  1.0,  0.0), 1.0),
+      (Primitives.Plane,  2, ( 0.0, -1.0,  0.0), 7.0),
+      (Primitives.Plane,  3, ( 1.0,  0.0,  0.0), 1.0),
+      (Primitives.Plane,  4, (-1.0,  0.0,  0.0), 7.0),
+      (Primitives.Plane,  2, ( 0.0,  0.0,  1.0), 6.0),
+      (Primitives.Plane,  2, ( 0.0,  0.0, -1.0), 7.0));
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -439,13 +371,13 @@ begin
                 "src/glsl/update_probe_irradiance.glsl",
                 Probe_Layout_Macros, "420");
 
-   Null_Buffer.Initialize_Id;
-
-   Create_UBO (Probes_UBO, 0, 48);
+   -- setup probes
+   Probes_UBO := UBOs.Create (0, 48);
    Setup_Probe_Layout (X  => 4,   Y  => 3,   Z  => 3,
                        SX => 2.0, SY => 3.0, SZ => 3.0);
 
-   Create_UBO (Scene_UBO, 1, 16 + 48 * 20);
+   -- setup scene
+   Scene_UBO := UBOs.Create (1, 16 + 48 * 20);
    Update_Scene_Description (Scene_Descr);
 
    -- prepare data structures

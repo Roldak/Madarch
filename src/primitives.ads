@@ -21,5 +21,5 @@ package Primitives is
       end case;
    end record;
 
-   type Primitive_Array is array (Natural range <>) of Primitive;
+   type Primitive_Array is array (Positive range <>) of Primitive;
 end Primitives;
