@@ -22,6 +22,7 @@ with GLFW_Utils;
 
 with Glfw.Input.Keys;
 
+with Primitives;
 with Shader_Loader; use Shader_Loader;
 
 procedure Main is
@@ -332,17 +333,67 @@ procedure Main is
    Scene_UBO  : Objects.Buffers.Buffer;
 
    procedure Update_Scene_Description
-     (Primitive_Count : Int)
+     (Prims : Primitives.Primitive_Array)
    is
       use Objects.Buffers;
+
+      Offset : Types.Size := 0;
+
+      procedure Pad (Amount : Types.Size) is
+      begin
+         while Offset mod Amount /= 0 loop
+            Offset := Offset + 1;
+         end loop;
+      end Pad;
+
+      procedure Add_Int (X : Int) is
+      begin
+        Set_Uniform_Int_Data
+          (Uniform_Buffer,
+           Offset, (0 => X));
+        Offset := Offset + 4;
+      end Add_Int;
+
+      procedure Add_Float (X : Single) is
+      begin
+        Set_Uniform_Float_Data
+          (Uniform_Buffer,
+           Offset, (0 => X));
+        Offset := Offset + 4;
+      end Add_Float;
+
+      procedure Add_Vec3 (V : Singles.Vector3) is
+      begin
+         Pad (16);
+         Set_Uniform_Float_Data
+           (Uniform_Buffer,
+            Offset,
+            (0 => V (X),
+             1 => V (Y),
+             2 => V (Z)));
+         Offset := Offset + 12;
+      end Add_Vec3;
    begin
       Bind (Uniform_Buffer, Scene_UBO);
 
-      --  Set primitive_count and material_count;
-      Set_Uniform_Int_Data
-        (Uniform_Buffer,
-         0,
-         (0 => Primitive_Count));
+      Add_Int (Int (Prims'Length));
+
+      for Prim of Prims loop
+         Pad (16);
+         Add_Int (Int (Prim.Kind'Enum_Rep));
+         case Prim.Kind is
+            when Primitives.Sphere =>
+               Add_Vec3 (Prim.Sphere_Center);
+               Add_Float (Prim.Sphere_Radius);
+            when Primitives.Cube =>
+               Add_Vec3 (Prim.Cube_Center);
+               Add_Float (Prim.Cube_Side);
+            when Primitives.Plane =>
+               Add_Vec3 (Prim.Normal);
+               Add_Float (Prim.Offset);
+         end case;
+         Add_Int (Prim.Material);
+      end loop;
 
       Bind (Uniform_Buffer, Null_Buffer);
    end Update_Scene_Description;
@@ -352,6 +403,16 @@ procedure Main is
       Create_Macro_Definition ("M_IRRADIANCE_RESOLUTION", "8"));
 
    FPS_Clock : Ada.Calendar.Time;
+
+   Scene_Descr : Primitives.Primitive_Array :=
+     (0 => (Primitives.Sphere, 0, ( 3.5,  3.0,  3.0), 1.0),
+      1 => (Primitives.Cube,   1, ( 3.0,  0.0,  4.0), 1.5),
+      2 => (Primitives.Plane,  2, ( 0.0,  1.0,  0.0), 1.0),
+      3 => (Primitives.Plane,  2, ( 0.0, -1.0,  0.0), 7.0),
+      4 => (Primitives.Plane,  3, ( 1.0,  0.0,  0.0), 1.0),
+      5 => (Primitives.Plane,  4, (-1.0,  0.0,  0.0), 7.0),
+      6 => (Primitives.Plane,  2, ( 0.0,  0.0,  1.0), 6.0),
+      7 => (Primitives.Plane,  2, ( 0.0,  0.0, -1.0), 7.0));
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -384,8 +445,8 @@ begin
    Setup_Probe_Layout (X  => 4,   Y  => 3,   Z  => 3,
                        SX => 2.0, SY => 3.0, SZ => 3.0);
 
-   Create_UBO (Scene_UBO, 1, 4);
-   Update_Scene_Description (8);
+   Create_UBO (Scene_UBO, 1, 16 + 48 * 20);
+   Update_Scene_Description (Scene_Descr);
 
    -- prepare data structures
    Prepare_Radiance;

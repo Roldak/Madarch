@@ -200,18 +200,6 @@ uniform float time;
 
 uniform sampler2D irradiance_data;
 
-const Primitive prims[8] = Primitive[](
-   Primitive(SPHERE, vec3(3.5, 3.0, 3.0), 1.0, 0),
-   Primitive(CUBE,   vec3(3.0, 0.0, 4.0), 1.5, 1),
-
-   Primitive(PLANE, vec3(0, 1, 0),  1.0, 2),
-   Primitive(PLANE, vec3(0, -1, 0), 7.0, 2),
-   Primitive(PLANE, vec3(1, 0, 0),  1.0, 3),
-   Primitive(PLANE, vec3(-1, 0, 0), 7.0, 4),
-   Primitive(PLANE, vec3(0, 0, 1),  6.0, 2),
-   Primitive(PLANE, vec3(0, 0, -1), 7.0, 2)
-);
-
 const Material materials[5] = Material[](
    Material(vec3(1, 0, 0), 0.5, 0.4),
    Material(vec3(0, 1, 0), 0.8, 0.8),
@@ -222,6 +210,7 @@ const Material materials[5] = Material[](
 
 layout(std140, binding = 1) uniform scene_description {
    int primitive_count;
+   Primitive prims[20];
 };
 
 float closest_primitive(vec3 x, out int index) {

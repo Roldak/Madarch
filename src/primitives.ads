@@ -1,0 +1,25 @@
+with GL.Types;
+
+package Primitives is
+   use GL.Types;
+
+   type Primitive_Kind is (Sphere, Plane, Cube);
+
+   type Primitive (Kind : Primitive_Kind := Sphere) is record
+      Material : Int;
+
+      case Kind is
+         when Sphere =>
+            Sphere_Center : Singles.Vector3;
+            Sphere_Radius : Single;
+         when Cube =>
+            Cube_Center : Singles.Vector3;
+            Cube_Side   : Single;
+         when Plane =>
+            Normal : Singles.Vector3;
+            Offset : Single;
+      end case;
+   end record;
+
+   type Primitive_Array is array (Natural range <>) of Primitive;
+end Primitives;
