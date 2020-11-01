@@ -3,3 +3,6 @@ all:
 
 run: all
 	./bin/main
+
+gdb: all
+	gdb --args ./bin/main
