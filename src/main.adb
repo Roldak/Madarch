@@ -22,6 +22,7 @@ with GLFW_Utils;
 
 with Glfw.Input.Keys;
 
+with Materials;
 with Primitives;
 with Shader_Loader; use Shader_Loader;
 with UBOs;
@@ -330,6 +331,23 @@ procedure Main is
       end loop;
    end Update_Scene_Description;
 
+   Materials_UBO : UBOs.UBO;
+
+   procedure Update_Materials_Description
+     (Mats : Materials.Material_Array)
+   is
+      W : UBOs.Writer := UBOs.Start (Materials_UBO);
+   begin
+      W.Write_Int (Int (Mats'Length));
+
+      for M of Mats loop
+         W.Pad (16);
+         W.Write_Vec3 (M.Albedo);
+         W.Write_Float (M.Metallic);
+         W.Write_Float (M.Roughness);
+      end loop;
+   end Update_Materials_Description;
+
    Probe_Layout_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_RADIANCE_RESOLUTION", "30"),
       Create_Macro_Definition ("M_IRRADIANCE_RESOLUTION", "8"));
@@ -345,6 +363,13 @@ procedure Main is
       (Primitives.Plane,  4, (-1.0,  0.0,  0.0), 7.0),
       (Primitives.Plane,  2, ( 0.0,  0.0,  1.0), 6.0),
       (Primitives.Plane,  2, ( 0.0,  0.0, -1.0), 7.0));
+
+   Mat_Descr : Materials.Material_Array :=
+      (((1.0, 0.0, 0.0), 0.5, 0.4),
+       ((0.0, 1.0, 0.0), 0.8, 0.8),
+       ((0.0, 0.0, 0.0), 0.0, 0.6),
+       ((1.0, 0.0, 0.0), 0.0, 0.6),
+       ((0.0, 0.0, 1.0), 0.0, 0.6));
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -379,6 +404,10 @@ begin
    -- setup scene
    Scene_UBO := UBOs.Create (1, 16 + 48 * 20);
    Update_Scene_Description (Scene_Descr);
+
+   -- setup materials
+   Materials_UBO := UBOs.Create (2, 16 + 32 * 20);
+   Update_Materials_Description (Mat_Descr);
 
    -- prepare data structures
    Prepare_Radiance;
