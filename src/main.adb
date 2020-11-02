@@ -104,7 +104,7 @@ procedure Main is
    Radiance_Data : GL.Objects.Textures.Texture;
    Radiance_FB   : GL.Objects.Framebuffers.Framebuffer;
 
-   Probe_Radiance_Resolution   : constant GL.Types.Int := 30;
+   Probe_Radiance_Resolution   : constant GL.Types.Int := 60;
 
    Probe_Count_X    : constant GL.Types.Int := 6;
    Probe_Count_Y    : constant GL.Types.Int := 6;
@@ -417,6 +417,9 @@ procedure Main is
       Create_Macro_Definition ("M_MAX_PLANE_COUNT", Max_Plane_Count'Image),
       Create_Macro_Definition ("M_MAX_CUBE_COUNT", Max_Cube_Count'Image));
 
+   Render_Macros : Macro_Definition_Array :=
+     (1 => Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "1"));
+
    FPS_Clock : Ada.Calendar.Time;
 
    Scene_Descr : Primitives.Primitive_Array_Access :=
@@ -463,7 +466,7 @@ begin
 
    Load_Shader (Image_Shader,
                 "src/glsl/render_image.glsl",
-                Probe_Layout_Macros & Scene_Macros, "420");
+                Probe_Layout_Macros & Scene_Macros & Render_Macros, "420");
 
    Load_Shader (Radiance_Shader,
                 "src/glsl/compute_probe_radiance.glsl",

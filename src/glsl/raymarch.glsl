@@ -187,6 +187,7 @@ struct PointLight {
 
 uniform float time;
 
+layout(binding = 0) uniform sampler2D radiance_data;
 layout(binding = 1) uniform sampler2D irradiance_data;
 
 layout(std140, binding = 1) uniform scene_description {
@@ -298,6 +299,20 @@ bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll) {
       }
 
       from += dir * dist;
+      total_dist += dist;
+   }
+   return false;
+}
+
+bool raycast_hit_position(vec3 from, vec3 dir, out vec3 coll) {
+   for (float total_dist = 0; total_dist < max_dist;) {
+      float dist = closest_primitive(from + dir * total_dist);
+
+      if (dist < epsilon) {
+         coll = from + dir * total_dist;
+         return true;
+      }
+
       total_dist += dist;
    }
    return false;
@@ -470,9 +485,6 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
 
       vec3 alpha = pos / grid_spacing - grid_position;
 
-      const vec2 min_coord = vec2(0.5) / irradiance_resolution;
-      const vec2 max_coord = vec2(1.0) - min_coord;
-
       for (int i = 0; i < 8; ++i) {
          ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
 
@@ -517,8 +529,8 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
 
          vec2 irr_ray_dir_id = clamp(
             ray_dir_to_ray_id(normal),
-            min_coord,
-            max_coord
+            irr_min_coord,
+            irr_max_coord
          );
 
          vec2 irr_coord = irr_base_coord + irr_ray_dir_id / probe_count;
@@ -528,7 +540,56 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
       }
 
       irradiance /= total_weight;
-      vec3 indirect = irradiance * irradiance * 0.3;
+
+      // indirect specular (reflections)
+
+      vec3 specular_color = vec3(0);
+
+#if M_COMPUTE_INDIRECT_SPECULAR == 1
+      total_weight = 0.0f;
+      dir = reflect(dir, normal);
+      vec3 spec_pos;
+      if (raycast(pos + normal * min_step_size * 5.0, dir, prim_index, spec_pos)) {
+         primitive_info (spec_pos, prim_index, normal, material_id);
+         grid_position = world_position_to_grid_position(spec_pos);
+         alpha = spec_pos / grid_spacing - grid_position;
+         float min_weight = -1.0;
+
+         for (int i = 0; i < 8; ++i) {
+            ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
+
+            ivec3 offseted = clamp(
+               grid_position + offset,
+               ivec3(0),
+               ivec3(grid_dimensions) - ivec3(1)
+            );
+
+            vec3 probe_pos = grid_position_to_world_position(offseted);
+            vec3 probe_to_spec = normalize(spec_pos - probe_pos);
+
+            float weight = dot(probe_to_spec, -normal);
+            if (weight > min_weight) {
+               min_weight = weight;
+
+               // retrieve radiance
+               int probe_id = grid_position_to_probe_id(offseted);
+               vec2 rad_base_coord = probe_id_to_coord(probe_id);
+
+               vec2 rad_ray_dir_id = clamp(
+                  ray_dir_to_ray_id(probe_to_spec),
+                  rad_min_coord,
+                  rad_max_coord
+               );
+
+               vec2 rad_coord = rad_base_coord + rad_ray_dir_id / probe_count;
+
+               specular_color = texture2D(radiance_data, rad_coord).rgb;
+            }
+         }
+      }
+#endif
+
+      vec3 indirect = irradiance * irradiance * 0.3 + specular_color;
 
       return indirect + direct;
    }

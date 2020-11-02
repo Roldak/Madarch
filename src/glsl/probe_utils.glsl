@@ -8,6 +8,12 @@ layout(std140, binding = 0) uniform probes_layout {
 const int radiance_resolution = M_RADIANCE_RESOLUTION;
 const int irradiance_resolution = M_IRRADIANCE_RESOLUTION;
 
+const vec2 irr_min_coord = vec2(0.5) / irradiance_resolution;
+const vec2 irr_max_coord = vec2(1.0) - irr_min_coord;
+
+const vec2 rad_min_coord = vec2(0.5) / radiance_resolution;
+const vec2 rad_max_coord = vec2(1.0) - rad_min_coord;
+
 int coord_to_probe_id(vec2 normalized_coord) {
    ivec2 probe_id = ivec2(
       int(normalized_coord.x * probe_count.x),
