@@ -187,7 +187,7 @@ struct PointLight {
 
 uniform float time;
 
-uniform sampler2D irradiance_data;
+layout(binding = 1) uniform sampler2D irradiance_data;
 
 layout(std140, binding = 1) uniform scene_description {
    int prim_sphere_count;

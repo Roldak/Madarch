@@ -118,6 +118,7 @@ procedure Main is
       Radiance_Data.Initialize_Id;
       Radiance_Fb.Initialize_Id;
 
+      Objects.Textures.Set_Active_Unit (0);
       Texture_2D.Bind (Radiance_Data);
       Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
       Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
@@ -166,8 +167,6 @@ procedure Main is
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Radiance_FB);
 
-      Texture_2D.Bind (Irradiance_Data);
-
       GL.Window.Set_Viewport
         (0, 0,
          Probe_Radiance_Resolution * Probe_Count_X,
@@ -190,6 +189,7 @@ procedure Main is
       Irradiance_Data.Initialize_Id;
       Irradiance_Fb.Initialize_Id;
 
+      Objects.Textures.Set_Active_Unit (1);
       Texture_2D.Bind (Irradiance_Data);
       Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
       Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
@@ -235,8 +235,6 @@ procedure Main is
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Irradiance_FB);
 
-      Texture_2D.Bind (Radiance_Data);
-
       GL.Window.Set_Viewport
         (0, 0,
          Probe_Irradiance_Resolution * Probe_Count_X,
@@ -281,8 +279,6 @@ procedure Main is
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind
         (GL.Objects.Framebuffers.Default_Framebuffer);
-
-      Texture_2D.Bind (Irradiance_Data);
 
       GL.Window.Set_Viewport (0, 0, 1000, 1000);
       Clear (Buffer_Bits'(Color => True, others => False));

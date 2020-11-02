@@ -3,7 +3,7 @@
 in vec4 pos;
 out vec3 irradiance;
 
-uniform sampler2D radiance_data;
+layout(binding = 0) uniform sampler2D radiance_data;
 
 void main(void) {
    vec2 normalized_coord = (pos.xy + vec2(1)) * 0.5;
