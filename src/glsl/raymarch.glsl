@@ -322,8 +322,8 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir,
    float NdotL = max(dot(N, L), 0.0);
 
    // calculate light radiance
-   float attenuation = 1.0; // / (light_distance * light_distance);
-   vec3 radiance     = point_light.color * attenuation;
+   float attenuation = 1.0 / (light_distance * light_distance * 0.03);
+   vec3 radiance     = point_light.color * min(attenuation, 1.5);
 
    // cook-torrance BRDF
    float NDF = distribution_GGX(N, H, roughness);
@@ -351,7 +351,7 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir,
    }
 
    // add to outgoing radiance Lo
-   Lo += (kD * albedo / PI + specular) * radiance * NdotL * mix(0.1, 1.0, shadows);
+   Lo += (kD * albedo / PI + specular) * radiance * NdotL * shadows;
 
    return Lo;
 }
