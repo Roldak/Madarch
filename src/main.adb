@@ -37,11 +37,6 @@ procedure Main is
    use GL.Fixed.Matrix;
    use GL.Immediate;
 
-   procedure Set_Uniform_Int_Data is
-      new Objects.Buffers.Set_Sub_Data (Int_Pointers);
-   procedure Set_Uniform_Float_Data is
-      new Objects.Buffers.Set_Sub_Data (Single_Pointers);
-
    procedure Draw_Fullscreen_Quad is
       Token : Input_Token := Start (Quads);
    begin
