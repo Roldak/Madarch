@@ -304,7 +304,7 @@ bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll) {
    return false;
 }
 
-bool raycast_hit_position(vec3 from, vec3 dir, out vec3 coll) {
+bool raycast_hit_position(vec3 from, vec3 dir, float max_dist, out vec3 coll) {
    for (float total_dist = 0; total_dist < max_dist;) {
       float dist = closest_primitive(from + dir * total_dist);
 
@@ -316,6 +316,11 @@ bool raycast_hit_position(vec3 from, vec3 dir, out vec3 coll) {
       total_dist += dist;
    }
    return false;
+}
+
+float raycast_visibility(vec3 from, vec3 dir, float max_dist) {
+   vec3 dummy;
+   return 1.0 - float(raycast_hit_position(from, dir, max_dist, dummy));
 }
 
 vec3 shade(vec3 pos, vec3 normal, vec3 dir,
@@ -345,6 +350,9 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir,
    float G   = geometry_smith(N, V, L, roughness);
    vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), F0);
 
+#if M_COMPUTE_INDIRECT_SPECULAR == 0
+   F = vec3(0);
+#endif
    vec3 kS = F;
    vec3 kD = vec3(1.0) - kS;
    kD *= 1.0 - metallic;
@@ -505,12 +513,10 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
          weight *= angle * angle + 0.2;
 
          // visibility test
-         weight *= softshadows(
+         weight *= raycast_visibility(
             pos + normal * min_step_size * 5.0,
             dir_to_probe,
-            min_step_size,
-            probe_distance,
-            16
+            probe_distance - min_step_size * 5.0
          );
 
          // crush tiny weights
@@ -552,8 +558,10 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
       if (raycast(pos + normal * min_step_size * 5.0, dir, prim_index, spec_pos)) {
          primitive_info (spec_pos, prim_index, normal, material_id);
          grid_position = world_position_to_grid_position(spec_pos);
-         alpha = spec_pos / grid_spacing - grid_position;
-         float min_weight = -1.0;
+
+         float max_weight = 0.0;
+         ivec3 best_offset = ivec3(0);
+         vec3 best_probe_to_spec;
 
          for (int i = 0; i < 8; ++i) {
             ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
@@ -565,27 +573,39 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
             );
 
             vec3 probe_pos = grid_position_to_world_position(offseted);
-            vec3 probe_to_spec = normalize(spec_pos - probe_pos);
+            vec3 probe_to_spec = spec_pos - probe_pos;
+            float probe_distance = length(probe_to_spec);
+            probe_to_spec /= probe_distance;
 
             float weight = dot(probe_to_spec, -normal);
-            if (weight > min_weight) {
-               min_weight = weight;
 
-               // retrieve radiance
-               int probe_id = grid_position_to_probe_id(offseted);
-               vec2 rad_base_coord = probe_id_to_coord(probe_id);
+            // visibility test
+            weight *= raycast_visibility(
+               spec_pos + normal * min_step_size * 5.0,
+               -probe_to_spec,
+               probe_distance
+            );
 
-               vec2 rad_ray_dir_id = clamp(
-                  ray_dir_to_ray_id(probe_to_spec),
-                  rad_min_coord,
-                  rad_max_coord
-               );
-
-               vec2 rad_coord = rad_base_coord + rad_ray_dir_id / probe_count;
-
-               specular_color = texture2D(radiance_data, rad_coord).rgb;
+            if (weight > max_weight) {
+               max_weight = weight;
+               best_offset = offseted;
+               best_probe_to_spec = probe_to_spec;
             }
          }
+
+         // retrieve radiance
+         int probe_id = grid_position_to_probe_id(best_offset);
+         vec2 rad_base_coord = probe_id_to_coord(probe_id);
+
+         vec2 rad_ray_dir_id = clamp(
+            ray_dir_to_ray_id(best_probe_to_spec),
+            rad_min_coord,
+            rad_max_coord
+         );
+
+         vec2 rad_coord = rad_base_coord + rad_ray_dir_id / probe_count;
+
+         specular_color = texture2D(radiance_data, rad_coord).rgb;
       }
 #endif
 
