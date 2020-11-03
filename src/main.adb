@@ -104,7 +104,7 @@ procedure Main is
    Radiance_Data : GL.Objects.Textures.Texture;
    Radiance_FB   : GL.Objects.Framebuffers.Framebuffer;
 
-   Probe_Radiance_Resolution   : constant GL.Types.Int := 60;
+   Probe_Radiance_Resolution   : constant GL.Types.Int := 64;
 
    Probe_Count_X    : constant GL.Types.Int := 6;
    Probe_Count_Y    : constant GL.Types.Int := 6;
