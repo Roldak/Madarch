@@ -23,6 +23,7 @@ with GLFW_Utils;
 with Glfw.Input.Keys;
 
 with Materials;
+with Math_Utils; use Math_Utils;
 with Lights;
 with Primitives;
 with Shader_Loader; use Shader_Loader;
@@ -120,14 +121,18 @@ procedure Main is
 
       Objects.Textures.Set_Active_Unit (0);
       Texture_2D.Bind (Radiance_Data);
+      Texture_2D.Set_Lowest_Mipmap_Level (0);
+      Texture_2D.Set_Highest_Mipmap_Level
+        (Int (Log_2 (Interfaces.Unsigned_64 (Probe_Radiance_Resolution))));
       Texture_2D.Set_X_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
       Texture_2D.Set_Y_Wrapping (GL.Objects.Textures.Mirrored_Repeat);
-      Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
+      Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Linear_Mipmap_Linear);
       Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Load_Empty_Texture
         (0, GL.Pixels.RGB8,
          Probe_Radiance_Resolution * Probe_Count_X,
          Probe_Radiance_Resolution * Probe_Count_Y);
+      Texture_2D.Generate_Mipmap;
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Radiance_FB);
       GL.Objects.Framebuffers.Read_And_Draw_Target.Attach_Texture
@@ -139,7 +144,7 @@ procedure Main is
          Ada.Text_IO.Put_Line
            ("Error: Framebuffer status is " &
               GL.Objects.Framebuffers.Read_And_Draw_Target.Status'Img);
-         return;
+         raise Program_Error;
       end if;
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind
@@ -174,6 +179,10 @@ procedure Main is
 
       Clear (Buffer_Bits'(Color => True, others => False));
       Draw_Fullscreen_Quad;
+
+      Objects.Textures.Set_Active_Unit (0);
+      Texture_2D.Bind (Radiance_Data);
+      Texture_2D.Generate_Mipmap;
 
    end Compute_Radiance;
 
@@ -210,6 +219,7 @@ procedure Main is
          Ada.Text_IO.Put_Line
            ("Error: Framebuffer status is " &
               GL.Objects.Framebuffers.Read_And_Draw_Target.Status'Img);
+         raise Program_Error;
          return;
       end if;
 
@@ -443,9 +453,9 @@ procedure Main is
    end Add_Sphere;
 
    Mat_Descr : Materials.Material_Array :=
-      (((0.1, 0.1, 0.1), 0.9, 0.2),
-       ((0.0, 1.0, 0.0), 0.8, 0.8),
-       ((0.0, 0.0, 0.0), 0.0, 1.0),
+      (((0.1, 0.1, 0.1), 0.9, 0.1),
+       ((0.0, 1.0, 0.0), 0.8, 0.3),
+       ((0.0, 0.0, 0.0), 0.0, 0.5),
        ((1.0, 0.0, 0.0), 0.0, 0.6),
        ((0.0, 0.0, 1.0), 0.0, 0.6));
 

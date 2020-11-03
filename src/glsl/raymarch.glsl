@@ -574,7 +574,7 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
 
 #if M_COMPUTE_INDIRECT_SPECULAR == 1
       vec3 spec_pos;
-      if (raycast_hit_position(
+      if (roughness < 0.75 && raycast_hit_position(
             pos + normal * min_step_size * 5.0,
             spec_dir,
             max_dist,
@@ -584,6 +584,12 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
 
          total_weight = 0.0f;
          vec3 alpha = pos / grid_spacing - grid_position;
+
+         // this shouldn't be dependent on the radiance resolution
+         float lod = mix(0.0, float(radiance_lods), roughness * 2.0);
+         int new_res = radiance_resolution / int(lod + 1.0);
+         vec2 rad_min_coord = vec2(0.5) / new_res;
+         vec2 rad_max_coord = vec2(1.0) - rad_min_coord;
 
          for (int i = 0; i < 8; ++i) {
             ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
@@ -621,10 +627,9 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
                rad_min_coord,
                rad_max_coord
             );
-
             vec2 rad_coord = rad_base_coord + rad_ray_dir_id / probe_count;
 
-            specular_color += texture2D(radiance_data, rad_coord).rgb * weight;
+            specular_color += textureLod(radiance_data, rad_coord, lod).rgb * weight;
             total_weight += weight;
          }
 
