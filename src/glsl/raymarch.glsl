@@ -375,6 +375,29 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir,
    return Lo;
 }
 
+vec3 compute_indirect(vec3 irradiance, vec3 specular,
+                      vec3 V, vec3 N, vec3 L,
+                      vec3 albedo, float metallic, float roughness) {
+   vec3 H = normalize(V + L);
+   float NdotL = max(dot(N, L), 0.0);
+   float NdotV = max(dot(N, V), 0.0);
+   float sin_t = sqrt(1 - NdotV * NdotV);
+
+   // cook-torrance BRDF
+   vec3 F0 = mix(vec3(0.04), albedo, metallic);
+   float NDF = distribution_GGX(N, H, roughness);
+   float G   = geometry_smith(N, V, L, roughness);
+   vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), F0);
+   vec3 kD = vec3(1.0) - F;
+   kD *= 1.0 - metallic;
+
+   vec3 numerator    = NDF * G * F;
+   float denominator = 4.0 * NdotV * NdotL;
+   vec3 kS           = min(numerator / max(denominator, 0.001), 1.0);
+
+   return (kD * irradiance / PI) + (kS * specular * NdotL);
+}
+
 vec3 pixel_color_direct(vec3 from, vec3 dir) {
    vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
 
@@ -547,11 +570,16 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
       // indirect specular (reflections)
 
       vec3 specular_color = vec3(0);
+      vec3 spec_dir = reflect(dir, normal);
 
 #if M_COMPUTE_INDIRECT_SPECULAR == 1
-      dir = reflect(dir, normal);
       vec3 spec_pos;
-      if (raycast_hit_position(pos + normal * min_step_size * 5.0, dir, max_dist, spec_pos)) {
+      if (raycast_hit_position(
+            pos + normal * min_step_size * 5.0,
+            spec_dir,
+            max_dist,
+            spec_pos
+      )) {
          vec3 pos_to_spec_pos = spec_pos - pos;
 
          total_weight = 0.0f;
@@ -603,8 +631,11 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
          specular_color /= total_weight;
       }
 #endif
-
-      vec3 indirect = irradiance / PI + specular_color;
+      vec3 indirect = compute_indirect(
+         irradiance, specular_color,
+         -dir, normal, spec_dir,
+         albedo, metallic, roughness
+      );
 
       return indirect + direct;
    }
