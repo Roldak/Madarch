@@ -542,6 +542,7 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
       }
 
       irradiance /= total_weight;
+      irradiance *= irradiance;
 
       // indirect specular (reflections)
 
@@ -603,7 +604,7 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
       }
 #endif
 
-      vec3 indirect = irradiance * irradiance * 0.3 + specular_color;
+      vec3 indirect = irradiance / PI + specular_color;
 
       return indirect + direct;
    }
