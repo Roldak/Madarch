@@ -64,6 +64,19 @@ struct PointLight {
    vec3 color;
 };
 
+vec3 sample_point_light(PointLight l, vec3 pos, vec3 normal,
+                        out vec3 dir, out float dist) {
+   dir = l.position - pos;
+   dist = length(dir);
+   dir /= dist;
+
+   float attenuation = 1.0 / (dist * dist * 0.03);
+
+   return l.color * min(attenuation, 1.5);
+}
+
+// scene description
+
 layout(std140, binding = 1) uniform scene_description {
    int prim_sphere_count;
    Sphere prim_spheres[M_MAX_SPHERE_COUNT];
@@ -74,7 +87,8 @@ layout(std140, binding = 1) uniform scene_description {
    int prim_cube_count;
    Cube prim_cubes[M_MAX_CUBE_COUNT];
 
-   PointLight point_light;
+   int light_count;
+   PointLight point_lights[M_MAX_POINT_LIGHT_COUNT];
 };
 
 float closest_primitive(vec3 x) {
@@ -135,5 +149,9 @@ void primitive_info(vec3 pos, int index, out vec3 normal, out int material_id) {
       material_id = prim_cubes[index].material_id;
       return;
    }
+}
+
+vec3 sample_light(int i, vec3 pos, vec3 normal, out vec3 dir, out float dist) {
+   return sample_point_light(point_lights[i], pos, normal, dir, dist);
 }
 

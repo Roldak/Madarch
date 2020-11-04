@@ -11,4 +11,6 @@ package Lights is
             Point_Light_Pos : Singles.Vector3;
       end case;
    end record;
+
+   type Light_Array is array (Positive range <>) of Light;
 end Lights;

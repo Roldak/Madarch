@@ -54,8 +54,11 @@ procedure Main is
    Time            : GL.Types.Single := 0.0;
    Cam_Pos         : Singles.Vector3 := (1.0, 2.0, -4.0);
 
-   Light : Lights.Light :=
-     (Lights.Point, (0.9, 0.9, 0.8), (4.0, 2.0, 0.0));
+   All_Lights : Lights.Light_Array :=
+     (1 => (Lights.Point, (0.9, 0.9, 0.8), (4.0, 2.0, 0.0)),
+      2 => (Lights.Point, (0.1, 0.9, 0.1), (1.0, 3.0, 1.0)));
+
+   Light : Lights.Light renames All_Lights (1);
 
    function Handle_Events return Boolean is
    begin
@@ -323,9 +326,10 @@ procedure Main is
 
    Scene_UBO  : UBOs.UBO;
 
-   Max_Sphere_Count : constant Size := 40;
-   Max_Plane_Count  : constant Size := 40;
-   Max_Cube_Count   : constant Size := 40;
+   Max_Sphere_Count      : constant Size := 40;
+   Max_Plane_Count       : constant Size := 40;
+   Max_Cube_Count        : constant Size := 40;
+   Max_Point_Light_Count : constant Size := 4;
 
    procedure Update_Scene_Primitives
      (Prims : Primitives.Primitive_Array)
@@ -393,13 +397,18 @@ procedure Main is
       W.Write_Int (Int (Cube_Count));
    end Update_Scene_Primitives;
 
-   procedure Update_Scene_Light (X : Lights.Light) is
+   procedure Update_Scene_Lights (Lits : Lights.Light_Array) is
       W : UBOs.Writer := UBOs.Start (Scene_UBO);
    begin
       W.Seek (16 * 3 + 32 * (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count));
-      W.Write_Vec3 (X.Point_Light_Pos);
-      W.Write_Vec3 (X.Light_Color);
-   end Update_Scene_Light;
+      W.Write_Int (Lits'Length);
+
+      for L of Lits loop
+         W.Pad (16);
+         W.Write_Vec3 (L.Point_Light_Pos);
+         W.Write_Vec3 (L.Light_Color);
+      end loop;
+   end Update_Scene_Lights;
 
    Materials_UBO : UBOs.UBO;
 
@@ -425,7 +434,9 @@ procedure Main is
    Scene_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_MAX_SPHERE_COUNT", Max_Sphere_Count'Image),
       Create_Macro_Definition ("M_MAX_PLANE_COUNT", Max_Plane_Count'Image),
-      Create_Macro_Definition ("M_MAX_CUBE_COUNT", Max_Cube_Count'Image));
+      Create_Macro_Definition ("M_MAX_CUBE_COUNT", Max_Cube_Count'Image),
+      Create_Macro_Definition
+        ("M_MAX_POINT_LIGHT_COUNT", Max_Point_Light_Count'Image));
 
    Probe_Render_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "0"),
@@ -498,9 +509,12 @@ begin
 
    -- setup scene
    Scene_UBO := UBOs.Create
-     (1, 16 * 3 + 32 * Long (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count + 1));
+     (1,
+      16 * 4 + 32 * Long (Max_Sphere_Count + Max_Plane_Count +
+                          Max_Cube_Count + Max_Point_Light_Count));
+
    Update_Scene_Primitives (Scene_Descr.all);
-   Update_Scene_Light (Light);
+   Update_Scene_Lights (All_Lights);
 
 
    -- setup materials
@@ -517,7 +531,7 @@ begin
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
          FPS_Clock := Ada.Calendar.Clock;
 
-         Update_Scene_Light (Light);
+         Update_Scene_Lights (All_Lights);
          Compute_Radiance;
          Update_Irradiance;
          Draw_Image;
