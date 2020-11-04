@@ -103,10 +103,8 @@ float geometry_schlick_GGX(float NdotV, float roughness)
     return num / denom;
 }
 
-float geometry_smith(vec3 N, vec3 V, vec3 L, float roughness)
+float geometry_smith(float NdotV, float NdotL, float roughness)
 {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
     float ggx2  = geometry_schlick_GGX(NdotV, roughness);
     float ggx1  = geometry_schlick_GGX(NdotL, roughness);
 
@@ -323,14 +321,29 @@ float raycast_visibility(vec3 from, vec3 dir, float max_dist) {
    return 1.0 - float(raycast_hit_position(from, dir, max_dist, dummy));
 }
 
-vec3 shade(vec3 pos, vec3 normal, vec3 dir,
-           vec3 albedo, float metallic, float roughness) {
+void cook_torrance_coefficients (vec3 N, vec3 V, vec3 L, float NdotL,
+                                 vec3 albedo, float metallic, float roughness,
+                                 out vec3 kD, out vec3 kS) {
+   vec3 H = normalize(V + L);
+   float NdotV = max(dot(N, V), 0.0);
 
-   // reflectance
+   // cook-torrance BRDF
+   vec3 F0 = mix(vec3(0.04), albedo, metallic);
+   float NDF = distribution_GGX(N, H, roughness);
+   float G   = geometry_smith(NdotV, NdotL, roughness);
+   vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), F0);
+
+   vec3 numerator    = NDF * G * F;
+   float denominator = 4.0 * NdotV * NdotL;
+
+   kD = (vec3(1.0) - F) * (1.0 - metallic);
+   kS = min(numerator / max(denominator, 0.001), 1.0);
+}
+
+vec3 compute_direct_lightning(vec3 pos, vec3 normal, vec3 dir,
+                              vec3 albedo, float metallic, float roughness) {
    vec3 N = normal;
    vec3 V = -dir;
-
-   vec3 F0 = mix(vec3(0.04), albedo, metallic);
 
    vec3 Lo = vec3(0.0);
 
@@ -338,24 +351,16 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir,
    vec3 light_dir = point_light.position - pos;
    float light_distance = length(light_dir);
    vec3 L = light_dir / light_distance;
-   vec3 H = normalize(V + L);
+
    float NdotL = max(dot(N, L), 0.0);
 
    // calculate light radiance
    float attenuation = 1.0 / (light_distance * light_distance * 0.03);
    vec3 radiance     = point_light.color * min(attenuation, 1.5);
 
-   // cook-torrance BRDF
-   float NDF = distribution_GGX(N, H, roughness);
-   float G   = geometry_smith(N, V, L, roughness);
-   vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), F0);
-   vec3 kS = F;
-   vec3 kD = vec3(1.0) - kS;
-   kD *= 1.0 - metallic;
-
-   vec3 numerator    = NDF * G * F;
-   float denominator = 4.0 * max(dot(N, V), 0.0) * NdotL;
-   vec3 specular     = numerator / max(denominator, 0.001);
+   // sample cook-torrance BRDF
+   vec3 kD, kS;
+   cook_torrance_coefficients (N, V, L, NdotL, albedo, metallic, roughness, kD, kS);
 
    // shadow cast
    float shadows = 0.0;
@@ -363,39 +368,26 @@ vec3 shade(vec3 pos, vec3 normal, vec3 dir,
       shadows = softshadows(
          pos + normal * min_step_size * 5,
          L,
-         min_step_size,
+         0.0,
          light_distance,
          64
       );
    }
 
    // add to outgoing radiance Lo
-   Lo += (kD * albedo / PI + specular) * radiance * NdotL * shadows;
+   Lo += (kD * albedo / PI + kS) * radiance * NdotL * shadows;
 
    return Lo;
 }
 
-vec3 compute_indirect(vec3 irradiance, vec3 specular,
-                      vec3 V, vec3 N, vec3 L,
-                      vec3 albedo, float metallic, float roughness) {
-   vec3 H = normalize(V + L);
+vec3 compute_indirect_lightning(vec3 irradiance, vec3 radiance,
+                                vec3 V, vec3 N, vec3 L,
+                                vec3 albedo, float metallic, float roughness) {
+
+   vec3 kD, kS;
    float NdotL = max(dot(N, L), 0.0);
-   float NdotV = max(dot(N, V), 0.0);
-   float sin_t = sqrt(1 - NdotV * NdotV);
-
-   // cook-torrance BRDF
-   vec3 F0 = mix(vec3(0.04), albedo, metallic);
-   float NDF = distribution_GGX(N, H, roughness);
-   float G   = geometry_smith(N, V, L, roughness);
-   vec3  F   = fresnel_schlick(max(dot(H, V), 0.0), F0);
-   vec3 kD = vec3(1.0) - F;
-   kD *= 1.0 - metallic;
-
-   vec3 numerator    = NDF * G * F;
-   float denominator = 4.0 * NdotV * NdotL;
-   vec3 kS           = min(numerator / max(denominator, 0.001), 1.0);
-
-   return (kD * irradiance / PI) + (kS * specular * NdotL);
+   cook_torrance_coefficients (N, V, L, NdotL, albedo, metallic, roughness, kD, kS);
+   return (kD * irradiance / PI) + (kS * radiance * NdotL);
 }
 
 vec3 pixel_color_direct(vec3 from, vec3 dir) {
@@ -410,9 +402,7 @@ vec3 pixel_color_direct(vec3 from, vec3 dir) {
       vec3 albedo = materials[material_id].albedo;
       float metallic = materials[material_id].metallic;
       float roughness = materials[material_id].roughness;
-      vec3 result = shade(pos, normal, dir, albedo, metallic, roughness);
-      return result;
-
+      return compute_direct_lightning(pos, normal, dir, albedo, metallic, roughness);
    }
 
    return background_color;
@@ -434,7 +424,9 @@ vec3 pixel_color_path(vec3 from, vec3 dir, float sa) {
          float metallic = materials[material_id].metallic;
          float roughness = materials[material_id].roughness;
 
-         result += mask * shade(pos, normal, dir, albedo, metallic, roughness);
+         result += mask * compute_direct_lightning (
+            pos, normal, dir, albedo, metallic, roughness
+         );
          mask *= albedo;
 
          from = pos;
@@ -471,7 +463,7 @@ vec3 pixel_color_many(vec3 from, vec3 dir, float sa) {
    vec3 albedo = materials[material_id].albedo;
    float metallic = materials[material_id].metallic;
    float roughness = materials[material_id].roughness;
-   result = shade(pos, normal, dir, albedo, metallic, roughness);
+   result = compute_direct_lightning(pos, normal, dir, albedo, metallic, roughness);
 
    from = pos + normal * min_step_size * 5;
    vec3 reflected = reflect(dir, normal);
@@ -504,7 +496,7 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
       vec3 albedo = materials[material_id].albedo;
       float metallic = materials[material_id].metallic;
       float roughness = materials[material_id].roughness;
-      vec3 direct = shade(pos, normal, dir, albedo, metallic, roughness);
+      vec3 direct = compute_direct_lightning(pos, normal, dir, albedo, metallic, roughness);
 
       ivec3 grid_position = world_position_to_grid_position(pos);
       vec3 irradiance = vec3(0);
@@ -636,7 +628,7 @@ vec3 pixel_color_irradiance_probes(vec3 from, vec3 dir) {
          specular_color /= total_weight;
       }
 #endif
-      vec3 indirect = compute_indirect(
+      vec3 indirect = compute_indirect_lightning(
          irradiance, specular_color,
          -dir, normal, spec_dir,
          albedo, metallic, roughness
