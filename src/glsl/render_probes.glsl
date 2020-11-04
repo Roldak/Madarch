@@ -145,7 +145,7 @@ vec3 sample_radiance_no_specular(vec3 pos, vec3 normal, vec3 dir, float roughnes
 
    vec3 spec_normal;
    int spec_material_id;
-   primitive_info (spec_pos, prim_index, spec_normal, spec_material_id);
+   primitive_info (prim_index, spec_pos, spec_normal, spec_material_id);
 
    ivec3 grid_position = world_position_to_grid_position(spec_pos);
 
@@ -205,7 +205,7 @@ vec3 pixel_color_probes(vec3 from, vec3 dir) {
    if (raycast(from, dir, prim_index, pos)) {
       int material_id;
       vec3 normal;
-      primitive_info (pos, prim_index, normal, material_id);
+      primitive_info (prim_index, pos, normal, material_id);
       vec3 albedo = materials[material_id].albedo;
       float metallic = materials[material_id].metallic;
       float roughness = materials[material_id].roughness;

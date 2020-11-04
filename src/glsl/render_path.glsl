@@ -11,7 +11,7 @@ vec3 pixel_color_path(vec3 from, vec3 dir, float sa) {
       if (raycast(from, dir, prim_index, pos)) {
          int material_id;
          vec3 normal;
-         primitive_info (pos, prim_index, normal, material_id);
+         primitive_info (prim_index, pos, normal, material_id);
          vec3 albedo = materials[material_id].albedo;
          float metallic = materials[material_id].metallic;
          float roughness = materials[material_id].roughness;

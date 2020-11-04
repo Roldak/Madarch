@@ -131,7 +131,7 @@ float closest_primitive_info(vec3 x, out int index) {
    return closest;
 }
 
-void primitive_info(vec3 pos, int index, out vec3 normal, out int material_id) {
+void primitive_info(int index, vec3 pos, out vec3 normal, out int material_id) {
    if (index < M_MAX_SPHERE_COUNT) {
       normal = sphere_normal(pos, prim_spheres[index]);
       material_id = prim_spheres[index].material_id;
