@@ -428,7 +428,8 @@ procedure Main is
       Create_Macro_Definition ("M_MAX_CUBE_COUNT", Max_Cube_Count'Image));
 
    Render_Macros : Macro_Definition_Array :=
-     (1 => Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "1"));
+     (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "1"),
+      Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "1"));
 
    FPS_Clock : Ada.Calendar.Time;
 

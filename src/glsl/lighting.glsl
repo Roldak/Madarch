@@ -32,6 +32,10 @@ vec3 compute_direct_lighting(vec3 pos, vec3 normal, vec3 dir,
       );
    }
 
+#if M_COMPUTE_DIRECT_SPECULAR == 0
+   kS = vec3(0);
+#endif
+
    // add to outgoing radiance Lo
    Lo += (kD * albedo / PI + kS) * radiance * NdotL * shadows;
 
