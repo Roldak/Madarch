@@ -475,7 +475,7 @@ begin
                 No_Macro_Definition_Array, "120");
 
    Load_Shader (Image_Shader,
-                "src/glsl/render_image.glsl",
+                "src/glsl/draw_screen.glsl",
                 Probe_Layout_Macros & Scene_Macros & Render_Macros, "420");
 
    Load_Shader (Radiance_Shader,

@@ -1,4 +1,12 @@
-#include "raymarch.glsl"
+#include "maths.glsl"
+#include "probe_utils.glsl"
+#include "random.glsl"
+#include "scene.glsl"
+#include "materials.glsl"
+#include "raymarching.glsl"
+#include "cook_torrance_brdf.glsl"
+#include "lighting.glsl"
+#include "render_probes.glsl"
 
 in vec4 pos;
 
@@ -14,5 +22,5 @@ void main() {
    vec2 ray_id = coord_to_ray_id(normalized_coord);
    vec3 ray_dir = ray_id_to_ray_dir(ray_id);
 
-   color = pixel_color_irradiance_probes(world_position, ray_dir);
+   color = pixel_color_probes(world_position, ray_dir);
 }
