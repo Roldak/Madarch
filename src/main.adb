@@ -427,9 +427,13 @@ procedure Main is
       Create_Macro_Definition ("M_MAX_PLANE_COUNT", Max_Plane_Count'Image),
       Create_Macro_Definition ("M_MAX_CUBE_COUNT", Max_Cube_Count'Image));
 
+   Probe_Render_Macros : Macro_Definition_Array :=
+     (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "0"),
+      Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "0"));
+
    Render_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "1"),
-      Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "1"));
+      Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "2"));
 
    FPS_Clock : Ada.Calendar.Time;
 
@@ -456,7 +460,7 @@ procedure Main is
    Mat_Descr : Materials.Material_Array :=
       (((0.1, 0.1, 0.1), 0.9, 0.1),
        ((0.0, 1.0, 0.0), 0.8, 0.3),
-       ((0.0, 0.0, 0.0), 0.0, 0.5),
+       ((0.0, 0.0, 0.0), 0.0, 0.1),
        ((1.0, 0.0, 0.0), 0.0, 0.6),
        ((0.0, 0.0, 1.0), 0.0, 0.6));
 
@@ -481,7 +485,7 @@ begin
 
    Load_Shader (Radiance_Shader,
                 "src/glsl/compute_probe_radiance.glsl",
-                Probe_Layout_Macros & Scene_Macros, "420");
+                Probe_Layout_Macros & Scene_Macros & Probe_Render_Macros, "420");
 
    Load_Shader (Irradiance_Shader,
                 "src/glsl/update_probe_irradiance.glsl",

@@ -176,9 +176,6 @@ vec3 sample_radiance_no_specular(vec3 pos, vec3 normal, vec3 dir, float roughnes
          distance - min_step_size * 5.0
       );
 
-      //vec3 trilinear = mix(1.0 - alpha, alpha, offset);
-      //weight *= trilinear.x * trilinear.y * trilinear.z;
-
       if (weight > max_weight) {
          max_weight = weight;
          best_offseted = offseted;
