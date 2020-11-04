@@ -75,6 +75,27 @@ vec3 sample_point_light(PointLight l, vec3 pos, vec3 normal,
    return l.color * min(attenuation, 1.5);
 }
 
+// spot light
+
+struct SpotLight {
+   vec3 position;
+   vec3 direction;
+   float aperture;
+   vec3 color;
+};
+
+vec3 sample_spot_light(SpotLight l, vec3 pos, vec3 normal,
+                       out vec3 dir, out float dist) {
+   dir = l.position - pos;
+   dist = length(dir);
+   dir /= dist;
+
+   float attenuation = 1.0 / (dist * dist * 0.03);
+   float visible = float(dot(-dir, l.direction) > 0.5);
+
+   return l.color * min(attenuation, 1.5) * visible;
+}
+
 // scene description
 
 layout(std140, binding = 1) uniform scene_description {
@@ -87,8 +108,13 @@ layout(std140, binding = 1) uniform scene_description {
    int prim_cube_count;
    Cube prim_cubes[M_MAX_CUBE_COUNT];
 
-   int light_count;
+   int point_light_count;
    PointLight point_lights[M_MAX_POINT_LIGHT_COUNT];
+
+   int spot_light_count;
+   SpotLight spot_lights[M_MAX_SPOT_LIGHT_COUNT];
+
+   int light_count;
 };
 
 float closest_primitive(vec3 x) {
@@ -151,7 +177,13 @@ void primitive_info(int index, vec3 pos, out vec3 normal, out int material_id) {
    }
 }
 
-vec3 sample_light(int i, vec3 pos, vec3 normal, out vec3 dir, out float dist) {
-   return sample_point_light(point_lights[i], pos, normal, dir, dist);
+vec3 sample_light(int index, vec3 pos, vec3 normal, out vec3 dir, out float dist) {
+   if (index < point_light_count) {
+      return sample_point_light(point_lights[index], pos, normal, dir, dist);
+   }
+   index -= point_light_count;
+   if (index < spot_light_count) {
+      return sample_spot_light(spot_lights[index], pos, normal, dir, dist);
+   }
 }
 

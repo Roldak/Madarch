@@ -55,8 +55,12 @@ procedure Main is
    Cam_Pos         : Singles.Vector3 := (1.0, 2.0, -4.0);
 
    All_Lights : Lights.Light_Array :=
-     (1 => (Lights.Point, (0.9, 0.9, 0.8), (4.0, 2.0, 0.0)),
-      2 => (Lights.Point, (0.1, 0.9, 0.1), (1.0, 3.0, 1.0)));
+     ((Lights.Point, (0.9, 0.9, 0.8), (4.0, 2.0, 0.0)),
+      (Kind     => Lights.Spot,
+       Light_Color => (0.9, 0.9, 0.8),
+       Spot_Light_Pos => (3.5, 4.0, 2.0),
+       Spot_Light_Dir => (0.0, -1.0, 0.0),
+       Spot_Light_Aperture => 0.5));
 
    Light : Lights.Light renames All_Lights (1);
 
@@ -330,6 +334,7 @@ procedure Main is
    Max_Plane_Count       : constant Size := 40;
    Max_Cube_Count        : constant Size := 40;
    Max_Point_Light_Count : constant Size := 4;
+   Max_Spot_Light_Count  : constant Size := 4;
 
    procedure Update_Scene_Primitives
      (Prims : Primitives.Primitive_Array)
@@ -376,8 +381,6 @@ procedure Main is
          Cube_Count := Cube_Count + 1;
       end Write_Cube;
    begin
-      W.Write_Int (Int (Prims'Length));
-
       for Prim of Prims loop
          case Prim.Kind is
             when Primitives.Sphere =>
@@ -399,15 +402,61 @@ procedure Main is
 
    procedure Update_Scene_Lights (Lits : Lights.Light_Array) is
       W : UBOs.Writer := UBOs.Start (Scene_UBO);
-   begin
-      W.Seek (16 * 3 + 32 * (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count));
-      W.Write_Int (Lits'Length);
 
-      for L of Lits loop
-         W.Pad (16);
+      Point_Light_Count : Size := 0;
+      Spot_Light_Count : Size := 0;
+
+      procedure Write_Point_Light (L : Lights.Light) is
+      begin
+         W.Seek
+           (16 + Max_Sphere_Count * 32 +
+            16 + Max_Plane_Count * 32 +
+            16 + Max_Cube_Count * 32 +
+            16 + Point_Light_Count * 32);
+
          W.Write_Vec3 (L.Point_Light_Pos);
          W.Write_Vec3 (L.Light_Color);
+
+         Point_Light_Count := Point_Light_Count + 1;
+      end Write_Point_Light;
+
+      procedure Write_Spot_Light (L : Lights.Light) is
+      begin
+         W.Seek
+           (16 + Max_Sphere_Count * 32 +
+            16 + Max_Plane_Count * 32 +
+            16 + Max_Cube_Count * 32 +
+            16 + Max_Point_Light_Count * 32 +
+            16 + Spot_Light_Count * 48);
+
+         W.Write_Vec3  (L.Spot_Light_Pos);
+         W.Write_Vec3  (L.Spot_Light_Dir);
+         W.Write_Float (L.Spot_Light_Aperture);
+         W.Write_Vec3  (L.Light_Color);
+
+         Spot_Light_Count := Spot_Light_Count + 1;
+      end Write_Spot_Light;
+   begin
+      for L of Lits loop
+         case L.Kind is
+            when Lights.Point =>
+               Write_Point_Light (L);
+            when Lights.Spot =>
+               Write_Spot_Light (L);
+         end case;
       end loop;
+
+      W.Seek (16 * 3 + 32 * (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count));
+      W.Write_Int (Int (Point_Light_Count));
+
+      W.Seek (16 * 4 + 32 * (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count +
+                             Max_Point_Light_Count));
+      W.Write_Int (Int (Spot_Light_Count));
+
+      W.Seek (16 * 5 + 32 * (Max_Sphere_Count + Max_Plane_Count + Max_Cube_Count +
+                             Max_Point_Light_Count)
+                     + 48 * (Max_Spot_Light_Count));
+      W.Write_Int (Int (Lits'Length));
    end Update_Scene_Lights;
 
    Materials_UBO : UBOs.UBO;
@@ -436,7 +485,9 @@ procedure Main is
       Create_Macro_Definition ("M_MAX_PLANE_COUNT", Max_Plane_Count'Image),
       Create_Macro_Definition ("M_MAX_CUBE_COUNT", Max_Cube_Count'Image),
       Create_Macro_Definition
-        ("M_MAX_POINT_LIGHT_COUNT", Max_Point_Light_Count'Image));
+        ("M_MAX_POINT_LIGHT_COUNT", Max_Point_Light_Count'Image),
+      Create_Macro_Definition
+        ("M_MAX_SPOT_LIGHT_COUNT", Max_Spot_Light_Count'Image));
 
    Probe_Render_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "0"),
@@ -471,7 +522,7 @@ procedure Main is
    Mat_Descr : Materials.Material_Array :=
       (((0.1, 0.1, 0.1), 0.9, 0.1),
        ((0.0, 1.0, 0.0), 0.8, 0.3),
-       ((0.0, 0.0, 0.0), 0.0, 0.1),
+       ((0.0, 0.0, 0.0), 0.0, 0.6),
        ((1.0, 0.0, 0.0), 0.0, 0.6),
        ((0.0, 0.0, 1.0), 0.0, 0.6));
 
@@ -510,12 +561,12 @@ begin
    -- setup scene
    Scene_UBO := UBOs.Create
      (1,
-      16 * 4 + 32 * Long (Max_Sphere_Count + Max_Plane_Count +
-                          Max_Cube_Count + Max_Point_Light_Count));
+      16 * 6 + 32 * Long (Max_Sphere_Count + Max_Plane_Count +
+                          Max_Cube_Count + Max_Point_Light_Count)
+             + 48 * Long (Max_Spot_Light_Count));
 
    Update_Scene_Primitives (Scene_Descr.all);
    Update_Scene_Lights (All_Lights);
-
 
    -- setup materials
    Materials_UBO := UBOs.Create (2, 16 + 32 * 20);
