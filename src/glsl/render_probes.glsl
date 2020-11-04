@@ -68,7 +68,7 @@ vec3 sample_irradiance(vec3 pos, vec3 normal) {
    return irradiance;
 }
 
-vec3 sample_radiance(vec3 pos, vec3 normal, vec3 dir, float roughness) {
+vec3 sample_radiance_with_specular(vec3 pos, vec3 normal, vec3 dir, float roughness) {
    vec3 spec_pos;
    vec3 from = pos + normal * min_step_size * 5.0;
    if (!raycast_hit_position(from, dir, max_dist, spec_pos)) {
@@ -135,6 +135,71 @@ vec3 sample_radiance(vec3 pos, vec3 normal, vec3 dir, float roughness) {
    return radiance;
 }
 
+vec3 sample_radiance_no_specular(vec3 pos, vec3 normal, vec3 dir, float roughness) {
+   int prim_index;
+   vec3 spec_pos;
+   vec3 from = pos + normal * min_step_size * 5.0;
+   if (!raycast(from, dir, prim_index, spec_pos)) {
+      return vec3(0);
+   }
+
+   vec3 spec_normal;
+   int spec_material_id;
+   primitive_info (spec_pos, prim_index, spec_normal, spec_material_id);
+
+   ivec3 grid_position = world_position_to_grid_position(spec_pos);
+
+   float max_weight = -2.0f;
+   ivec3 best_offseted;
+   vec3 best_probe_to_spec;
+
+   for (int i = 0; i < 8; ++i) {
+      ivec3 offset = ivec3(i, i >> 1, i >> 2) & ivec3(1);
+
+      ivec3 offseted = clamp(
+         grid_position + offset,
+         ivec3(0),
+         ivec3(grid_dimensions) - ivec3(1)
+      );
+
+      vec3 probe_pos = grid_position_to_world_position(offseted);
+      vec3 probe_to_spec = spec_pos - probe_pos;
+      float distance = length(probe_to_spec);
+      probe_to_spec /= distance;
+
+      float weight = dot(probe_to_spec, -spec_normal);
+
+      // visibility test
+      weight *= raycast_visibility(
+         spec_pos + spec_normal * min_step_size * 5.0,
+         -probe_to_spec,
+         distance - min_step_size * 5.0
+      );
+
+      //vec3 trilinear = mix(1.0 - alpha, alpha, offset);
+      //weight *= trilinear.x * trilinear.y * trilinear.z;
+
+      if (weight > max_weight) {
+         max_weight = weight;
+         best_offseted = offseted;
+         best_probe_to_spec = probe_to_spec;
+      }
+   }
+
+   // retrieve radiance
+   int probe_id = grid_position_to_probe_id(best_offseted);
+   vec2 rad_base_coord = probe_id_to_coord(probe_id);
+
+   vec2 rad_ray_dir_id = clamp(
+      ray_dir_to_ray_id(best_probe_to_spec),
+      rad_min_coord,
+      rad_max_coord
+   );
+   vec2 rad_coord = rad_base_coord + rad_ray_dir_id / probe_count;
+
+   return textureLod(radiance_data, rad_coord, 1.0).rgb;
+}
+
 vec3 pixel_color_probes(vec3 from, vec3 dir) {
    vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
 
@@ -154,12 +219,16 @@ vec3 pixel_color_probes(vec3 from, vec3 dir) {
       vec3 specular_col = vec3(0);
       vec3 specular_dir = reflect(dir, normal);
 
-#if M_COMPUTE_INDIRECT_SPECULAR == 1
+#if M_COMPUTE_INDIRECT_SPECULAR > 0
       if (roughness < 0.75) {
-         specular_col = sample_radiance(pos, normal, specular_dir, roughness);
+#if M_COMPUTE_INDIRECT_SPECULAR == 1
+         specular_col = sample_radiance_with_specular(pos, normal, specular_dir, roughness);
+#else
+         specular_col = sample_radiance_no_specular(pos, normal, specular_dir, roughness);
+#endif
       }
 #endif
-#
+
       vec3 indirect = compute_indirect_lighting(
          irradiance, specular_col,
          -dir, normal, specular_dir,
