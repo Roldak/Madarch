@@ -208,9 +208,42 @@ vec3 sample_radiance_no_specular(vec3 pos, vec3 normal, vec3 dir, float roughnes
    return radiance;
 }
 
-vec3 pixel_color_probes(vec3 from, vec3 dir) {
-   vec3 background_color = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
+vec3 compute_indirect_specular(vec3 pos, vec3 normal, vec3 dir, float roughness) {
+   int prim_index;
+   vec3 spec_pos;
+   vec3 from = pos + normal * min_step_size * 5.0;
 
+   if (!raycast(from, dir, prim_index, spec_pos)) {
+      return vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
+   }
+
+   vec3 spec_normal;
+   int spec_material_id;
+   primitive_info (prim_index, spec_pos, spec_normal, spec_material_id);
+   vec3 spec_albedo = materials[spec_material_id].albedo;
+   float spec_metallic = materials[spec_material_id].metallic;
+   float spec_roughness = materials[spec_material_id].roughness;
+
+   vec3 direct = compute_direct_lighting(
+      spec_pos, spec_normal, dir,
+      spec_albedo, spec_metallic, spec_roughness
+   );
+
+   vec3 irradiance = sample_irradiance(spec_pos, spec_normal);
+
+   vec3 specular_col = vec3(0);
+   vec3 specular_dir = reflect(dir, spec_normal);
+
+   vec3 indirect = compute_indirect_lighting(
+      irradiance, specular_col,
+      -dir, spec_normal, specular_dir,
+      spec_albedo, spec_metallic, spec_roughness
+   );
+
+   return indirect + direct;
+}
+
+vec3 pixel_color_probes(vec3 from, vec3 dir) {
    int prim_index;
    vec3 pos;
    if (raycast(from, dir, prim_index, pos)) {
@@ -231,8 +264,10 @@ vec3 pixel_color_probes(vec3 from, vec3 dir) {
       if (roughness < 0.75) {
 #if M_COMPUTE_INDIRECT_SPECULAR == 1
          specular_col = sample_radiance_with_specular(pos, normal, specular_dir, roughness);
-#else
+#elif M_COMPUTE_INDIRECT_SPECULAR == 2
          specular_col = sample_radiance_no_specular(pos, normal, specular_dir, roughness);
+#else
+         specular_col = compute_indirect_specular(pos, normal, specular_dir, roughness);
 #endif
       }
 #endif
@@ -246,6 +281,6 @@ vec3 pixel_color_probes(vec3 from, vec3 dir) {
       return indirect + direct;
    }
 
-   return background_color;
+   return vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
 }
 
