@@ -498,7 +498,8 @@ procedure Main is
 
    Render_Macros : Macro_Definition_Array :=
      (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "1"),
-      Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "2"));
+      Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "2"),
+      Create_Macro_Definition ("M_ADD_INDIRECT_SPECULAR", "1"));
 
    FPS_Clock : Ada.Calendar.Time;
 

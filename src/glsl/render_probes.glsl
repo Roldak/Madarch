@@ -194,7 +194,18 @@ vec3 sample_radiance_no_specular(vec3 pos, vec3 normal, vec3 dir, float roughnes
    );
    vec2 rad_coord = rad_base_coord + rad_ray_dir_id / probe_count;
 
-   return textureLod(radiance_data, rad_coord, 1.0).rgb;
+   vec3 radiance = textureLod(radiance_data, rad_coord, 1.0).rgb;
+
+#if M_ADD_INDIRECT_SPECULAR == 1
+   float spec_metallic = materials[spec_material_id].metallic;
+   float spec_roughness = materials[spec_material_id].roughness;
+   radiance += compute_direct_lighting(
+      spec_pos, spec_normal, dir,
+      vec3(0), spec_metallic, spec_roughness
+   );
+#endif
+
+   return radiance;
 }
 
 vec3 pixel_color_probes(vec3 from, vec3 dir) {
