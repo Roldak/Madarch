@@ -62,7 +62,8 @@ procedure Main is
        Spot_Light_Dir => (1.0, 0.0, 0.0),
        Spot_Light_Aperture => 3.1415 / 4.0));
 
-   Light : Lights.Light renames All_Lights (1);
+   Controlled_Light : Lights.Light renames All_Lights (1);
+   Spot_Light : Lights.Light renames All_Lights (2);
 
    function Handle_Events return Boolean is
    begin
@@ -83,15 +84,19 @@ procedure Main is
       end if;
 
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.K) then
-         Light.Point_Light_Pos (Z) := Light.Point_Light_Pos (Z) - 0.1;
+         Controlled_Light.Point_Light_Pos (Z) :=
+            Controlled_Light.Point_Light_Pos (Z) - 0.1;
       elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.I) then
-         Light.Point_Light_Pos (Z) := Light.Point_Light_Pos (Z) + 0.1;
+         Controlled_Light.Point_Light_Pos (Z) :=
+            Controlled_Light.Point_Light_Pos (Z) + 0.1;
       end if;
 
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.J) then
-         Light.Point_Light_Pos (X) := Light.Point_Light_Pos (X) - 0.1;
+         Controlled_Light.Point_Light_Pos (X) :=
+            Controlled_Light.Point_Light_Pos (X) - 0.1;
       elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.L) then
-         Light.Point_Light_Pos (X) := Light.Point_Light_Pos (X) + 0.1;
+         Controlled_Light.Point_Light_Pos (X) :=
+            Controlled_Light.Point_Light_Pos (X) + 0.1;
       end if;
 
       return False;
@@ -288,8 +293,6 @@ procedure Main is
    procedure Draw_Image is
       use GL.Objects.Textures.Targets;
    begin
-      Time := Time + 0.01;
-
       Image_Program.Use_Program;
       GL.Uniforms.Set_Single (Time_Uniform, Time);
       GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);
@@ -581,6 +584,12 @@ begin
       exit when Handle_Events;
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Space) then
          FPS_Clock := Ada.Calendar.Clock;
+
+         Time := Time + 0.01;
+         Spot_Light.Spot_Light_Dir :=
+           (Single_Elementaries.Cos (Time),
+            Single_Elementaries.Sin (Time),
+            0.0);
 
          Update_Scene_Lights (All_Lights);
          Compute_Radiance;
