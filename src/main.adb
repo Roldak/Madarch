@@ -58,9 +58,9 @@ procedure Main is
      ((Lights.Point, (0.9, 0.9, 0.8), (4.0, 2.0, 0.0)),
       (Kind     => Lights.Spot,
        Light_Color => (0.9, 0.9, 0.8),
-       Spot_Light_Pos => (3.5, 4.0, 2.0),
-       Spot_Light_Dir => (0.0, -1.0, 0.0),
-       Spot_Light_Aperture => 0.5));
+       Spot_Light_Pos => (3.5, 5.0, 2.0),
+       Spot_Light_Dir => (1.0, 0.0, 0.0),
+       Spot_Light_Aperture => 3.1415 / 4.0));
 
    Light : Lights.Light renames All_Lights (1);
 

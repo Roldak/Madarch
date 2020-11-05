@@ -91,7 +91,10 @@ vec3 sample_spot_light(SpotLight l, vec3 pos, vec3 normal,
    dir /= dist;
 
    float attenuation = 1.0 / (dist * dist * 0.03);
-   float visible = float(dot(-dir, l.direction) > 0.5);
+   float cos_theta = max(dot(-dir, l.direction), 0.0);
+   float theta = acos(cos_theta);
+   float ratio = clamp(theta / l.aperture, 0.0, 1.0);
+   float visible = 1.0 - pow(ratio, 8.0);
 
    return l.color * min(attenuation, 1.5) * visible;
 }
