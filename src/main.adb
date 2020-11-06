@@ -41,6 +41,8 @@ procedure Main is
    use GL.Fixed.Matrix;
    use GL.Immediate;
 
+   use GPU_Types;
+
    procedure Draw_Fullscreen_Quad is
       Token : Input_Token := Start (Quads);
    begin
@@ -313,28 +315,30 @@ procedure Main is
 
    Probes_UBO : UBOs.UBO;
 
-   Probes_Layout_Type : GPU_Types.Structs.Struct := GPU_Types.Structs.Create
-     ((GPU_Types.Base.IVec_2, GPU_Types.Base.IVec_3, GPU_Types.Base.Vec_3));
+   Probes_Layout_Type : Structs.Struct := Structs.Create
+     ((Base.IVec_2.Named ("probe_count"),
+       Base.IVec_3.Named ("grid_dimensions"),
+       Base.Vec_3.Named ("grid_spacing")));
 
    procedure Setup_Probe_Layout (X, Y, Z : Int; SX, SY, SZ : Single) is
       W : UBOs.Writer := UBOs.Start (Probes_UBO);
 
-      L : GPU_Types.Locations.Location := Probes_Layout_Type.Address;
+      L : Locations.Location := Probes_Layout_Type.Address;
    begin
       if X * Y * Z /= Probe_Count_X * Probe_Count_Y then
          raise Program_Error with "Probe_Count should match grid dimensions.";
       end if;
 
-      L.Component (1).Adjust (W);
+      L.Component ("probe_count").Adjust (W);
       W.Write_Int (Probe_Count_X);
       W.Write_Int (Probe_Count_Y);
 
-      L.Component (2).Adjust (W);
+      L.Component ("grid_dimensions").Adjust (W);
       W.Write_Int (X);
       W.Write_Int (Y);
       W.Write_Int (Z);
 
-      L.Component (3).Adjust (W);
+      L.Component ("grid_spacing").Adjust (W);
       W.Write_Float (SX);
       W.Write_Float (SY);
       W.Write_Float (SZ);
@@ -342,53 +346,63 @@ procedure Main is
 
    Scene_UBO  : UBOs.UBO;
 
-   Max_Sphere_Count      : constant Size := 40;
-   Max_Plane_Count       : constant Size := 40;
-   Max_Cube_Count        : constant Size := 40;
-   Max_Point_Light_Count : constant Size := 4;
-   Max_Spot_Light_Count  : constant Size := 4;
+   Max_Sphere_Count      : constant Types.Size := 40;
+   Max_Plane_Count       : constant Types.Size := 40;
+   Max_Cube_Count        : constant Types.Size := 40;
+   Max_Point_Light_Count : constant Types.Size := 4;
+   Max_Spot_Light_Count  : constant Types.Size := 4;
 
-   Primitive_Type : aliased constant GPU_Types.Structs.Struct :=
-      GPU_Types.Structs.Create
-        ((GPU_Types.Base.Vec_3, GPU_Types.Base.Float,
-          GPU_Types.Base.Int));
+   Primitive_Type : aliased constant Structs.Struct :=
+      Structs.Create
+        ((Base.Vec_3.Named ("f_vec3"), Base.Float.Named ("f_float"),
+          Base.Int.Named ("material_id")));
 
-   Point_Light_Type : aliased constant GPU_Types.Structs.Struct :=
-      GPU_Types.Structs.Create
-        ((GPU_Types.Base.Vec_3, GPU_Types.Base.Vec_3));
+   Point_Light_Type : aliased constant Structs.Struct :=
+      Structs.Create
+        ((Base.Vec_3.Named ("position"), Base.Vec_3.Named ("color")));
 
-   Spot_Light_Type : aliased constant GPU_Types.Structs.Struct :=
-      GPU_Types.Structs.Create
-        ((GPU_Types.Base.Vec_3, GPU_Types.Base.Vec_3,
-          GPU_Types.Base.Float, GPU_Types.Base.Vec_3));
+   Spot_Light_Type : aliased constant Structs.Struct :=
+      Structs.Create
+        ((Base.Vec_3.Named ("position"), Base.Vec_3.Named ("direction"),
+          Base.Float.Named ("aperture"), Base.Vec_3.Named ("color")));
 
-   Primitive_Sphere_Array_Type : aliased constant GPU_Types.Fixed_Arrays.Fixed_Array :=
-      GPU_Types.Fixed_Arrays.Create
+   Primitive_Sphere_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+      Fixed_Arrays.Create
         (Max_Sphere_Count, Primitive_Type'Unchecked_Access);
 
-   Primitive_Plane_Array_Type : aliased constant GPU_Types.Fixed_Arrays.Fixed_Array :=
-      GPU_Types.Fixed_Arrays.Create
+   Primitive_Plane_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+      Fixed_Arrays.Create
         (Max_Plane_Count, Primitive_Type'Unchecked_Access);
 
-   Primitive_Cube_Array_Type : aliased constant GPU_Types.Fixed_Arrays.Fixed_Array :=
-      GPU_Types.Fixed_Arrays.Create
+   Primitive_Cube_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+      Fixed_Arrays.Create
         (Max_Cube_Count, Primitive_Type'Unchecked_Access);
 
-   Point_Light_Array_Type : aliased constant GPU_Types.Fixed_Arrays.Fixed_Array :=
-      GPU_Types.Fixed_Arrays.Create
+   Point_Light_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+      Fixed_Arrays.Create
         (Max_Point_Light_Count, Point_Light_Type'Unchecked_Access);
 
-   Spot_Light_Array_Type : aliased constant GPU_Types.Fixed_Arrays.Fixed_Array :=
-      GPU_Types.Fixed_Arrays.Create
+   Spot_Light_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+      Fixed_Arrays.Create
         (Max_Spot_Light_Count, Spot_Light_Type'Unchecked_Access);
 
-   Scene_Description_Type : GPU_Types.Structs.Struct := GPU_Types.Structs.Create
-     ((GPU_Types.Base.Int, Primitive_Sphere_Array_Type'Unchecked_Access,
-       GPU_Types.Base.Int, Primitive_Plane_Array_Type'Unchecked_Access,
-       GPU_Types.Base.Int, Primitive_Cube_Array_Type'Unchecked_Access,
-       GPU_Types.Base.Int, Point_Light_Array_Type'Unchecked_Access,
-       GPU_Types.Base.Int, Spot_Light_Array_Type'Unchecked_Access,
-       GPU_Types.Base.Int));
+   Scene_Description_Type : Structs.Struct := Structs.Create
+     ((Base.Int.Named ("prim_sphere_count"),
+       Primitive_Sphere_Array_Type.Named ("prim_spheres"),
+
+       Base.Int.Named ("prim_plane_count"),
+       Primitive_Plane_Array_Type.Named ("prim_planes"),
+
+       Base.Int.Named ("prim_cube_count"),
+       Primitive_Cube_Array_Type.Named ("prim_cubes"),
+
+       Base.Int.Named ("point_light_count"),
+       Point_Light_Array_Type.Named ("point_lights"),
+
+       Base.Int.Named ("spot_light_count"),
+       Spot_Light_Array_Type.Named ("spot_lights"),
+
+       Base.Int.Named ("light_count")));
 
    procedure Update_Scene_Primitives
      (Prims : Primitives.Primitive_Array)
@@ -399,11 +413,11 @@ procedure Main is
       Plane_Index  : Positive := 1;
       Cube_Index   : Positive := 1;
 
-      L : GPU_Types.Locations.Location := Scene_Description_Type.Address;
+      L : Locations.Location := Scene_Description_Type.Address;
 
       procedure Write_Sphere (X : Primitives.Primitive) is
       begin
-         L.Component (2).Component (Sphere_Index).Adjust (W);
+         L.Component ("prim_spheres").Component (Sphere_Index).Adjust (W);
 
          W.Write_Vec3 (X.Sphere_Center);
          W.Write_Float (X.Sphere_Radius);
@@ -413,7 +427,7 @@ procedure Main is
 
       procedure Write_Plane (X : Primitives.Primitive) is
       begin
-         L.Component (4).Component (Plane_Index).Adjust (W);
+         L.Component ("prim_planes").Component (Plane_Index).Adjust (W);
 
          W.Write_Vec3 (X.Plane_Normal);
          W.Write_Float (X.Plane_Offset);
@@ -423,7 +437,7 @@ procedure Main is
 
       procedure Write_Cube (X : Primitives.Primitive) is
       begin
-         L.Component (6).Component (Cube_Index).Adjust (W);
+         L.Component ("prim_cubes").Component (Cube_Index).Adjust (W);
 
          W.Write_Vec3 (X.Cube_Center);
          W.Write_Float (X.Cube_Side);
@@ -442,13 +456,13 @@ procedure Main is
          end case;
       end loop;
 
-      L.Component (1).Adjust (W);
+      L.Component ("prim_sphere_count").Adjust (W);
       W.Write_Int (Int (Sphere_Index) - 1);
 
-      L.Component (3).Adjust (W);
+      L.Component ("prim_plane_count").Adjust (W);
       W.Write_Int (Int (Plane_Index) - 1);
 
-      L.Component (5).Adjust (W);
+      L.Component ("prim_cube_count").Adjust (W);
       W.Write_Int (Int (Cube_Index) - 1);
    end Update_Scene_Primitives;
 
@@ -458,11 +472,11 @@ procedure Main is
       Point_Light_Index : Positive := 1;
       Spot_Light_Index  : Positive := 1;
 
-      L : GPU_Types.Locations.Location := Scene_Description_Type.Address;
+      L : Locations.Location := Scene_Description_Type.Address;
 
       procedure Write_Point_Light (X : Lights.Light) is
       begin
-         L.Component (8).Component (Point_Light_Index).Adjust (W);
+         L.Component ("point_lights").Component (Point_Light_Index).Adjust (W);
 
          W.Write_Vec3 (X.Point_Light_Pos);
          W.Write_Vec3 (X.Light_Color);
@@ -472,7 +486,7 @@ procedure Main is
 
       procedure Write_Spot_Light (X : Lights.Light) is
       begin
-         L.Component (10).Component (Spot_Light_Index).Adjust (W);
+         L.Component ("spot_lights").Component (Spot_Light_Index).Adjust (W);
 
          W.Write_Vec3  (X.Spot_Light_Pos);
          W.Write_Vec3  (X.Spot_Light_Dir);
@@ -491,44 +505,47 @@ procedure Main is
          end case;
       end loop;
 
-      L.Component (7).Adjust (W);
+      L.Component ("point_light_count").Adjust (W);
       W.Write_Int (Int (Point_Light_Index) - 1);
 
-      L.Component (9).Adjust (W);
+      L.Component ("spot_light_count").Adjust (W);
       W.Write_Int (Int (Spot_Light_Index) - 1);
 
-      L.Component (11).Adjust (W);
+      L.Component ("light_count").Adjust (W);
       W.Write_Int (Int (Lits'Length));
    end Update_Scene_Lights;
 
-   Max_Material_Count    : constant Size := 20;
+   Max_Material_Count : constant Types.Size := 20;
 
    Materials_UBO : UBOs.UBO;
 
-   Material_Type : aliased constant GPU_Types.Structs.Struct :=
-      GPU_Types.Structs.Create
-        ((GPU_Types.Base.Vec_3, GPU_Types.Base.Float, GPU_Types.Base.Float));
+   Material_Type : aliased constant Structs.Struct :=
+      Structs.Create
+        ((Base.Vec_3.Named ("albedo"),
+          Base.Float.Named ("metallic"),
+          Base.Float.Named ("roughness")));
 
-   Material_Array_Type : aliased constant GPU_Types.Fixed_Arrays.Fixed_Array :=
-      GPU_Types.Fixed_Arrays.Create
+   Material_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+      Fixed_Arrays.Create
         (Max_Material_Count, Material_Type'Unchecked_Access);
 
-   Materials_Description_Type : GPU_Types.Structs.Struct :=
-      GPU_Types.Structs.Create
-        ((GPU_Types.Base.Int, Material_Array_Type'Unchecked_Access));
+   Materials_Description_Type : Structs.Struct :=
+      Structs.Create
+        ((Base.Int.Named ("material_count"),
+          Material_Array_Type.Named ("materials")));
 
    procedure Update_Materials_Description
      (Mats : Materials.Material_Array)
    is
       W : UBOs.Writer := UBOs.Start (Materials_UBO);
 
-      L : GPU_Types.Locations.Location := Materials_Description_Type.Address;
+      L : Locations.Location := Materials_Description_Type.Address;
    begin
-      L.Component (1).Adjust (W);
+      L.Component ("material_count").Adjust (W);
       W.Write_Int (Int (Mats'Length));
 
       for I in Mats'Range loop
-         L.Component (2).Component (I).Adjust (W);
+         L.Component ("materials").Component (I).Adjust (W);
          W.Write_Vec3 (Mats (I).Albedo);
          W.Write_Float (Mats (I).Metallic);
          W.Write_Float (Mats (I).Roughness);
@@ -656,8 +673,8 @@ begin
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Q) then
          if not Q_Pressed then
             Mat_Descr (4).Albedo (X) := 1.0 - Mat_Descr (4).Albedo (X);
+            -- Mat_Descr (1).Roughness := Mat_Descr (1).Roughness + 0.1;
             Update_Materials_Description (Mat_Descr);
-            Add_Sphere;
          end if;
          Q_Pressed := True;
       else

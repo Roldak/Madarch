@@ -1,8 +1,11 @@
+with GNATCOLL.Strings;
+
 with GL.Types;
 with UBOs;
 
 package GPU_Types is
    use GL;
+   use GNATCOLL.Strings;
 
    type GPU_Type;
    type GPU_Type_Access is access constant GPU_Type'Class;
@@ -18,6 +21,16 @@ package GPU_Types is
    function Allocate
      (X : GPU_Type'Class; Binding : Types.UInt) return UBOs.UBO;
 
+   type Named_Component is record
+      Name : XString;
+      Typ  : GPU_Type_Access;
+   end record;
+
+   type Named_Component_Array is array (Positive range <>) of Named_Component;
+
+   function Named
+     (Self : aliased GPU_Type; Name : String) return Named_Component;
+
    package Locations is
       type Location is tagged record
          Offset : Types.Size;
@@ -25,6 +38,8 @@ package GPU_Types is
       end record;
 
       function Component (Self : Location; Index : Positive) return Location;
+      function Component (Self : Location; Name  : String) return Location;
+
       procedure Adjust (Self : Location; W : in out UBOs.Writer);
    end Locations;
 
@@ -33,6 +48,9 @@ package GPU_Types is
 
    function Component_Location
      (Self : GPU_Type; Component_Index : Positive) return Locations.Location;
+
+   function Component_Location
+     (Self : GPU_Type; Component_Name : String) return Locations.Location;
 private
    type GPU_Type is abstract tagged null record;
 

@@ -5,13 +5,14 @@ package GPU_Types.Structs is
    overriding function Size (X : Struct) return Types.Size;
 
    function Create
-     (Component_Types : GPU_Type_Array) return Struct;
+     (Named_Components : Named_Component_Array) return Struct;
 
    overriding function Component_Location
-     (Self : Struct; Index : Positive) return Locations.Location;
+     (Self : Struct; Name : String) return Locations.Location;
 private
+   type Named_Component_Array_Access is access Named_Component_Array;
 
    type Struct is new GPU_Type with record
-      Components : GPU_Type_Array_Access;
+      Components : Named_Component_Array_Access;
    end record;
 end GPU_Types.Structs;
