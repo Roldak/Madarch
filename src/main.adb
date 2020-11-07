@@ -31,6 +31,7 @@ with UBOs;
 with GPU_Types.Base;
 with GPU_Types.Structs;
 with GPU_Types.Fixed_Arrays;
+with Meshes.Obj_Loader;
 
 procedure Main is
    use GNATCOLL;
@@ -604,6 +605,9 @@ procedure Main is
        ((0.0, 0.0, 1.0), 0.0, 0.6));
 
    Q_Pressed : Boolean := False;
+
+   Suzanne_Mesh : Meshes.Mesh :=
+      Meshes.Obj_Loader.Load_Obj_File ("media/suzanne.obj");
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
