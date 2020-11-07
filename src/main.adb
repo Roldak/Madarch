@@ -608,6 +608,8 @@ procedure Main is
 
    Suzanne_Mesh : Meshes.Mesh :=
       Meshes.Obj_Loader.Load_Obj_File ("media/suzanne.obj");
+   Suzanne_BB   : Meshes.Bounding_Box :=
+      Meshes.Compute_Bounding_Box (Suzanne_Mesh);
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");

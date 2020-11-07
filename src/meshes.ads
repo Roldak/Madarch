@@ -7,6 +7,12 @@ package Meshes is
 
    type Mesh is private;
 
+   type Bounding_Box is record
+      From, To : Singles.Vector3;
+   end record;
+
+   function Compute_Bounding_Box (M : Mesh) return Bounding_Box;
+
 private
    package Vec3_Vectors is new Ada.Containers.Vectors
      (Positive, Singles.Vector3, Singles."=");
