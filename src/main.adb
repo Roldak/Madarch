@@ -33,6 +33,7 @@ with GPU_Types.Structs;
 with GPU_Types.Fixed_Arrays;
 with Meshes.Obj_Loader;
 with Meshes.Voxels;
+with Meshes.Distance_Maps;
 
 procedure Main is
    use GNATCOLL;
@@ -613,6 +614,9 @@ procedure Main is
       Meshes.Compute_Bounding_Box (Suzanne_Mesh);
    Suzanne_Voxels : Meshes.Voxels.Voxelization :=
       Meshes.Voxels.Voxelize (Suzanne_Mesh, Suzanne_BB, (50, 50, 50));
+   Suzanne_DT : Meshes.Distance_Maps.Distance_Map :=
+      Meshes.Distance_Maps.Build
+        (Suzanne_Voxels, Meshes.Distance_Maps.Danielsson);
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
