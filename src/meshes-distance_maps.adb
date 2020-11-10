@@ -1,6 +1,11 @@
+with Ada.Numerics.Elementary_Functions; use Ada.Numerics.Elementary_Functions;
+with Ada.Text_IO;
+
 with GL.Objects.Textures.Targets;
 with GL.Pixels;
 with GL.Vectors;
+
+with Math_Utils; use Math_Utils;
 
 package body Meshes.Distance_Maps is
    use GL;
@@ -147,6 +152,151 @@ package body Meshes.Distance_Maps is
             return Build_Danielsson (Input);
       end case;
    end Build_From_Voxelization;
+
+   function Build_From_Mesh
+     (Input  : Mesh;
+      Bounds : Bounding_Box;
+      Res_X, Res_Y, Res_Z : Natural) return Distance_Map
+   is
+      Normalization : Singles.Vector3 :=
+        (Single (Res_X),
+         Single (Res_Y),
+         Single (Res_Z));
+
+      function Rebased (X, Y, Z : Positive) return Singles.Vector3 is
+         R : Singles.Vector3 :=
+           (Single (X), Single (Y), Single (Z));
+      begin
+         for C in GL.X .. GL.Z loop
+            -- [1 .. Res_C] => [0 .. 1]
+            R (C) := (R (C) - 1.0) / (Normalization (C) - 1.0);
+         end loop;
+         return R;
+      end Rebased;
+
+      function Rescaled (X : Singles.Vector3) return Singles.Vector3 is
+         R : Singles.Vector3;
+      begin
+         for C in GL.X .. GL.Z loop
+            -- [From .. To] => [0 .. 1]
+            R (C) := (X (C) - Bounds.From (C)) / (Bounds.To (C) - Bounds.From (C));
+         end loop;
+         return R;
+      end Rescaled;
+
+      function Intersects_Triangle
+        (From, Dir : Singles.Vector3; T : Triangle) return Boolean
+      is
+         -- pragma Suppress (All_Checks);
+         use type Singles.Vector3;
+
+         V1 : Singles.Vector3 := Rescaled (Input.Vertices (T.A.Vertex_Index));
+         V2 : Singles.Vector3 := Rescaled (Input.Vertices (T.B.Vertex_Index));
+         V3 : Singles.Vector3 := Rescaled (Input.Vertices (T.C.Vertex_Index));
+
+         V12 : Singles.Vector3 := V2 - V1;
+         V13 : Singles.Vector3 := V3 - V1;
+
+         OV1 : Singles.Vector3 := From - V1;
+
+         N : Singles.Vector3 := Cross (V12, V13);
+         Q : Singles.Vector3 := Cross (OV1, Dir);
+
+         D : Single := 1.0 / Dot (Dir, N);
+         U : Single := D * Dot (-Q, V13);
+         V : Single := D * Dot ( Q, V12);
+         K : Single := D * Dot (-N, OV1);
+      begin
+         return K >= 0.0 and U >= 0.0 and V >= 0.0 and U + V <= 1.0;
+      end Intersects_Triangle;
+
+      function Squared_Dist_To_Triangle
+        (P : Singles.Vector3; T : Triangle) return Single
+      is
+         pragma Suppress (All_Checks);
+
+         use type Singles.Vector3;
+
+         V1 : Singles.Vector3 := Rescaled (Input.Vertices (T.A.Vertex_Index));
+         V2 : Singles.Vector3 := Rescaled (Input.Vertices (T.B.Vertex_Index));
+         V3 : Singles.Vector3 := Rescaled (Input.Vertices (T.C.Vertex_Index));
+
+         V21 : Singles.Vector3 := V2 - V1;
+         V32 : Singles.Vector3 := V3 - v2;
+         V13 : Singles.Vector3 := V1 - V3;
+
+         P1 : Singles.Vector3 := P - V1;
+         P2 : Singles.Vector3 := P - V2;
+         P3 : Singles.Vector3 := P - V3;
+
+         Normal : Singles.Vector3 := Singles.Cross_Product (V21, V13);
+
+         C1 : Single := Sign (Dot (Cross (V21, Normal), P1));
+         C2 : Single := Sign (Dot (Cross (V32, Normal), P2));
+         C3 : Single := Sign (Dot (Cross (V13, Normal), P3));
+      begin
+         if C1 + C2 + C3 < 2.0 then
+            declare
+               D1 : Single :=
+                  Dot2 (V21 * Saturate (Dot (V21, P1) / Dot2 (V21)) - P1);
+               D2 : Single :=
+                  Dot2 (V32 * Saturate (Dot (V32, P1) / Dot2 (V32)) - P2);
+               D3 : Single :=
+                  Dot2 (V13 * Saturate (Dot (V13, P1) / Dot2 (V13)) - P3);
+            begin
+               return Single'Min (D1, Single'Min (D2, D3));
+            end;
+         else
+            declare
+               D : Single := Dot (Normal, P1);
+            begin
+               return D * D / Dot2 (Normal);
+            end;
+         end if;
+      end Squared_Dist_To_Triangle;
+
+      Ray_Dir : constant Singles.Vector3 := (1.0, 0.0, 0.0);
+
+      function Dist_To_Closest_Triangle (P : Singles.Vector3) return Single is
+         Closest : Single := 1.0e10;
+         Dist : Single;
+
+         Intersection_Count : Natural := 0;
+      begin
+         for T of Input.Triangles loop
+            if Intersects_Triangle (P, Ray_Dir, T) then
+               Intersection_Count := Intersection_Count + 1;
+            end if;
+         end loop;
+
+         if Intersection_Count mod 2 = 1 then
+            return 0.0;
+         end if;
+
+         for T of Input.Triangles loop
+            Dist := Squared_Dist_To_Triangle (P, T);
+            if Dist < Closest then
+               Closest := Dist;
+            end if;
+         end loop;
+
+         return Sqrt (Closest);
+      end Dist_To_Closest_Triangle;
+
+      Output : Distance_Map
+        (1 .. Res_X, 1 .. Res_Y, 1 .. Res_Z);
+   begin
+      for X in Output'Range (1) loop
+         for Y in Output'Range (2) loop
+            for Z in Output'Range (3) loop
+               Output (X, Y, Z) :=
+                  Dist_To_Closest_Triangle (Rebased (X, Y, Z));
+            end loop;
+         end loop;
+      end loop;
+
+      return Output;
+   end Build_From_Mesh;
 
    procedure Load_To_Texture (Map : aliased Distance_Map) is
    begin

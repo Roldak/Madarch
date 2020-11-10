@@ -15,5 +15,10 @@ package Meshes.Distance_Maps is
      (Input     : Voxels.Voxelization;
       Algorithm : Transformation_Algorithm) return Distance_Map;
 
+   function Build_From_Mesh
+     (Input  : Mesh;
+      Bounds : Bounding_Box;
+      Res_X, Res_Y, Res_Z : Natural) return Distance_Map;
+
    procedure Load_To_Texture (Map : aliased Distance_Map);
 end Meshes.Distance_Maps;
