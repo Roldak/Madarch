@@ -1,3 +1,5 @@
+with GL.Objects.Textures.Targets;
+with GL.Pixels;
 with GL.Vectors;
 
 package body Meshes.Distance_Maps is
@@ -145,4 +147,13 @@ package body Meshes.Distance_Maps is
             return Build_Danielsson (Input);
       end case;
    end Build_From_Voxelization;
+
+   procedure Load_To_Texture (Map : aliased Distance_Map) is
+   begin
+      GL.Objects.Textures.Targets.Texture_3D.Load_From_Data
+        (0, GL.Pixels.R16F,
+         Map'Length (1), Map'Length (2), Map'Length (3),
+         GL.Pixels.Red, GL.Pixels.Float,
+         GL.Objects.Textures.Image_Source (Map'Address));
+   end Load_To_Texture;
 end Meshes.Distance_Maps;

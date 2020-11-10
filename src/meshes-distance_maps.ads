@@ -1,3 +1,5 @@
+with GL.Objects.Textures;
+
 with Meshes.Voxels;
 
 package Meshes.Distance_Maps is
@@ -12,4 +14,6 @@ package Meshes.Distance_Maps is
    function Build_From_Voxelization
      (Input     : Voxels.Voxelization;
       Algorithm : Transformation_Algorithm) return Distance_Map;
+
+   procedure Load_To_Texture (Map : aliased Distance_Map);
 end Meshes.Distance_Maps;
