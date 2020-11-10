@@ -10,8 +10,13 @@ package body Meshes.Distance_Maps is
    is
       use type Singles.Vector3;
 
+      type Vector_Map is array
+        (Positive range <>,
+         Positive range <>,
+         Positive range <>) of Singles.Vector3;
+
       Inf_Vector : Singles.Vector3 :=
-        (others => 1.0e10);
+        (others => 1.0e5);
 
       Bot_Bound : NVectors3.Vector :=
         (Input'First (1), Input'First (2), Input'First (3));
@@ -19,9 +24,17 @@ package body Meshes.Distance_Maps is
       Top_Bound : NVectors3.Vector :=
         (Input'Last (1), Input'Last (2), Input'Last (3));
 
-      Result : Distance_Map
+      Normalization : Singles.Vector3 :=
+        (Single (Input'Length (1)),
+         Single (Input'Length (2)),
+         Single (Input'Length (3)));
+
+      Result : Vector_Map
         (Input'Range (1), Input'Range (2), Input'Range (3)) :=
            (others => (others => (others => Inf_Vector)));
+
+      Output : Distance_Map
+        (Input'Range (1), Input'Range (2), Input'Range (3));
 
       function Value (V : NVectors3.Vector) return Singles.Vector3
       is
@@ -61,6 +74,13 @@ package body Meshes.Distance_Maps is
          end if;
          return Min_Vector;
       end Min_Value;
+
+      procedure Rescale (V : in out Singles.Vector3) is
+      begin
+         for C in X .. Z loop
+            V (C) := V (C) / Normalization (C);
+         end loop;
+      end Rescale;
    begin
       --  First pass: write 0 distance vectors for the shell of the object
       for X in Result'Range (1) loop
@@ -78,13 +98,11 @@ package body Meshes.Distance_Maps is
       for X in Result'Range (1) loop
          for Y in Result'Range (2) loop
             for Z in Result'Range (3) loop
-               if Input (X, Y, Z) then
-                  Result (X, Y, Z) := Min_Value
-                    (Value ((X - 1, Y, Z)) + (-1.0, 0.0, 0.0),
-                     Value ((X, Y - 1, Z)) + (0.0, -1.0, 0.0),
-                     Value ((X, Y, Z - 1)) + (0.0, 0.0, -1.0),
-                     Value ((X, Y, Z)));
-               end if;
+               Result (X, Y, Z) := Min_Value
+                 (Value ((X - 1, Y, Z)) + (-1.0, 0.0, 0.0),
+                  Value ((X, Y - 1, Z)) + (0.0, -1.0, 0.0),
+                  Value ((X, Y, Z - 1)) + (0.0, 0.0, -1.0),
+                  Value ((X, Y, Z)));
             end loop;
          end loop;
       end loop;
@@ -94,21 +112,30 @@ package body Meshes.Distance_Maps is
       for X in reverse Result'Range (1) loop
          for Y in reverse Result'Range (2) loop
             for Z in reverse Result'Range (3) loop
-               if Input (X, Y, Z) then
-                  Result (X, Y, Z) := Min_Value
-                    (Value ((X + 1, Y, Z)) + (1.0, 0.0, 0.0),
-                     Value ((X, Y + 1, Z)) + (0.0, 1.0, 0.0),
-                     Value ((X, Y, Z + 1)) + (0.0, 0.0, 1.0),
-                     Value ((X, Y, Z)));
-               end if;
+               Result (X, Y, Z) := Min_Value
+                 (Value ((X + 1, Y, Z)) + (1.0, 0.0, 0.0),
+                  Value ((X, Y + 1, Z)) + (0.0, 1.0, 0.0),
+                  Value ((X, Y, Z + 1)) + (0.0, 0.0, 1.0),
+                  Value ((X, Y, Z)));
             end loop;
          end loop;
       end loop;
 
-      return Result;
+      --  Fourth pass: scale everything down to [0, 1[ range and output
+      --  distance map.
+      for X in reverse Result'Range (1) loop
+         for Y in reverse Result'Range (2) loop
+            for Z in reverse Result'Range (3) loop
+               Rescale (Result (X, Y, Z));
+               Output (X, Y, Z) := Length (Result (X, Y, Z));
+            end loop;
+         end loop;
+      end loop;
+
+      return Output;
    end Build_Danielsson;
 
-   function Build
+   function Build_From_Voxelization
      (Input     : Voxels.Voxelization;
       Algorithm : Transformation_Algorithm) return Distance_Map
    is
@@ -117,5 +144,5 @@ package body Meshes.Distance_Maps is
          when Danielsson =>
             return Build_Danielsson (Input);
       end case;
-   end Build;
+   end Build_From_Voxelization;
 end Meshes.Distance_Maps;
