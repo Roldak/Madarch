@@ -170,19 +170,12 @@ package body Meshes.Distance_Maps is
          for C in GL.X .. GL.Z loop
             -- [1 .. Res_C] => [0 .. 1]
             R (C) := (R (C) - 1.0) / (Normalization (C) - 1.0);
+
+            -- [0 .. 1] => [From .. To]
+            R (C) := R (C) * (Bounds.To (C) - Bounds.From (C)) + Bounds.From (C);
          end loop;
          return R;
       end Rebased;
-
-      function Rescaled (X : Singles.Vector3) return Singles.Vector3 is
-         R : Singles.Vector3;
-      begin
-         for C in GL.X .. GL.Z loop
-            -- [From .. To] => [0 .. 1]
-            R (C) := (X (C) - Bounds.From (C)) / (Bounds.To (C) - Bounds.From (C));
-         end loop;
-         return R;
-      end Rescaled;
 
       function Intersects_Triangle
         (From, Dir : Singles.Vector3; T : Triangle) return Boolean
@@ -190,9 +183,9 @@ package body Meshes.Distance_Maps is
          -- pragma Suppress (All_Checks);
          use type Singles.Vector3;
 
-         V1 : Singles.Vector3 := Rescaled (Input.Vertices (T.A.Vertex_Index));
-         V2 : Singles.Vector3 := Rescaled (Input.Vertices (T.B.Vertex_Index));
-         V3 : Singles.Vector3 := Rescaled (Input.Vertices (T.C.Vertex_Index));
+         V1 : Singles.Vector3 := Input.Vertices (T.A.Vertex_Index);
+         V2 : Singles.Vector3 := Input.Vertices (T.B.Vertex_Index);
+         V3 : Singles.Vector3 := Input.Vertices (T.C.Vertex_Index);
 
          V12 : Singles.Vector3 := V2 - V1;
          V13 : Singles.Vector3 := V3 - V1;
@@ -217,9 +210,9 @@ package body Meshes.Distance_Maps is
 
          use type Singles.Vector3;
 
-         V1 : Singles.Vector3 := Rescaled (Input.Vertices (T.A.Vertex_Index));
-         V2 : Singles.Vector3 := Rescaled (Input.Vertices (T.B.Vertex_Index));
-         V3 : Singles.Vector3 := Rescaled (Input.Vertices (T.C.Vertex_Index));
+         V1 : Singles.Vector3 := Input.Vertices (T.A.Vertex_Index);
+         V2 : Singles.Vector3 := Input.Vertices (T.B.Vertex_Index);
+         V3 : Singles.Vector3 := Input.Vertices (T.C.Vertex_Index);
 
          V21 : Singles.Vector3 := V2 - V1;
          V32 : Singles.Vector3 := V3 - v2;
