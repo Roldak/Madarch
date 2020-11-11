@@ -277,12 +277,12 @@ package body Meshes.Distance_Maps is
       end Dist_To_Closest_Triangle;
 
       Output : Distance_Map
-        (1 .. Res_X, 1 .. Res_Y, 1 .. Res_Z);
+        (1 .. Res_Z, 1 .. Res_Y, 1 .. Res_X);
    begin
-      for X in Output'Range (1) loop
+      for Z in Output'Range (1) loop
          for Y in Output'Range (2) loop
-            for Z in Output'Range (3) loop
-               Output (X, Y, Z) :=
+            for X in Output'Range (3) loop
+               Output (Z, Y, X) :=
                   Dist_To_Closest_Triangle (Rebased (X, Y, Z));
             end loop;
          end loop;
