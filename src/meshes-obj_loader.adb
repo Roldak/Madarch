@@ -64,7 +64,6 @@ package body Meshes.Obj_Loader is
                Second_Index : Natural := Line.Find (Second_Sep, First_Index + 1);
             begin
                if First_Index = 0
-                  or else First_Index = Second_Index
                   or else (not Jump and then First_Index /= Cursor)
                then
                   return 0;
@@ -72,6 +71,10 @@ package body Meshes.Obj_Loader is
 
                if Second_Index = 0 then
                   Second_Index := Line.Length;
+               end if;
+
+               if First_Index = Second_Index - 1 then
+                  return 0;
                end if;
 
                Cursor := Second_Index;
