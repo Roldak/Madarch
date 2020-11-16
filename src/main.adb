@@ -608,15 +608,44 @@ procedure Main is
 
    Q_Pressed : Boolean := False;
 
-   Suzanne_Mesh : Meshes.Mesh :=
-      Meshes.Obj_Loader.Load_Obj_File ("media/suzanne.obj");
-   Suzanne_BB   : Meshes.Bounding_Box :=
-      Meshes.Compute_Bounding_Box (Suzanne_Mesh);
-   Suzanne_Voxels : Meshes.Voxels.Voxelization :=
-      Meshes.Voxels.Voxelize (Suzanne_Mesh, Suzanne_BB, (50, 50, 50));
-   Suzanne_DT : Meshes.Distance_Maps.Distance_Map :=
-      Meshes.Distance_Maps.Build
-        (Suzanne_Voxels, Meshes.Distance_Maps.Danielsson);
+   Suzanne_Type : Structs.Struct := Structs.Create
+     ((Base.Vec_3.Named ("position"), Base.Vec_3.Named ("extent")));
+
+   Suzanne_UBO : UBOs.UBO;
+
+   procedure Prepare_Suzanne is
+      use GL.Objects.Textures.Targets;
+      use type Singles.Vector3;
+
+      Suzanne_Mesh : Meshes.Mesh :=
+         Meshes.Obj_Loader.Load_Obj_File ("media/suzanne.obj");
+      Suzanne_BB   : Meshes.Bounding_Box :=
+         Meshes.Compute_Bounding_Box (Suzanne_Mesh);
+      Suzanne_DT : aliased Meshes.Distance_Maps.Distance_Map :=
+         Meshes.Distance_Maps.Build_From_Mesh
+           (Suzanne_Mesh, Suzanne_BB, 20, 20, 20);
+      Suzanne_Tex : GL.Objects.Textures.Texture;
+
+      Extent : Singles.Vector3 := (Suzanne_BB.To - Suzanne_BB.From) / 2.0;
+
+      W : UBOs.Writer := UBOs.Start (Suzanne_UBO);
+   begin
+      Suzanne_Tex.Initialize_Id;
+      Objects.Textures.Set_Active_Unit (2);
+      Texture_3D.Bind (Suzanne_Tex);
+      Texture_3D.Set_X_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
+      Texture_3D.Set_Y_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
+      Texture_3D.Set_Z_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
+      Texture_3D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
+      Texture_3D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
+      Meshes.Distance_Maps.Load_To_Texture (Suzanne_DT);
+
+      W.Write_Vec3 ((1.0, 1.0, 1.0));
+      W.Write_Vec3 (Extent);
+      Ada.Text_IO.Put_Line (Extent (X)'Image);
+      Ada.Text_IO.Put_Line (Extent (Y)'Image);
+      Ada.Text_IO.Put_Line (Extent (Z)'Image);
+   end Prepare_Suzanne;
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
@@ -658,10 +687,14 @@ begin
    Materials_UBO := Materials_Description_Type.Allocate (Binding => 2);
    Update_Materials_Description (Mat_Descr);
 
+   -- setup suzanne
+   Suzanne_UBO := Suzanne_Type.Allocate (Binding => 3);
+
    -- prepare data structures
    Prepare_Radiance;
    Prepare_Irradiance;
    Prepare_Image;
+   Prepare_Suzanne;
 
    while GLFW_Utils.Window_Opened loop
       exit when Handle_Events;
