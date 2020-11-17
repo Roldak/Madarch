@@ -636,8 +636,8 @@ procedure Main is
       Texture_3D.Set_X_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
       Texture_3D.Set_Y_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
       Texture_3D.Set_Z_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
-      Texture_3D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
-      Texture_3D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
+      Texture_3D.Set_Minifying_Filter (GL.Objects.Textures.Nearest);
+      Texture_3D.Set_Magnifying_Filter (GL.Objects.Textures.Nearest);
       Meshes.Distance_Maps.Load_To_Texture (Suzanne_DT);
 
       W.Write_Vec3 ((1.0, 1.0, 1.0));

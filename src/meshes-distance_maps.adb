@@ -10,6 +10,8 @@ with Math_Utils; use Math_Utils;
 package body Meshes.Distance_Maps is
    use GL;
 
+   pragma Suppress (All_Checks);
+
    package NVectors3 is new GL.Vectors (GL.Index_3D, Natural);
 
    function Build_Danielsson
@@ -204,10 +206,10 @@ package body Meshes.Distance_Maps is
       end Intersects_Triangle;
 
       function Squared_Dist_To_Triangle
-        (P : Singles.Vector3; T : Triangle) return Single
+        (P : Singles.Vector3;
+         T : Triangle;
+         Back_Facing : out Boolean) return Single
       is
-         pragma Suppress (All_Checks);
-
          use type Singles.Vector3;
 
          V1 : Singles.Vector3 := Input.Vertices (T.A.Vertex_Index);
@@ -228,6 +230,8 @@ package body Meshes.Distance_Maps is
          C2 : Single := Sign (Dot (Cross (V32, Normal), P2));
          C3 : Single := Sign (Dot (Cross (V13, Normal), P3));
       begin
+         Back_Facing := Dot (Normal, P1) > 0.0;
+
          if C1 + C2 + C3 < 2.0 then
             declare
                D1 : Single :=
@@ -251,29 +255,25 @@ package body Meshes.Distance_Maps is
       Ray_Dir : constant Singles.Vector3 := (1.0, 0.0, 0.0);
 
       function Dist_To_Closest_Triangle (P : Singles.Vector3) return Single is
-         Closest : Single := 1.0e10;
-         Dist : Single;
+         Closest    : Single := 1.0e10;
+         Closest_BF : Boolean := False;
 
-         Intersection_Count : Natural := 0;
+         Dist : Single;
+         BF   : Boolean;
       begin
          for T of Input.Triangles loop
-            if Intersects_Triangle (P, Ray_Dir, T) then
-               Intersection_Count := Intersection_Count + 1;
-            end if;
-         end loop;
-
-         if Intersection_Count mod 2 = 1 then
-            return 0.0;
-         end if;
-
-         for T of Input.Triangles loop
-            Dist := Squared_Dist_To_Triangle (P, T);
+            Dist := Squared_Dist_To_Triangle (P, T, BF);
             if Dist < Closest then
                Closest := Dist;
+               Closest_BF := BF;
             end if;
          end loop;
 
-         return Sqrt (Closest);
+         if Closest_BF then
+            return 0.0;
+         else
+            return Sqrt (Closest);
+         end if;
       end Dist_To_Closest_Triangle;
 
       Output : Distance_Map
