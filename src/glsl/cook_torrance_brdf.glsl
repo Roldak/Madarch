@@ -1,5 +1,5 @@
 vec3 fresnel_schlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    return F0 + (1.0 - F0) * pow(1.001 - cosTheta, 5.0);
 }
 
 float distribution_GGX(vec3 N, vec3 H, float roughness) {
