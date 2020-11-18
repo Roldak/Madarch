@@ -713,7 +713,7 @@ begin
    Prepare_Radiance;
    Prepare_Irradiance;
    Prepare_Image;
-   Prepare_Suzanne;
+   -- Prepare_Suzanne;
 
    while GLFW_Utils.Window_Opened loop
       exit when Handle_Events;

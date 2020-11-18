@@ -120,6 +120,32 @@ layout(std140, binding = 1) uniform scene_description {
    int light_count;
 };
 
+layout(binding = 2) uniform sampler3D custom_sdf;
+layout(binding = 3) uniform sampler3D custom_normals;
+layout(std140, binding = 3) uniform custom_description {
+   vec3 custom_position;
+   vec3 custom_extent;
+};
+
+float dist_to_custom(vec3 x) {
+   vec3 q = x - custom_position;
+   vec3 in_bounds = clamp(q, -custom_extent, custom_extent);
+   vec3 q_to_bounds = in_bounds - q;
+   float squared_dist_to_bounds = dot(q_to_bounds, q_to_bounds);
+   if (squared_dist_to_bounds > epsilon) {
+      return sqrt(squared_dist_to_bounds);
+   }
+   vec3 rebased = ((in_bounds / custom_extent) + vec3(1)) * 0.5;
+   float dist_to_shell = texture(custom_sdf, rebased).r;
+   return dist_to_shell;
+}
+
+vec3 custom_normal(vec3 x) {
+   vec3 q = x - custom_position;
+   vec3 rebased = ((q / custom_extent) + vec3(1)) * 0.5;
+   return normalize(texture(custom_normals, rebased).rgb);
+}
+
 float closest_primitive(vec3 x) {
    float closest = max_dist;
    for (int i = 0; i < prim_sphere_count; ++i) {
@@ -131,6 +157,7 @@ float closest_primitive(vec3 x) {
    for (int i = 0; i < prim_cube_count; ++i) {
       closest = min(closest, dist_to_cube (x, prim_cubes[i]));
    }
+   closest = min(closest, dist_to_custom (x));
    return closest;
 }
 
@@ -157,6 +184,11 @@ float closest_primitive_info(vec3 x, out int index) {
          index = M_MAX_SPHERE_COUNT + M_MAX_PLANE_COUNT + i;
       }
    }
+   float dist = dist_to_custom (x);
+   if (dist < closest) {
+      closest = dist;
+      index = M_MAX_SPHERE_COUNT + M_MAX_PLANE_COUNT + M_MAX_CUBE_COUNT;
+   }
    return closest;
 }
 
@@ -178,6 +210,8 @@ void primitive_info(int index, vec3 pos, out vec3 normal, out int material_id) {
       material_id = prim_cubes[index].material_id;
       return;
    }
+   normal = custom_normal (pos);
+   material_id = 3;
 }
 
 vec3 sample_light(int index, vec3 pos, vec3 normal, out vec3 dir, out float dist) {
