@@ -121,6 +121,7 @@ layout(std140, binding = 1) uniform scene_description {
 };
 
 layout(binding = 2) uniform sampler3D custom_sdf;
+layout(binding = 3) uniform sampler3D custom_normals;
 layout(std140, binding = 3) uniform custom_description {
    vec3 custom_position;
    vec3 custom_extent;
@@ -140,12 +141,9 @@ float dist_to_custom(vec3 x) {
 }
 
 vec3 custom_normal(vec3 x) {
-   const float h = 0.002; // replace by an appropriate value
-   const vec2 k = vec2(1,-1);
-   return normalize(k.xyy * dist_to_custom(x + k.xyy * h) +
-                    k.yyx * dist_to_custom(x + k.yyx * h) +
-                    k.yxy * dist_to_custom(x + k.yxy * h) +
-                    k.xxx * dist_to_custom(x + k.xxx * h));
+   vec3 q = x - custom_position;
+   vec3 rebased = ((q / custom_extent) + vec3(1)) * 0.5;
+   return normalize(texture(custom_normals, rebased).rgb);
 }
 
 float closest_primitive(vec3 x) {

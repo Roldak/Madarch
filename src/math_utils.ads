@@ -42,4 +42,6 @@ package Math_Utils is
    function Length (V : Singles.Vector3) return Single is
      (Single_Elementaries.Sqrt (Dot2 (V)))
       with Inline;
+
+   function Normalize (V : Singles.Vector3) return Singles.Vector3;
 end Math_Utils;

@@ -612,6 +612,8 @@ procedure Main is
      ((Base.Vec_3.Named ("position"), Base.Vec_3.Named ("extent")));
 
    Suzanne_UBO : UBOs.UBO;
+   Suzanne_Distances : GL.Objects.Textures.Texture;
+   Suzanne_Normals   : GL.Objects.Textures.Texture;
 
    procedure Prepare_Suzanne is
       use GL.Objects.Textures.Targets;
@@ -621,24 +623,41 @@ procedure Main is
          Meshes.Obj_Loader.Load_Obj_File ("media/suzanne.obj");
       Suzanne_BB   : Meshes.Bounding_Box :=
          Meshes.Compute_Bounding_Box (Suzanne_Mesh);
-      Suzanne_DT : aliased Meshes.Distance_Maps.Distance_Map :=
-         Meshes.Distance_Maps.Build_From_Mesh
-           (Suzanne_Mesh, Suzanne_BB, 20, 20, 20);
-      Suzanne_Tex : GL.Objects.Textures.Texture;
+
+      Res : Positive := 50;
+
+      Suzanne_DT : aliased Meshes.Distance_Maps.Distance_Map
+        (1 .. Res, 1 .. Res, 1 .. Res);
+
+      Suzanne_NM : aliased Meshes.Distance_Maps.Normal_Map
+        (1 .. Res, 1 .. Res, 1 .. Res);
 
       Extent : Singles.Vector3 := (Suzanne_BB.To - Suzanne_BB.From) / 2.0;
 
       W : UBOs.Writer := UBOs.Start (Suzanne_UBO);
    begin
-      Suzanne_Tex.Initialize_Id;
+      Meshes.Distance_Maps.Build_From_Mesh
+        (Suzanne_Mesh, Suzanne_BB, Suzanne_DT, Suzanne_NM);
+
+      Suzanne_Distances.Initialize_Id;
       Objects.Textures.Set_Active_Unit (2);
-      Texture_3D.Bind (Suzanne_Tex);
+      Texture_3D.Bind (Suzanne_Distances);
       Texture_3D.Set_X_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
       Texture_3D.Set_Y_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
       Texture_3D.Set_Z_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
-      Texture_3D.Set_Minifying_Filter (GL.Objects.Textures.Nearest);
-      Texture_3D.Set_Magnifying_Filter (GL.Objects.Textures.Nearest);
+      Texture_3D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
+      Texture_3D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
       Meshes.Distance_Maps.Load_To_Texture (Suzanne_DT);
+
+      Suzanne_Normals.Initialize_Id;
+      Objects.Textures.Set_Active_Unit (3);
+      Texture_3D.Bind (Suzanne_Normals);
+      Texture_3D.Set_X_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
+      Texture_3D.Set_Y_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
+      Texture_3D.Set_Z_Wrapping (GL.Objects.Textures.Clamp_To_Edge);
+      Texture_3D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
+      Texture_3D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
+      Meshes.Distance_Maps.Load_To_Texture (Suzanne_NM);
 
       W.Write_Vec3 ((1.0, 1.0, 1.0));
       W.Write_Vec3 (Extent);

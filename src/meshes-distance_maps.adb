@@ -155,15 +155,16 @@ package body Meshes.Distance_Maps is
       end case;
    end Build_From_Voxelization;
 
-   function Build_From_Mesh
-     (Input  : Mesh;
-      Bounds : Bounding_Box;
-      Res_X, Res_Y, Res_Z : Natural) return Distance_Map
+   procedure Build_From_Mesh
+     (Input   : Mesh;
+      Bounds  : Bounding_Box;
+      Dists   : in out Distance_Map;
+      Normals : in out Normal_Map)
    is
       Normalization : Singles.Vector3 :=
-        (Single (Res_X),
-         Single (Res_Y),
-         Single (Res_Z));
+        (Single (Dists'Length (1)),
+         Single (Dists'Length (2)),
+         Single (Dists'Length (3)));
 
       function Rebased (X, Y, Z : Positive) return Singles.Vector3 is
          R : Singles.Vector3 :=
@@ -182,7 +183,6 @@ package body Meshes.Distance_Maps is
       function Intersects_Triangle
         (From, Dir : Singles.Vector3; T : Triangle) return Boolean
       is
-         -- pragma Suppress (All_Checks);
          use type Singles.Vector3;
 
          V1 : Singles.Vector3 := Input.Vertices (T.A.Vertex_Index);
@@ -205,32 +205,38 @@ package body Meshes.Distance_Maps is
          return K >= 0.0 and U >= 0.0 and V >= 0.0 and U + V <= 1.0;
       end Intersects_Triangle;
 
-      function Squared_Dist_To_Triangle
-        (P : Singles.Vector3;
-         T : Triangle;
-         Back_Facing : out Boolean) return Single
+      procedure Triangle_Info
+        (From        : Singles.Vector3;
+         Tri         : Triangle;
+         Sq_Dist     : out Single;
+         Back_Facing : out Boolean;
+         Normal      : out Singles.Vector3)
       is
          use type Singles.Vector3;
 
-         V1 : Singles.Vector3 := Input.Vertices (T.A.Vertex_Index);
-         V2 : Singles.Vector3 := Input.Vertices (T.B.Vertex_Index);
-         V3 : Singles.Vector3 := Input.Vertices (T.C.Vertex_Index);
+         V1 : Singles.Vector3 := Input.Vertices (Tri.A.Vertex_Index);
+         V2 : Singles.Vector3 := Input.Vertices (Tri.B.Vertex_Index);
+         V3 : Singles.Vector3 := Input.Vertices (Tri.C.Vertex_Index);
 
          V21 : Singles.Vector3 := V2 - V1;
-         V32 : Singles.Vector3 := V3 - v2;
+         V32 : Singles.Vector3 := V3 - V2;
          V13 : Singles.Vector3 := V1 - V3;
 
-         P1 : Singles.Vector3 := P - V1;
-         P2 : Singles.Vector3 := P - V2;
-         P3 : Singles.Vector3 := P - V3;
+         P1 : Singles.Vector3 := From - V1;
+         P2 : Singles.Vector3 := From - V2;
+         P3 : Singles.Vector3 := From - V3;
 
-         Normal : Singles.Vector3 := Singles.Cross_Product (V21, V13);
+         N : Singles.Vector3 := Singles.Cross_Product (V21, V13);
 
-         C1 : Single := Sign (Dot (Cross (V21, Normal), P1));
-         C2 : Single := Sign (Dot (Cross (V32, Normal), P2));
-         C3 : Single := Sign (Dot (Cross (V13, Normal), P3));
+         C1 : Single := Sign (Dot (Cross (V21, N), P1));
+         C2 : Single := Sign (Dot (Cross (V32, N), P2));
+         C3 : Single := Sign (Dot (Cross (V13, N), P3));
       begin
-         Back_Facing := Dot (Normal, P1) > 0.0;
+         Normal      :=
+           (Input.Normals (Tri.A.Normal_Index) +
+            Input.Normals (Tri.B.Normal_Index) +
+            Input.Normals (Tri.C.Normal_Index));
+         Back_Facing := Dot (N, P1) >= 0.0;
 
          if C1 + C2 + C3 < 2.0 then
             declare
@@ -241,62 +247,74 @@ package body Meshes.Distance_Maps is
                D3 : Single :=
                   Dot2 (V13 * Saturate (Dot (V13, P1) / Dot2 (V13)) - P3);
             begin
-               return Single'Min (D1, Single'Min (D2, D3));
+               Sq_Dist := Single'Min (D1, Single'Min (D2, D3));
             end;
          else
             declare
-               D : Single := Dot (Normal, P1);
+               D : Single := Dot (N, P1);
             begin
-               return D * D / Dot2 (Normal);
+               Sq_Dist := D * D / Dot2 (N);
             end;
          end if;
-      end Squared_Dist_To_Triangle;
+      end Triangle_Info;
 
-      Ray_Dir : constant Singles.Vector3 := (1.0, 0.0, 0.0);
+      procedure Closest_Triangle_Info
+        (Point  : Singles.Vector3;
+         Dist   : in out Single;
+         Normal : in out Singles.Vector3)
+      is
+         BF : Boolean := False;
 
-      function Dist_To_Closest_Triangle (P : Singles.Vector3) return Single is
-         Closest    : Single := 1.0e10;
-         Closest_BF : Boolean := False;
-
-         Dist : Single;
-         BF   : Boolean;
+         Cur_Sq_Dist : Single;
+         Cur_BF      : Boolean;
+         Cur_Normal  : Singles.Vector3;
       begin
+         Dist := 1.0e10;
          for T of Input.Triangles loop
-            Dist := Squared_Dist_To_Triangle (P, T, BF);
-            if Dist < Closest then
-               Closest := Dist;
-               Closest_BF := BF;
+            Triangle_Info (Point, T, Cur_Sq_Dist, Cur_BF, Cur_Normal);
+            if Cur_Sq_Dist < Dist then
+               Dist   := Cur_Sq_Dist;
+               BF     := Cur_BF;
+               Normal := Cur_Normal;
             end if;
          end loop;
 
-         if Closest_BF then
-            return 0.0;
+         if BF then
+            Dist := 0.0;
          else
-            return Sqrt (Closest);
+            Dist := Sqrt (Dist);
          end if;
-      end Dist_To_Closest_Triangle;
 
-      Output : Distance_Map
-        (1 .. Res_Z, 1 .. Res_Y, 1 .. Res_X);
+         Normal := Normalize (Normal);
+      end Closest_Triangle_Info;
    begin
-      for Z in Output'Range (1) loop
-         for Y in Output'Range (2) loop
-            for X in Output'Range (3) loop
-               Output (Z, Y, X) :=
-                  Dist_To_Closest_Triangle (Rebased (X, Y, Z));
+      for Z in Dists'Range (1) loop
+         for Y in Dists'Range (2) loop
+            for X in Dists'Range (3) loop
+               Closest_Triangle_Info
+                 (Rebased (X, Y, Z),
+                  Dists   (Z, Y, X),
+                  Normals (Z, Y, X));
             end loop;
          end loop;
       end loop;
-
-      return Output;
    end Build_From_Mesh;
 
-   procedure Load_To_Texture (Map : aliased Distance_Map) is
+   procedure Load_To_Texture (Map : Distance_Map) is
    begin
       GL.Objects.Textures.Targets.Texture_3D.Load_From_Data
         (0, GL.Pixels.R16F,
          Map'Length (1), Map'Length (2), Map'Length (3),
          GL.Pixels.Red, GL.Pixels.Float,
+         GL.Objects.Textures.Image_Source (Map'Address));
+   end Load_To_Texture;
+
+   procedure Load_To_Texture (Map : Normal_Map) is
+   begin
+      GL.Objects.Textures.Targets.Texture_3D.Load_From_Data
+        (0, GL.Pixels.RGB32F,
+         Map'Length (1), Map'Length (2), Map'Length (3),
+         GL.Pixels.RGB, GL.Pixels.Float,
          GL.Objects.Textures.Image_Source (Map'Address));
    end Load_To_Texture;
 end Meshes.Distance_Maps;

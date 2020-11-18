@@ -11,4 +11,14 @@ package body Math_Utils is
       end loop;
       return Result;
    end Log_2;
+
+   function Normalize (V : Singles.Vector3) return Singles.Vector3 is
+      R : Singles.Vector3;
+      L : Single := Length (V);
+   begin
+      for C in GL.X .. GL.Z loop
+         R (C) := V (C) / L;
+      end loop;
+      return R;
+   end Normalize;
 end Math_Utils;
