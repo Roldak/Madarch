@@ -10,7 +10,10 @@ vec3 pixel_color_direct(vec3 from, vec3 dir) {
       vec3 albedo = materials[material_id].albedo;
       float metallic = materials[material_id].metallic;
       float roughness = materials[material_id].roughness;
-      return compute_direct_lighting(pos, normal, dir, albedo, metallic, roughness);
+      float ao = compute_ambient_occlusion(pos, normal);
+      return ao * compute_direct_lighting(
+         pos, normal, dir, albedo, metallic, roughness
+      );
    }
 
    return background_color;

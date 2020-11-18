@@ -48,3 +48,22 @@ vec3 compute_indirect_lighting(vec3 irradiance, vec3 radiance,
    return (kD * irradiance / PI) + (kS * radiance * NdotL);
 }
 
+float compute_ambient_occlusion(vec3 pos, vec3 normal) {
+#if M_AMBIENT_OCCLUSION_STEPS > 0
+   const float ao_step_size = 0.1;
+
+   float ao_sum = 0.0;
+   float max_ao_sum = 0.0;
+
+   for (int i = 0; i < M_AMBIENT_OCCLUSION_STEPS; ++i) {
+      vec3 p = pos + normal * (i + 1) * ao_step_size;
+      float factor = 1.0 / pow(2.0, i);
+      ao_sum += factor * closest_primitive(p);
+      max_ao_sum += factor * (i + 1) * ao_step_size;
+   }
+
+   return 0.6 + 0.4 * ao_sum / max_ao_sum;
+#else
+   return 1.0;
+#endif
+}

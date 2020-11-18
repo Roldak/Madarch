@@ -278,7 +278,9 @@ vec3 pixel_color_probes(vec3 from, vec3 dir) {
          albedo, metallic, roughness
       );
 
-      return indirect + direct;
+      float ao = compute_ambient_occlusion(pos, normal);
+
+      return ao * (direct + indirect);
    }
 
    return vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
