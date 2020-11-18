@@ -21,6 +21,7 @@ with GL.Window;
 with GLFW_Utils;
 
 with Glfw.Input.Keys;
+with Glfw.Input.Mouse;
 
 with Materials;
 with Math_Utils; use Math_Utils;
@@ -73,22 +74,54 @@ procedure Main is
    Controlled_Light : Lights.Light renames All_Lights (1);
    Spot_Light : Lights.Light renames All_Lights (2);
 
+   Cam_Orientation : Singles.Matrix3 := Singles.Identity3;
+
+   procedure Rotate_Camera (X, Y : Single) is
+      use type Singles.Matrix3;
+
+      Rot_Mat : Singles.Matrix3 := Singles.Identity3;
+      CX : Single := Cos (X);
+      CY : Single := Cos (Y);
+      SX : Single := Sin (X);
+      SY : Single := Sin (Y);
+   begin
+      Rot_Mat (GL.X, GL.X) := CX;
+      Rot_Mat (GL.Z, GL.Z) := CX;
+      Rot_Mat (GL.Z, GL.X) := SX;
+      Rot_Mat (GL.X, GL.Z) := -SX;
+
+      Cam_Orientation := Rot_Mat * Cam_Orientation;
+      --  Rot_Mat := Singles.Identity3;
+
+      --  Rot_Mat (GL.Y, GL.Y) := CY;
+      --  Rot_Mat (GL.Z, GL.Z) := CY;
+      --  Rot_Mat (GL.Z, GL.Y) := -SY;
+      --  Rot_Mat (GL.Y, GL.Z) := SY;
+
+      --  Cam_Orientation := Rot_Mat * Cam_Orientation;
+   end Rotate_Camera;
+
    function Handle_Events return Boolean is
+      use type Singles.Vector3;
+      use type Singles.Matrix3;
+
+      DX, DY : Float;
+      MV : Singles.Vector3 := (0.0, 0.0, 0.0);
    begin
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.Escape) then
          return True;
       end if;
 
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.S) then
-         Cam_Pos (Z) := Cam_Pos (Z) - 0.1;
+         MV (Z) := MV (Z) - 0.1;
       elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.W) then
-         Cam_Pos (Z) := Cam_Pos (Z) + 0.1;
+         MV (Z) := MV (Z) + 0.1;
       end if;
 
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.A) then
-         Cam_Pos (X) := Cam_Pos (X) - 0.1;
+         MV (X) := MV (X) - 0.1;
       elsif GLFW_Utils.Key_Pressed (Glfw.Input.Keys.D) then
-         Cam_Pos (X) := Cam_Pos (X) + 0.1;
+         MV (X) := MV (X) + 0.1;
       end if;
 
       if GLFW_Utils.Key_Pressed (Glfw.Input.Keys.K) then
@@ -106,6 +139,11 @@ procedure Main is
          Controlled_Light.Point_Light_Pos (X) :=
             Controlled_Light.Point_Light_Pos (X) + 0.1;
       end if;
+
+      Cam_Pos := Cam_Pos + Cam_Orientation * MV;
+
+      GLFW_Utils.Center_Cursor (DX, DY);
+      Rotate_Camera (Single (DX / 200.0), Single (DY / 200.0));
 
       return False;
    end Handle_Events;
@@ -277,6 +315,7 @@ procedure Main is
    Image_Program   : GL.Objects.Programs.Program;
    Time_Uniform    : GL.Uniforms.Uniform;
    Cam_Pos_Uniform : GL.Uniforms.Uniform;
+   Cam_Dir_Uniform : GL.Uniforms.Uniform;
 
    procedure Prepare_Image is
    begin
@@ -296,6 +335,9 @@ procedure Main is
 
       Cam_Pos_Uniform :=
          GL.Objects.Programs.Uniform_Location (Image_Program, "camera_position");
+
+      Cam_Dir_Uniform :=
+         GL.Objects.Programs.Uniform_Location (Image_Program, "camera_orientation");
    end Prepare_Image;
 
    procedure Draw_Image is
@@ -304,6 +346,7 @@ procedure Main is
       Image_Program.Use_Program;
       GL.Uniforms.Set_Single (Time_Uniform, Time);
       GL.Uniforms.Set_Single (Cam_Pos_Uniform, Cam_Pos);
+      GL.Uniforms.Set_Single (Cam_Dir_Uniform, Cam_Orientation);
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind
         (GL.Objects.Framebuffers.Default_Framebuffer);

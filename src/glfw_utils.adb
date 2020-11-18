@@ -3,6 +3,8 @@
 
 with Ada.Text_IO;
 
+with Interfaces.C;
+
 with Glfw.Windows.Context;
 with Glfw.Windows.Hints;
 with Glfw.Input.Keys;
@@ -50,6 +52,24 @@ package body GLFW_Utils is
       Main_Window.Enable_Callback (Glfw.Windows.Callbacks.Close);
       Glfw.Windows.Context.Make_Current (Main_Window);
    end Open_Window;
+
+   procedure Center_Cursor (DX, DY : out Float) is
+      use Interfaces.C;
+
+      SX, SY : Int;
+      MX, MY : Double;
+   begin
+      Main_Window.Get_Size (SX, SY);
+      Main_Window.Get_Cursor_Pos (MX, MY);
+      declare
+         CX : Double := Double (SX) / 2.0;
+         CY : Double := Double (SY) / 2.0;
+      begin
+         Main_Window.Set_Cursor_Pos (CX, CY);
+         DX := Float (MX - CX);
+         DY := Float (MY - CY);
+      end;
+   end Center_Cursor;
 
    procedure Swap_Buffers is
    begin

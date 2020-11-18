@@ -12,6 +12,8 @@ package GLFW_Utils is
    procedure Open_Window
      (Width, Height : Natural; Title : String; Depth_Bits : Natural := 0);
 
+   procedure Center_Cursor (DX, DY : out Float);
+
    procedure Swap_Buffers;
 
    procedure Poll_Events;

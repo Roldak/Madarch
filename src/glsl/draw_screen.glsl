@@ -14,10 +14,13 @@ in vec4 pos;
 out vec3 color;
 
 uniform vec3 camera_position;
+uniform mat3 camera_orientation;
 
 void main(void) {
    vec3 frag_pos = vec3(pos.xy, 0);
    vec3 dir = normalize(frag_pos - vec3(0, 0, -1.5));
+   dir = camera_orientation * dir;
+   frag_pos = camera_orientation * frag_pos;
    vec3 initial_pos = frag_pos + camera_position;
 
    //float sa = rand(pos.xy * 1113.1 * time);

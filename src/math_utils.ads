@@ -26,6 +26,12 @@ package Math_Utils is
    package Single_Elementaries is
       new Ada.Numerics.Generic_Elementary_Functions (Single);
 
+   function Cos (X : Single) return Single
+      renames Single_Elementaries.Cos;
+
+   function Sin (X : Single) return Single
+      renames Single_Elementaries.Sin;
+
    function Sqrt (X : Single) return Single
       renames Single_Elementaries.Sqrt;
 
