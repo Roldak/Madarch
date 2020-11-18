@@ -8,6 +8,8 @@ Ray marching engine in Ada and GLSL.
 - Soft shadows.
 - World-space reflections.
 - Glossy reflections (*WIP*).
+- World-space ambient occlusion.
+- Arbitrary meshes (voxelization, *WIP*).
 
 ## Illustration
 
