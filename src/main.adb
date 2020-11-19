@@ -143,7 +143,7 @@ procedure Main is
       Cam_Pos := Cam_Pos + Cam_Orientation * MV;
 
       GLFW_Utils.Center_Cursor (DX, DY);
-      Rotate_Camera (Single (DX / 200.0), Single (DY / 200.0));
+      Rotate_Camera (Single (DX / 1000.0), Single (DY / 1000.0));
 
       return False;
    end Handle_Events;
@@ -712,6 +712,7 @@ procedure Main is
 begin
    GLFW_Utils.Init;
    GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
+   GLFW_Utils.Show_Cursor (False);
 
    -- set up matrices
    Projection.Load_Identity;

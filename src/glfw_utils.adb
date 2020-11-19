@@ -8,6 +8,7 @@ with Interfaces.C;
 with Glfw.Windows.Context;
 with Glfw.Windows.Hints;
 with Glfw.Input.Keys;
+with Glfw.Input.Mouse;
 with Glfw.Errors;
 
 package body GLFW_Utils is
@@ -70,6 +71,15 @@ package body GLFW_Utils is
          DY := Float (MY - CY);
       end;
    end Center_Cursor;
+
+   procedure Show_Cursor (Show : Boolean) is
+   begin
+      if Show then
+         Main_Window.Set_Cursor_Mode (Glfw.Input.Mouse.Normal);
+      else
+         Main_Window.Set_Cursor_Mode (Glfw.Input.Mouse.Hidden);
+      end if;
+   end Show_Cursor;
 
    procedure Swap_Buffers is
    begin

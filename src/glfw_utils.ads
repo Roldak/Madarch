@@ -14,6 +14,8 @@ package GLFW_Utils is
 
    procedure Center_Cursor (DX, DY : out Float);
 
+   procedure Show_Cursor (Show : Boolean);
+
    procedure Swap_Buffers;
 
    procedure Poll_Events;
