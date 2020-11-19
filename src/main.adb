@@ -75,30 +75,37 @@ procedure Main is
    Spot_Light : Lights.Light renames All_Lights (2);
 
    Cam_Orientation : Singles.Matrix3 := Singles.Identity3;
+   Total_Rot_X, Total_Rot_Y : Single := 0.0;
 
    procedure Rotate_Camera (X, Y : Single) is
       use type Singles.Matrix3;
 
-      Rot_Mat : Singles.Matrix3 := Singles.Identity3;
-      CX : Single := Cos (X);
-      CY : Single := Cos (Y);
-      SX : Single := Sin (X);
-      SY : Single := Sin (Y);
+      Rot_Mat : Singles.Matrix3;
    begin
-      Rot_Mat (GL.X, GL.X) := CX;
-      Rot_Mat (GL.Z, GL.Z) := CX;
-      Rot_Mat (GL.Z, GL.X) := SX;
-      Rot_Mat (GL.X, GL.Z) := -SX;
+      Total_Rot_X := Total_Rot_X + X;
+      Total_Rot_Y := Total_Rot_Y + Y;
+      declare
+         CX : Single := Cos (Total_Rot_X);
+         CY : Single := Cos (Total_Rot_Y);
+         SX : Single := Sin (Total_Rot_X);
+         SY : Single := Sin (Total_Rot_Y);
+      begin
+         Rot_Mat := Singles.Identity3;
+         Rot_Mat (GL.Y, GL.Y) := CY;
+         Rot_Mat (GL.Z, GL.Z) := CY;
+         Rot_Mat (GL.Z, GL.Y) := -SY;
+         Rot_Mat (GL.Y, GL.Z) := SY;
 
-      Cam_Orientation := Rot_Mat * Cam_Orientation;
-      --  Rot_Mat := Singles.Identity3;
+         Cam_Orientation := Rot_Mat;
 
-      --  Rot_Mat (GL.Y, GL.Y) := CY;
-      --  Rot_Mat (GL.Z, GL.Z) := CY;
-      --  Rot_Mat (GL.Z, GL.Y) := -SY;
-      --  Rot_Mat (GL.Y, GL.Z) := SY;
+         Rot_Mat := Singles.Identity3;
+         Rot_Mat (GL.X, GL.X) := CX;
+         Rot_Mat (GL.Z, GL.Z) := CX;
+         Rot_Mat (GL.Z, GL.X) := SX;
+         Rot_Mat (GL.X, GL.Z) := -SX;
 
-      --  Cam_Orientation := Rot_Mat * Cam_Orientation;
+         Cam_Orientation := Rot_Mat * Cam_Orientation;
+      end;
    end Rotate_Camera;
 
    function Handle_Events return Boolean is
