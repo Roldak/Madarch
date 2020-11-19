@@ -24,14 +24,13 @@ float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) 
 
 bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll) {
    for (float total_dist = 0; total_dist < max_dist;) {
-      float dist = closest_primitive_info(from, index);
+      float dist = closest_primitive_info(from + dir * total_dist, index);
 
       if (dist < epsilon) {
-         coll = from + dir * dist;
+         coll = from + dir * total_dist;
          return true;
       }
 
-      from += dir * dist;
       total_dist += dist;
    }
    return false;
