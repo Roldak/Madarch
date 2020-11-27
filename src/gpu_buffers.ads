@@ -3,14 +3,14 @@ with Ada.Finalization;
 with GL.Objects.Buffers;
 with GL.Types; use GL.Types;
 
-package UBOs is
-   type UBO is private;
+package GPU_Buffers is
+   type GPU_Buffer is private;
 
-   function Create (Binding : UInt; Size : Long) return UBO;
+   function Create (Binding : UInt; Size : Long) return GPU_Buffer;
 
    type Writer is new Ada.Finalization.Limited_Controlled with private;
 
-   function Start (Buffer : UBO) return Writer;
+   function Start (Buffer : GPU_Buffer) return Writer;
 
    procedure Pad         (Self : in out Writer; X : Size);
    procedure Seek        (Self : in out Writer; X : Size);
@@ -19,15 +19,15 @@ package UBOs is
    procedure Write_Vec3  (Self : in out Writer; V : Singles.Vector3);
 
 private
-   type UBO is record
+   type GPU_Buffer is record
       Buffer : GL.Objects.Buffers.Buffer;
    end record;
 
    type Writer is new Ada.Finalization.Limited_Controlled with record
       Offset : Size := 0;
-      Buffer : UBO;
+      Buffer : GPU_Buffer;
    end record;
 
    overriding procedure Initialize (Self : in out Writer);
    overriding procedure Finalize   (Self : in out Writer);
-end UBOs;
+end GPU_Buffers;

@@ -8,10 +8,10 @@ package body GPU_Types is
    end Pad;
 
    function Allocate
-     (X : GPU_Type'Class; Binding : Types.UInt) return UBOs.UBO
+     (X : GPU_Type'Class; Binding : Types.UInt) return GPU_Buffers.GPU_Buffer
    is
    begin
-      return UBOs.Create (Binding, Types.Long (X.Size));
+      return GPU_Buffers.Create (Binding, Types.Long (X.Size));
    end Allocate;
 
    function Named
@@ -40,7 +40,7 @@ package body GPU_Types is
          return (Offset => Self.Offset + Comp_Loc.Offset, Typ => Comp_Loc.Typ);
       end Component;
 
-      procedure Adjust (Self : Location; W : in out UBOs.Writer) is
+      procedure Adjust (Self : Location; W : in out GPU_Buffers.Writer) is
       begin
          W.Seek (Self.Offset);
       end Adjust;

@@ -1,32 +1,32 @@
 with Ada.Text_IO;
 
-package body UBOs is
+package body GPU_Buffers is
    use GL;
    use GL.Objects;
 
    Null_Buffer : Buffers.Buffer;
 
-   procedure Bind_UBO (Buf : Buffers.Buffer) is
+   procedure Bind_Buffer (Buf : Buffers.Buffer) is
       use GL.Objects.Buffers;
    begin
       Bind (Uniform_Buffer, Buf);
-   end Bind_UBO;
+   end Bind_Buffer;
 
-   procedure Unbind_UBO is
+   procedure Unbind_Buffer is
       use GL.Objects.Buffers;
    begin
       if not Null_Buffer.Initialized then
          Null_Buffer.Initialize_Id;
       end if;
-      Bind_UBO (Null_Buffer);
-   end Unbind_UBO;
+      Bind_Buffer (Null_Buffer);
+   end Unbind_Buffer;
 
    procedure Set_Uniform_Int_Data is
       new Objects.Buffers.Set_Sub_Data (Int_Pointers);
    procedure Set_Uniform_Float_Data is
       new Objects.Buffers.Set_Sub_Data (Single_Pointers);
 
-   function Create (Binding : UInt; Size : Long) return UBO
+   function Create (Binding : UInt; Size : Long) return GPU_Buffer
    is
       use GL.Objects.Buffers;
 
@@ -34,16 +34,16 @@ package body UBOs is
    begin
       Buf.Initialize_Id;
 
-      Bind_UBO (Buf);
+      Bind_Buffer (Buf);
       Allocate (Uniform_Buffer, Create.Size, Static_Draw);
-      Unbind_UBO;
+      Unbind_Buffer;
 
       Bind_Buffer_Base (Uniform_Buffer, Binding, Buf);
 
-      return UBO'(Buffer => Buf);
+      return GPU_Buffer'(Buffer => Buf);
    end Create;
 
-   function Start (Buffer : UBO) return Writer is
+   function Start (Buffer : GPU_Buffer) return Writer is
    begin
       return X : Writer :=
         (Ada.Finalization.Limited_Controlled
@@ -99,12 +99,12 @@ package body UBOs is
    overriding procedure Initialize (Self : in out Writer) is
       use GL.Objects.Buffers;
    begin
-      Bind_UBO (Self.Buffer.Buffer);
+      Bind_Buffer (Self.Buffer.Buffer);
    end Initialize;
 
    overriding procedure Finalize   (Self : in out Writer) is
       use GL.Objects.Buffers;
    begin
-      Unbind_UBO;
+      Unbind_Buffer;
    end Finalize;
-end UBOs;
+end GPU_Buffers;

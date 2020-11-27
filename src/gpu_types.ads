@@ -1,7 +1,7 @@
 with GNATCOLL.Strings;
 
 with GL.Types;
-with UBOs;
+with GPU_Buffers;
 
 package GPU_Types is
    use GL;
@@ -19,7 +19,7 @@ package GPU_Types is
    type GPU_Type_Array_Access is access all GPU_Type_Array;
 
    function Allocate
-     (X : GPU_Type'Class; Binding : Types.UInt) return UBOs.UBO;
+     (X : GPU_Type'Class; Binding : Types.UInt) return GPU_Buffers.GPU_Buffer;
 
    type Named_Component is record
       Name : XString;
@@ -40,7 +40,7 @@ package GPU_Types is
       function Component (Self : Location; Index : Positive) return Location;
       function Component (Self : Location; Name  : String) return Location;
 
-      procedure Adjust (Self : Location; W : in out UBOs.Writer);
+      procedure Adjust (Self : Location; W : in out GPU_Buffers.Writer);
    end Locations;
 
    function Address (Self : aliased GPU_Type) return Locations.Location

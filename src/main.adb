@@ -28,7 +28,7 @@ with Math_Utils; use Math_Utils;
 with Lights;
 with Primitives;
 with Shader_Loader; use Shader_Loader;
-with UBOs;
+with GPU_Buffers;
 with GPU_Types.Base;
 with GPU_Types.Structs;
 with GPU_Types.Fixed_Arrays;
@@ -366,7 +366,7 @@ procedure Main is
       GLFW_Utils.Swap_Buffers;
    end Draw_Image;
 
-   Probes_UBO : UBOs.UBO;
+   Probes_UBO : GPU_Buffers.GPU_Buffer;
 
    Probes_Layout_Type : Structs.Struct := Structs.Create
      ((Base.IVec_2.Named ("probe_count"),
@@ -374,7 +374,7 @@ procedure Main is
        Base.Vec_3.Named ("grid_spacing")));
 
    procedure Setup_Probe_Layout (X, Y, Z : Int; SX, SY, SZ : Single) is
-      W : UBOs.Writer := UBOs.Start (Probes_UBO);
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Probes_UBO);
 
       L : Locations.Location := Probes_Layout_Type.Address;
    begin
@@ -397,7 +397,7 @@ procedure Main is
       W.Write_Float (SZ);
    end Setup_Probe_Layout;
 
-   Scene_UBO  : UBOs.UBO;
+   Scene_UBO  : GPU_Buffers.GPU_Buffer;
 
    Max_Sphere_Count      : constant Types.Size := 40;
    Max_Plane_Count       : constant Types.Size := 40;
@@ -460,7 +460,7 @@ procedure Main is
    procedure Update_Scene_Primitives
      (Prims : Primitives.Primitive_Array)
    is
-      W : UBOs.Writer := UBOs.Start (Scene_UBO);
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Scene_UBO);
 
       Sphere_Index : Positive := 1;
       Plane_Index  : Positive := 1;
@@ -520,7 +520,7 @@ procedure Main is
    end Update_Scene_Primitives;
 
    procedure Update_Scene_Lights (Lits : Lights.Light_Array) is
-      W : UBOs.Writer := UBOs.Start (Scene_UBO);
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Scene_UBO);
 
       Point_Light_Index : Positive := 1;
       Spot_Light_Index  : Positive := 1;
@@ -570,7 +570,7 @@ procedure Main is
 
    Max_Material_Count : constant Types.Size := 20;
 
-   Materials_UBO : UBOs.UBO;
+   Materials_UBO : GPU_Buffers.GPU_Buffer;
 
    Material_Type : aliased constant Structs.Struct :=
       Structs.Create
@@ -590,7 +590,7 @@ procedure Main is
    procedure Update_Materials_Description
      (Mats : Materials.Material_Array)
    is
-      W : UBOs.Writer := UBOs.Start (Materials_UBO);
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Materials_UBO);
 
       L : Locations.Location := Materials_Description_Type.Address;
    begin
@@ -662,7 +662,7 @@ procedure Main is
    Suzanne_Type : Structs.Struct := Structs.Create
      ((Base.Vec_3.Named ("position"), Base.Vec_3.Named ("extent")));
 
-   Suzanne_UBO : UBOs.UBO;
+   Suzanne_UBO : GPU_Buffers.GPU_Buffer;
    Suzanne_Distances : GL.Objects.Textures.Texture;
    Suzanne_Normals   : GL.Objects.Textures.Texture;
 
@@ -685,7 +685,7 @@ procedure Main is
 
       Extent : Singles.Vector3 := (Suzanne_BB.To - Suzanne_BB.From) / 2.0;
 
-      W : UBOs.Writer := UBOs.Start (Suzanne_UBO);
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Suzanne_UBO);
    begin
       Meshes.Distance_Maps.Build_From_Mesh
         (Suzanne_Mesh, Suzanne_BB, Suzanne_DT, Suzanne_NM);
