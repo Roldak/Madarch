@@ -8,10 +8,12 @@ package body GPU_Types is
    end Pad;
 
    function Allocate
-     (X : GPU_Type'Class; Binding : Types.UInt) return GPU_Buffers.GPU_Buffer
+     (Typ     : GPU_Type'Class;
+      Kind    : GPU_Buffers.GPU_Buffer_Kind;
+      Binding : Types.UInt) return GPU_Buffers.GPU_Buffer
    is
    begin
-      return GPU_Buffers.Create (Binding, Types.Long (X.Size));
+      return GPU_Buffers.Create (Kind, Binding, Types.Long (Typ.Size));
    end Allocate;
 
    function Named

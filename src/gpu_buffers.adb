@@ -1,3 +1,5 @@
+with Interfaces.C.Pointers;
+
 with Ada.Text_IO;
 
 package body GPU_Buffers is
@@ -6,27 +8,50 @@ package body GPU_Buffers is
 
    Null_Buffer : Buffers.Buffer;
 
-   procedure Bind_Buffer (Buf : Buffers.Buffer) is
+   procedure Bind_Buffer (Kind : GPU_Buffer_Kind; Buf : Buffers.Buffer) is
       use GL.Objects.Buffers;
    begin
-      Bind (Uniform_Buffer, Buf);
+      Bind ((if Kind in Uniform_Buffer
+             then Buffers.Uniform_Buffer
+             else Buffers.Shader_Storage_Buffer), Buf);
    end Bind_Buffer;
 
-   procedure Unbind_Buffer is
+   procedure Unbind_Buffer (Kind : GPU_Buffer_Kind) is
       use GL.Objects.Buffers;
    begin
       if not Null_Buffer.Initialized then
          Null_Buffer.Initialize_Id;
       end if;
-      Bind_Buffer (Null_Buffer);
+      Bind_Buffer (Kind, Null_Buffer);
    end Unbind_Buffer;
 
-   procedure Set_Uniform_Int_Data is
-      new Objects.Buffers.Set_Sub_Data (Int_Pointers);
-   procedure Set_Uniform_Float_Data is
-      new Objects.Buffers.Set_Sub_Data (Single_Pointers);
+   generic
+      with package Pointers is new Interfaces.C.Pointers (<>);
+   procedure Set_Sub_Data (Kind   : GPU_Buffer_Kind;
+                           Offset : Types.Size;
+                           Data   : Pointers.Element_Array);
 
-   function Create (Binding : UInt; Size : Long) return GPU_Buffer
+   procedure Set_Sub_Data (Kind   : GPU_Buffer_Kind;
+                           Offset : Types.Size;
+                           Data   : Pointers.Element_Array)
+   is
+      procedure Set_It is new Buffers.Set_Sub_Data (Pointers);
+   begin
+      Set_It
+        ((if Kind in Uniform_Buffer
+          then Buffers.Uniform_Buffer
+          else Buffers.Shader_Storage_Buffer),
+         Offset,
+         Data);
+   end Set_Sub_Data;
+
+   procedure Set_Buffer_Int_Data is new Set_Sub_Data (Int_Pointers);
+   procedure Set_Buffer_Float_Data is new Set_Sub_Data (Single_Pointers);
+
+   function Create
+     (Kind    : GPU_Buffer_Kind;
+      Binding : UInt;
+      Size    : Long) return GPU_Buffer
    is
       use GL.Objects.Buffers;
 
@@ -34,13 +59,25 @@ package body GPU_Buffers is
    begin
       Buf.Initialize_Id;
 
-      Bind_Buffer (Buf);
-      Allocate (Uniform_Buffer, Create.Size, Static_Draw);
-      Unbind_Buffer;
+      Bind_Buffer (Kind, Buf);
 
-      Bind_Buffer_Base (Uniform_Buffer, Binding, Buf);
+      Allocate
+        ((if Kind in Uniform_Buffer
+          then Buffers.Uniform_Buffer
+          else Buffers.Shader_Storage_Buffer),
+         Create.Size,
+         Static_Draw);
 
-      return GPU_Buffer'(Buffer => Buf);
+      Unbind_Buffer (Kind);
+
+      Bind_Buffer_Base
+        ((if Kind in Uniform_Buffer
+          then Buffers.Uniform_Buffer
+          else Buffers.Shader_Storage_Buffer),
+         Binding,
+         Buf);
+
+      return (Kind => Kind, Buffer => Buf);
    end Create;
 
    function Start (Buffer : GPU_Buffer) return Writer is
@@ -68,8 +105,8 @@ package body GPU_Buffers is
    procedure Write_Int (Self : in out Writer; X : Int) is
       use GL.Objects.Buffers;
    begin
-     Set_Uniform_Int_Data
-       (Uniform_Buffer,
+     Set_Buffer_Int_Data
+       (Self.Buffer.Kind,
         Self.Offset, (0 => X));
      Self.Offset := Self.Offset + 4;
    end Write_Int;
@@ -77,8 +114,8 @@ package body GPU_Buffers is
    procedure Write_Float (Self : in out Writer; X : Single) is
       use GL.Objects.Buffers;
    begin
-     Set_Uniform_Float_Data
-       (Uniform_Buffer,
+     Set_Buffer_Float_Data
+       (Self.Buffer.Kind,
         Self.Offset, (0 => X));
      Self.Offset := Self.Offset + 4;
    end Write_Float;
@@ -87,8 +124,8 @@ package body GPU_Buffers is
       use GL.Objects.Buffers;
    begin
       Self.Pad (16);
-      Set_Uniform_Float_Data
-        (Uniform_Buffer,
+      Set_Buffer_Float_Data
+        (Self.Buffer.Kind,
          Self.Offset,
          (0 => V (X),
           1 => V (Y),
@@ -99,12 +136,12 @@ package body GPU_Buffers is
    overriding procedure Initialize (Self : in out Writer) is
       use GL.Objects.Buffers;
    begin
-      Bind_Buffer (Self.Buffer.Buffer);
+      Bind_Buffer (Self.Buffer.Kind, Self.Buffer.Buffer);
    end Initialize;
 
    overriding procedure Finalize   (Self : in out Writer) is
       use GL.Objects.Buffers;
    begin
-      Unbind_Buffer;
+      Unbind_Buffer (Self.Buffer.Kind);
    end Finalize;
 end GPU_Buffers;

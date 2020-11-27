@@ -19,7 +19,9 @@ package GPU_Types is
    type GPU_Type_Array_Access is access all GPU_Type_Array;
 
    function Allocate
-     (X : GPU_Type'Class; Binding : Types.UInt) return GPU_Buffers.GPU_Buffer;
+     (Typ     : GPU_Type'Class;
+      Kind    : GPU_Buffers.GPU_Buffer_Kind;
+      Binding : Types.UInt) return GPU_Buffers.GPU_Buffer;
 
    type Named_Component is record
       Name : XString;

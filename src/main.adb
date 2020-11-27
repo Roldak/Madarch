@@ -744,22 +744,27 @@ begin
                 Probe_Layout_Macros, "420");
 
    -- setup probes
-   Probes_UBO := Probes_Layout_Type.Allocate (Binding => 0);
+   Probes_UBO := Probes_Layout_Type.Allocate
+     (Kind => GPU_Buffers.Uniform_Buffer, Binding => 0);
    Setup_Probe_Layout (X  => 4,   Y  => 3,   Z  => 3,
                        SX => 2.0, SY => 3.0, SZ => 3.0);
 
    -- setup scene
-   Scene_UBO := Scene_Description_Type.Allocate (Binding => 1);
+   Scene_UBO := Scene_Description_Type.Allocate
+     (Kind => GPU_Buffers.Uniform_Buffer, Binding => 1);
 
    Update_Scene_Primitives (Scene_Descr.all);
    Update_Scene_Lights (All_Lights);
 
    -- setup materials
-   Materials_UBO := Materials_Description_Type.Allocate (Binding => 2);
+   Materials_UBO := Materials_Description_Type.Allocate
+     (Kind => GPU_Buffers.Uniform_Buffer, Binding => 2);
+
    Update_Materials_Description (Mat_Descr);
 
    -- setup suzanne
-   Suzanne_UBO := Suzanne_Type.Allocate (Binding => 3);
+   Suzanne_UBO := Suzanne_Type.Allocate
+     (Kind => GPU_Buffers.Uniform_Buffer, Binding => 3);
 
    -- prepare data structures
    Prepare_Radiance;

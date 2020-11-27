@@ -4,9 +4,14 @@ with GL.Objects.Buffers;
 with GL.Types; use GL.Types;
 
 package GPU_Buffers is
+   type GPU_Buffer_Kind is (Uniform_Buffer, Shader_Storage_Buffer);
+
    type GPU_Buffer is private;
 
-   function Create (Binding : UInt; Size : Long) return GPU_Buffer;
+   function Create
+     (Kind    : GPU_Buffer_Kind;
+      Binding : UInt;
+      Size    : Long) return GPU_Buffer;
 
    type Writer is new Ada.Finalization.Limited_Controlled with private;
 
@@ -19,7 +24,10 @@ package GPU_Buffers is
    procedure Write_Vec3  (Self : in out Writer; V : Singles.Vector3);
 
 private
+   type Buffer_Target_Access is access constant GL.Objects.Buffers.Buffer_Target;
+
    type GPU_Buffer is record
+      Kind   : GPU_Buffer_Kind;
       Buffer : GL.Objects.Buffers.Buffer;
    end record;
 
