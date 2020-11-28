@@ -728,19 +728,19 @@ begin
 
    -- load shader sources and compile shaders
    Load_Shader (Vertex_Shader,
-                "src/glsl/identity.glsl",
+                "madarch/glsl/identity.glsl",
                 No_Macro_Definition_Array, "120");
 
    Load_Shader (Image_Shader,
-                "src/glsl/draw_screen.glsl",
+                "madarch/glsl/draw_screen.glsl",
                 Probe_Layout_Macros & Scene_Macros & Render_Macros, "420");
 
    Load_Shader (Radiance_Shader,
-                "src/glsl/compute_probe_radiance.glsl",
+                "madarch/glsl/compute_probe_radiance.glsl",
                 Probe_Layout_Macros & Scene_Macros & Probe_Render_Macros, "420");
 
    Load_Shader (Irradiance_Shader,
-                "src/glsl/update_probe_irradiance.glsl",
+                "madarch/glsl/update_probe_irradiance.glsl",
                 Probe_Layout_Macros, "420");
 
    -- setup probes
