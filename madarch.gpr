@@ -3,11 +3,11 @@ with "opengl-glfw";
 
 with "gnatcoll";
 
-project Madarch is
+library project Madarch is
    for Source_Dirs use ("madarch", "madarch/support");
    for Object_Dir use "obj";
-   for Exec_Dir use "bin";
-   for Main use ("main");
+   for Library_Dir use "lib";
+   for Library_Name use "madarch";
 
    package Compiler is
       for Switches ("Ada") use ("-g");

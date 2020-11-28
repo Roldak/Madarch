@@ -1,11 +1,14 @@
 all:
 	gprbuild madarch.gpr -XWindowing_System=x11 -Xmode=debug -p
+	gprbuild examples/support_test/test.gpr -XWindowing_System=x11 -Xmode=debug -p
 
 clean:
 	gprclean madarch.gpr -XWindowing_System=x11 -Xmode=debug -p
+	gprclean examples/support_test/test.gpr -XWindowing_System=x11 -Xmode=debug -p
 
-run: all
-	./bin/main
+support_test: all
+	./examples/support_test/bin/main
 
-gdb: all
-	gdb --args ./bin/main
+support_test_gdb: all
+	gdb --args ./examples/support_test/bin/main
+
