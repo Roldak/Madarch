@@ -13,6 +13,8 @@ package Madarch.Exprs is
    function To_GLSL (E : Expr) return String;
 
    function Literal (V : Value) return Expr;
+   function Value_Identifier (N : String) return Expr;
+   function Struct_Identifier (N : String) return Struct_Expr;
 
    function "+" (L, R : Expr) return Expr;
    function "-" (L, R : Expr) return Expr;

@@ -12,6 +12,7 @@ package Madarch.Components is
       Kind : Values.Value_Kind) return Component;
 
    function Get_Name (C : Component) return String;
+   function Get_Kind (C : Component) return Values.Value_Kind;
 
    type Component_Value is record
       Comp : Component;

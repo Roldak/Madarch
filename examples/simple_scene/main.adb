@@ -3,6 +3,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with Madarch.Components;
 with Madarch.Exprs;
 with Madarch.Primitives;
+with Madarch.Scenes;
 with Madarch.Values;
 
 procedure Main is
@@ -23,10 +24,13 @@ procedure Main is
    is (P."-" (S.Get (Sphere_Center)).Normalize);
 
    Sphere : Primitives.Primitive := Primitives.Create
-     ("sphere",
+     ("Sphere",
       (Sphere_Center, Sphere_Radius),
       Sphere_Dist'Unrestricted_Access,
       Sphere_Normal'Unrestricted_Access);
+
+   Scene : Scenes.Scene := Scenes.Compile
+     ((1 => (Sphere, 20)));
 begin
-   null;
+   Scenes.Print_GLSL (Scene);
 end Main;

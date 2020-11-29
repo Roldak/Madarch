@@ -10,7 +10,8 @@ package body Madarch.Components is
    end Create;
 
    function Get_Name (C : Component) return String is
-   begin
-      return To_String (C.Name);
-   end Get_Name;
+     (To_String (C.Name));
+
+   function Get_Kind (C : Component) return Values.Value_Kind is
+     (C.Kind);
 end Madarch.Components;

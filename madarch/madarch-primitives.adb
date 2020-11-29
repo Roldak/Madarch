@@ -12,4 +12,23 @@ package body Madarch.Primitives is
          Distance => Distance,
          Normal   => Normal);
    end Create;
+
+   function Get_Name (Prim : Primitive) return String is
+     (To_String (Prim.Name));
+
+   function Get_Components
+     (Prim : Primitive) return Components.Component_Array
+   is (Prim.Comps.all);
+
+   function Get_Dist_Expr
+     (Prim  : Primitive;
+      Inst  : Exprs.Struct_Expr;
+      Point : Exprs.Expr) return Exprs.Expr'Class
+   is (Prim.Distance (Inst, Point));
+
+   function Get_Normal_Expr
+     (Prim  : Primitive;
+      Inst  : Exprs.Struct_Expr;
+      Point : Exprs.Expr) return Exprs.Expr'Class
+   is (Prim.Normal (Inst, Point));
 end Madarch.Primitives;

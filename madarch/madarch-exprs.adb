@@ -4,6 +4,12 @@ package body Madarch.Exprs is
    function Literal (V : Value) return Expr is
      (Value => new Lit'(V => V));
 
+   function Value_Identifier (N : String) return Expr is
+     (Value => new Ident'(Name => To_unbounded_String (N)));
+
+   function Struct_Identifier (N : String) return Struct_Expr is
+     (Struct_Expr'(Name => To_unbounded_String (N)));
+
    function Eval (E : Expr; Ctx : Eval_Context) return Value is
      (E.Value.Eval (Ctx));
 
