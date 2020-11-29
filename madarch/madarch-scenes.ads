@@ -1,5 +1,8 @@
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+
 with Madarch.Primitives;
+
+with GL.Types;
 
 package Madarch.Scenes is
    type Scene is private;
@@ -12,7 +15,8 @@ package Madarch.Scenes is
    type Primitive_Count_Array is array (Positive range <>) of Primitive_Count;
 
    function Compile
-     (Prims_Count : Primitive_Count_Array) return Scene;
+     (Prims_Count : Primitive_Count_Array;
+      Max_Dist    : GL.Types.Single := 20.0) return Scene;
 
    procedure Print_GLSL (S : Scene);
 private
