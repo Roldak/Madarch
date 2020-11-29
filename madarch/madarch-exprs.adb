@@ -2,34 +2,37 @@ with GL;
 
 package body Madarch.Exprs is
    function Literal (V : Value) return Expr is
-     (new Lit'(V => V));
+     (Value => new Lit'(V => V));
 
    function Eval (E : Expr; Ctx : Eval_Context) return Value is
-     (E.all.Eval (Ctx));
+     (E.Value.Eval (Ctx));
 
    function To_GLSL (E : Expr) return String is
-     (E.all.To_GLSL);
+     (E.Value.To_GLSL);
 
    function "+" (L, R : Expr) return Expr is
-     (new Bin_Op'(Bin_Add, L, R));
+     (Value => new Bin_Op'(Bin_Add, L, R));
 
    function "-" (L, R : Expr) return Expr is
-     (new Bin_Op'(Bin_Sub, L, R));
+     (Value => new Bin_Op'(Bin_Sub, L, R));
 
    function "*" (L, R : Expr) return Expr is
-     (new Bin_Op'(Bin_Mul, L, R));
+     (Value => new Bin_Op'(Bin_Mul, L, R));
 
    function "/" (L, R : Expr) return Expr is
-     (new Bin_Op'(Bin_Div, L, R));
+     (Value => new Bin_Op'(Bin_Div, L, R));
 
    function Length (E : Expr) return Expr is
-     (new Un_Op'(Un_Length, E));
+     (Value => new Un_Op'(Un_Length, E));
 
    function Normalize (E : Expr) return Expr is
-     (new Un_Op'(Un_Normalize, E));
+     (Value => new Un_Op'(Un_Normalize, E));
 
-   function Get (E : Struct_Expr; C : Component) return Expr is
-     (new Get_Component'(E, C));
+   function Get (E : Struct_Expr; C : Component) return Expr'Class is
+      R : Expr := (Value => new Get_Component'(E, C));
+   begin
+      return R;
+   end Get;
 
    --  Ident
 

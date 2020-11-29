@@ -8,7 +8,7 @@ package Madarch.Primitives is
 
    type Struct_Point_Function is access function
      (S : Exprs.Struct_Expr;
-      P : Exprs.Expr) return Exprs.Expr;
+      P : Exprs.Expr'Class) return Exprs.Expr'Class;
 
    function Create
      (Name     : String;

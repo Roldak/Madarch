@@ -15,13 +15,12 @@ procedure Main is
      ("radius", Values.Float_Kind);
 
    function Sphere_Dist
-     (S : Exprs.Struct_Expr; P : Exprs.Expr) return Exprs.Expr
-   is (Exprs.Length (Exprs.Get (S, Sphere_Center) - P)
-       - Exprs.Get (S, Sphere_Radius));
+     (S : Exprs.Struct_Expr; P : Exprs.Expr'Class) return Exprs.Expr'Class
+   is (S.Get (Sphere_Center)."-" (P).Length - S.Get (Sphere_Radius));
 
    function Sphere_Normal
-     (S : Exprs.Struct_Expr; P : Exprs.Expr) return Exprs.Expr
-   is (Exprs.Normalize (P - Exprs.Get (S, Sphere_Center)));
+     (S : Exprs.Struct_Expr; P : Exprs.Expr'Class) return Exprs.Expr'Class
+   is (P."-" (S.Get (Sphere_Center)).Normalize);
 
    Sphere : Primitives.Primitive := Primitives.Create
      ("sphere",

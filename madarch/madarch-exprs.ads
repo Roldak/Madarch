@@ -4,8 +4,8 @@ with Madarch.Components; use Madarch.Components;
 with Madarch.Values; use Madarch.Values;
 
 package Madarch.Exprs is
-   type Expr is private;
-   type Struct_Expr is private;
+   type Expr is tagged private;
+   type Struct_Expr is tagged private;
 
    type Eval_Context is private;
 
@@ -22,10 +22,11 @@ package Madarch.Exprs is
    function Length (E : Expr) return Expr;
    function Normalize (E : Expr) return Expr;
 
-   function Get (E : Struct_Expr; C : Component) return Expr;
+   function Get (E : Struct_Expr; C : Component) return Expr'Class;
 
 private
    type Expr_Node is abstract tagged null record;
+   type Expr_Access is access all Expr_Node'Class;
 
    type Eval_Context is record
       null;
@@ -34,7 +35,9 @@ private
    function Eval (E : Expr_Node; Ctx : Eval_Context) return Value is abstract;
    function To_GLSL (E : Expr_Node) return String is abstract;
 
-   type Expr is access all Expr_Node'Class;
+   type Expr is tagged record
+      Value : Expr_Access;
+   end record;
 
    type Ident is new Expr_Node with record
       Name : Unbounded_String;
@@ -70,7 +73,7 @@ private
    function Eval (U : Un_Op; Ctx : Eval_Context) return Value;
    function To_GLSL (U : Un_Op) return String;
 
-   type Struct_Expr is record
+   type Struct_Expr is tagged record
       Name : Unbounded_String;
    end record;
 
