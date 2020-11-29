@@ -12,13 +12,21 @@ package body Math_Utils is
       return Result;
    end Log_2;
 
-   function Normalize (V : Singles.Vector3) return Singles.Vector3 is
+   function Mul (X, Y : Singles.Vector3) return Singles.Vector3 is
       R : Singles.Vector3;
-      L : Single := Length (V);
    begin
       for C in GL.X .. GL.Z loop
-         R (C) := V (C) / L;
+         R (C) := X (C) * Y (C);
       end loop;
       return R;
-   end Normalize;
+   end Mul;
+
+   function Div (X, Y : Singles.Vector3) return Singles.Vector3 is
+      R : Singles.Vector3;
+   begin
+      for C in GL.X .. GL.Z loop
+         R (C) := X (C) / Y (C);
+      end loop;
+      return R;
+   end Div;
 end Math_Utils;

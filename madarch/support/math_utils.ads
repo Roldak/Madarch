@@ -35,6 +35,12 @@ package Math_Utils is
    function Sqrt (X : Single) return Single
       renames Single_Elementaries.Sqrt;
 
+   function Mul (X, Y : Singles.Vector3) return Singles.Vector3
+      with Inline;
+
+   function Div (X, Y : Singles.Vector3) return Singles.Vector3
+      with Inline;
+
    function Dot (X, Y : Singles.Vector3) return Single
       renames Singles.Dot_Product;
 
@@ -49,5 +55,7 @@ package Math_Utils is
      (Single_Elementaries.Sqrt (Dot2 (V)))
       with Inline;
 
-   function Normalize (V : Singles.Vector3) return Singles.Vector3;
+   function Normalize (V : Singles.Vector3) return Singles.Vector3 is
+     (Singles."/" (V, Length (V)))
+     with Inline;
 end Math_Utils;
