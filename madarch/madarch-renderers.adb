@@ -1,6 +1,9 @@
+with Ada.Text_IO;
+
 with GL;
 with GL.Objects.Programs;
 with GL.Objects.Shaders;
+with GL.Uniforms;
 
 with Shader_Loader;
 with GPU_Types;
@@ -11,6 +14,19 @@ with GPU_Types.Structs;
 with Glfw.Windows.Context;
 
 package body Madarch.Renderers is
+   procedure Setup_Camera (R : Renderer) is
+      use GL;
+
+      Camera_Position : Uniforms.Uniform :=
+         R.Screen_Pass.Uniform ("camera_position");
+
+      Camera_Orientation : Uniforms.Uniform :=
+         R.Screen_Pass.Uniform ("camera_orientation");
+   begin
+      Uniforms.Set_Single (Camera_Position, Singles.Vector3'(0.0, 0.0, 0.0));
+      Uniforms.Set_Single (Camera_Orientation, Singles.Identity3);
+   end Setup_Camera;
+
    Probes_Layout_Type : GPU_Types.GPU_Type := GPU_Types.Structs.Create
      ((GPU_Types.Base.IVec_2.Named ("probe_count"),
        GPU_Types.Base.IVec_3.Named ("grid_dimensions"),
@@ -173,6 +189,7 @@ package body Madarch.Renderers is
             Frame_Height => Int (Window.Height)))
       do
          Setup_Probe_Layout (R, Probes);
+         Setup_Camera (R);
       end return;
    end Create;
 

@@ -37,6 +37,14 @@ package body Render_Passes is
       Draw_Fullscreen_Quad;
    end Render_Base;
 
+   function Uniform
+     (Self : Render_Pass; Name : String) return Uniforms.Uniform
+   is
+   begin
+      Self.Program.Use_Program;
+      return Objects.Programs.Uniform_Location (Self.Program, Name);
+   end Uniform;
+
    procedure Init_Program
      (Program         : in out Objects.Programs.Program;
       Vertex_Shader   : Objects.Shaders.Shader;

@@ -3,6 +3,7 @@ with GL.Objects.Shaders;
 with GL.Objects.Programs;
 with GL.Objects.Textures;
 with GL.Objects.Textures.Targets;
+with GL.Uniforms;
 
 with GL.Types;
 
@@ -12,6 +13,8 @@ package Render_Passes is
    type Render_Pass is abstract tagged private;
 
    procedure Render (Pass : Render_Pass) is abstract;
+   function Uniform
+     (Self : Render_Pass; Name : String) return Uniforms.Uniform;
 
    type Screen_Render_Pass is new Render_Pass with private;
 
