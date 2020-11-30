@@ -111,10 +111,6 @@ package body Madarch.Renderers is
 
       Irradiance_Shader : GL.Objects.Shaders.Shader
         (Kind => GL.Objects.Shaders.Fragment_Shader);
-
-      Radiance_Program   : GL.Objects.Programs.Program;
-      Irradiance_Program : GL.Objects.Programs.Program;
-      Screen_Program     : GL.Objects.Programs.Program;
    begin
       Glfw.Windows.Context.Make_Current (Window);
 
@@ -137,10 +133,6 @@ package body Madarch.Renderers is
         (Irradiance_Shader,
          "madarch/glsl/update_probe_irradiance.glsl",
          Probe_Layout_Macros, "420");
-
-      Radiance_Program.Initialize_Id;
-      Irradiance_Program.Initialize_Id;
-      Screen_Program.Initialize_Id;
 
       return R : Renderer := new Renderer_Internal'
         (Window       => Window,
@@ -175,7 +167,7 @@ package body Madarch.Renderers is
 
          Screen_Pass => Render_Passes.Create
            (Vertex_Shader   => Vertex_Shader,
-            Fragment_Shader => Radiance_Shader,
+            Fragment_Shader => Screen_Shader,
 
             Frame_Width  => Int (Window.Width),
             Frame_Height => Int (Window.Height)))
