@@ -368,7 +368,7 @@ procedure Main is
 
    Probes_UBO : GPU_Buffers.GPU_Buffer;
 
-   Probes_Layout_Type : Structs.Struct := Structs.Create
+   Probes_Layout_Type : GPU_Type := Structs.Create
      ((Base.IVec_2.Named ("probe_count"),
        Base.IVec_3.Named ("grid_dimensions"),
        Base.Vec_3.Named ("grid_spacing")));
@@ -405,41 +405,41 @@ procedure Main is
    Max_Point_Light_Count : constant Types.Size := 4;
    Max_Spot_Light_Count  : constant Types.Size := 4;
 
-   Primitive_Type : aliased constant Structs.Struct :=
+   Primitive_Type : GPU_Type :=
       Structs.Create
         ((Base.Vec_3.Named ("f_vec3"), Base.Float.Named ("f_float"),
           Base.Int.Named ("material_id")));
 
-   Point_Light_Type : aliased constant Structs.Struct :=
+   Point_Light_Type : GPU_Type :=
       Structs.Create
         ((Base.Vec_3.Named ("position"), Base.Vec_3.Named ("color")));
 
-   Spot_Light_Type : aliased constant Structs.Struct :=
+   Spot_Light_Type : GPU_Type :=
       Structs.Create
         ((Base.Vec_3.Named ("position"), Base.Vec_3.Named ("direction"),
           Base.Float.Named ("aperture"), Base.Vec_3.Named ("color")));
 
-   Primitive_Sphere_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+   Primitive_Sphere_Array_Type : GPU_Type :=
       Fixed_Arrays.Create
-        (Max_Sphere_Count, Primitive_Type'Unchecked_Access);
+        (Max_Sphere_Count, Primitive_Type);
 
-   Primitive_Plane_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+   Primitive_Plane_Array_Type : GPU_Type :=
       Fixed_Arrays.Create
-        (Max_Plane_Count, Primitive_Type'Unchecked_Access);
+        (Max_Plane_Count, Primitive_Type);
 
-   Primitive_Cube_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+   Primitive_Cube_Array_Type : GPU_Type :=
       Fixed_Arrays.Create
-        (Max_Cube_Count, Primitive_Type'Unchecked_Access);
+        (Max_Cube_Count, Primitive_Type);
 
-   Point_Light_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+   Point_Light_Array_Type : GPU_Type :=
       Fixed_Arrays.Create
-        (Max_Point_Light_Count, Point_Light_Type'Unchecked_Access);
+        (Max_Point_Light_Count, Point_Light_Type);
 
-   Spot_Light_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+   Spot_Light_Array_Type : GPU_Type :=
       Fixed_Arrays.Create
-        (Max_Spot_Light_Count, Spot_Light_Type'Unchecked_Access);
+        (Max_Spot_Light_Count, Spot_Light_Type);
 
-   Scene_Description_Type : Structs.Struct := Structs.Create
+   Scene_Description_Type : GPU_Type := Structs.Create
      ((Base.Int.Named ("prim_sphere_count"),
        Primitive_Sphere_Array_Type.Named ("prim_spheres"),
 
@@ -572,17 +572,17 @@ procedure Main is
 
    Materials_UBO : GPU_Buffers.GPU_Buffer;
 
-   Material_Type : aliased constant Structs.Struct :=
+   Material_Type : GPU_Type :=
       Structs.Create
         ((Base.Vec_3.Named ("albedo"),
           Base.Float.Named ("metallic"),
           Base.Float.Named ("roughness")));
 
-   Material_Array_Type : aliased constant Fixed_Arrays.Fixed_Array :=
+   Material_Array_Type : GPU_Type :=
       Fixed_Arrays.Create
-        (Max_Material_Count, Material_Type'Unchecked_Access);
+        (Max_Material_Count, Material_Type);
 
-   Materials_Description_Type : Structs.Struct :=
+   Materials_Description_Type : GPU_Type :=
       Structs.Create
         ((Base.Int.Named ("material_count"),
           Material_Array_Type.Named ("materials")));
@@ -659,7 +659,7 @@ procedure Main is
 
    Q_Pressed : Boolean := False;
 
-   Suzanne_Type : Structs.Struct := Structs.Create
+   Suzanne_Type : GPU_Type := Structs.Create
      ((Base.Vec_3.Named ("position"), Base.Vec_3.Named ("extent")));
 
    Suzanne_UBO : GPU_Buffers.GPU_Buffer;

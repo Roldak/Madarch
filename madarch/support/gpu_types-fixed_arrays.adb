@@ -1,4 +1,14 @@
 package body GPU_Types.Fixed_Arrays is
+   function Create
+     (Length : Types.Size; X : GPU_Type) return GPU_Type
+   is
+   begin
+      return (T => new Fixed_Array'
+        (GPU_Type_Internal with
+            Length    => Length,
+            Component => X));
+   end Create;
+
    overriding function Alignment (X : Fixed_Array) return Types.Size is
    begin
       return X.Component.Alignment;
@@ -12,15 +22,6 @@ package body GPU_Types.Fixed_Arrays is
       Pad (Component_Size, 16);
       return Component_Size * X.Length;
    end Size;
-
-   function Create
-     (Length : Types.Size; X : GPU_Type_Access) return Fixed_Array
-   is
-   begin
-      return (GPU_Type with
-                Length    => Length,
-                Component => X);
-   end Create;
 
    overriding function Component_Location
      (Self  : Fixed_Array; Index : Positive) return Locations.Location

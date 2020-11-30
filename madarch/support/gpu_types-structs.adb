@@ -1,4 +1,13 @@
 package body GPU_Types.Structs is
+   function Create
+     (Named_Components : Named_Component_Array) return GPU_Type
+   is
+   begin
+      return (T => new Struct'
+        (GPU_Type_Internal with
+            Components => new Named_Component_Array'(Named_Components)));
+   end Create;
+
    overriding function Size (X : Struct) return Types.Size is
       use type GL.Types.Size;
 
@@ -10,15 +19,6 @@ package body GPU_Types.Structs is
       end loop;
       return Total;
    end Size;
-
-   function Create
-     (Named_Components : Named_Component_Array) return Struct
-   is
-   begin
-      return
-        (GPU_Type with
-           Components => new Named_Component_Array'(Named_Components));
-   end Create;
 
    overriding function Component_Location
      (Self : Struct; Name : String) return Locations.Location

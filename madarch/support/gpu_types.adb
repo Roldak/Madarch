@@ -8,7 +8,7 @@ package body GPU_Types is
    end Pad;
 
    function Allocate
-     (Typ     : GPU_Type'Class;
+     (Typ     : GPU_Type;
       Kind    : GPU_Buffers.GPU_Buffer_Kind;
       Binding : Types.UInt) return GPU_Buffers.GPU_Buffer
    is
@@ -17,12 +17,12 @@ package body GPU_Types is
    end Allocate;
 
    function Named
-     (Self : aliased GPU_Type; Name : String) return Named_Component
+     (Self : GPU_Type; Name : String) return Named_Component
    is
       R_Name : XString;
    begin
       R_Name.Set (Name);
-      return (R_Name, Self'Unchecked_Access);
+      return (R_Name, Self);
    end Named;
 
    package body Locations is
@@ -49,10 +49,12 @@ package body GPU_Types is
    end Locations;
 
    function Component_Location
-     (Self : GPU_Type; Component_Index : Positive) return Locations.Location
+     (Self : GPU_Type_Internal;
+      Component_Index : Positive) return Locations.Location
    is (raise Program_Error with "Invalid operation");
 
    function Component_Location
-     (Self : GPU_Type; Component_Name : String) return Locations.Location
+     (Self : GPU_Type_Internal;
+      Component_Name : String) return Locations.Location
    is (raise Program_Error with "Invalid operation");
 end GPU_Types;
