@@ -58,10 +58,15 @@ procedure Main is
      (Albedo    => (0.9, 0.1, 0.1),
       Metallic  => 0.1,
       Roughness => 0.9);
+
+   Sphere_Instance : Values.Value_Array :=
+     ((Values.Vector3_Kind, (0.0, 0.0, 2.0)),
+      (Values.Float_Kind, 1.0));
 begin
    Renderers.Set_Material (Renderer, 1, Red_Mat);
-   Scenes.Print_GLSL (Scene);
+   Renderers.Set_Primitive (Renderer, 1, Sphere, Sphere_Instance, 1);
    while Window.Is_Opened loop
+      Renderers.Render (Renderer);
       Window.Poll_Events;
    end loop;
 end Main;

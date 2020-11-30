@@ -18,6 +18,8 @@ package Madarch.Values is
       end case;
    end record;
 
+   type Value_Array is array (Positive range <>) of Value;
+
    function Vector3 (X : GLT.Singles.Vector3) return Value;
    function Float (X : GLT.Single) return Value;
    function Int (X : GLT.Int) return Value;

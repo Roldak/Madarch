@@ -1,7 +1,9 @@
 with GL.Types;
 
 with Madarch.Materials;
+with madarch.Primitives;
 with Madarch.Scenes;
+with Madarch.Values;
 with Madarch.Windows;
 
 with GPU_Buffers;
@@ -33,6 +35,13 @@ package Madarch.Renderers is
      (Self  : in out Renderer;
       Index : Positive;
       Mat   : Materials.Material);
+
+   procedure Set_Primitive
+     (Self  : in out Renderer;
+      Index : Positive;
+      Prim  : Primitives.Primitive;
+      Vals  : Values.Value_Array;
+      Mat   : Positive);
 private
    type Renderer_Internal is record
       Window : Windows.Window;

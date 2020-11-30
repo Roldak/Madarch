@@ -218,4 +218,37 @@ package body Madarch.Renderers is
       W.Write_Float (Mat.Metallic);
       W.Write_Float (Mat.Roughness);
    end Set_Material;
+
+   procedure Set_Primitive
+     (Self  : in out Renderer;
+      Index : Positive;
+      Prim  : Primitives.Primitive;
+      Vals  : Values.Value_Array;
+      Mat   : Positive)
+   is
+      use GPU_Types;
+
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Scene_Buffer);
+
+      Array_Loc : Locations.Location;
+      Count_Loc : Locations.Location;
+   begin
+      Scenes.Get_Primitives_Location (Self.Scene, Prim, Array_Loc, Count_Loc);
+
+      Array_Loc.Component (Index).Adjust (W);
+      for V of Vals loop
+         case V.Kind is
+            when Values.Vector3_Kind =>
+               W.Write_Vec3 (V.Vector3_Value);
+            when Values.Float_Kind =>
+               W.Write_Float (V.Float_Value);
+            when Values.Int_Kind =>
+               W.Write_Int (V.Int_Value);
+         end case;
+      end loop;
+      W.Write_Int (Int (Mat));
+
+      Count_Loc.Adjust (W);
+      W.Write_Int (Int (Index));
+   end Set_Primitive;
 end Madarch.Renderers;

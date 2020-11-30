@@ -31,6 +31,12 @@ package Madarch.Scenes is
    procedure Print_GLSL (S : Scene);
 
    function Get_GPU_Type (S : Scene) return GPU_Types.GPU_Type;
+
+   procedure Get_Primitives_Location
+     (S    : Scene;
+      Prim : Primitives.Primitive;
+      Array_Location : out GPU_Types.Locations.Location;
+      Count_Location : out GPU_Types.Locations.Location);
 private
    type Scene_Internal is record
       Prims    : Primitives.Primitive_Array_Access;

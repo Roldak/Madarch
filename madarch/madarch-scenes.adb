@@ -674,4 +674,17 @@ package body Madarch.Scenes is
 
    function Get_GPU_Type (S : Scene) return GPU_Types.GPU_Type is
      (S.GPU_Type);
+
+   procedure Get_Primitives_Location
+     (S    : Scene;
+      Prim : Primitives.Primitive;
+      Array_Location : out GPU_Types.Locations.Location;
+      Count_Location : out GPU_Types.Locations.Location)
+   is
+   begin
+      Array_Location :=
+         S.GPU_Type.Address.Component (Prim_Array_Reference (Prim));
+      Count_Location :=
+         S.GPU_Type.Address.Component (Prim_Count_Reference (Prim));
+   end Get_Primitives_Location;
 end Madarch.Scenes;
