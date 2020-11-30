@@ -7,6 +7,7 @@ with Madarch.Primitives;
 with Madarch.Renderers;
 with Madarch.Scenes;
 with Madarch.Values;
+with Madarch.Windows;
 
 procedure Main is
    use Madarch;
@@ -48,7 +49,12 @@ procedure Main is
      (All_Primitives => (1 => (Sphere, 20)),
       All_Lights     => (1 => (Point_Light, 4)));
 
-   Renderer : Renderers.Renderer := Renderers.Create (Scene);
+   Window : Windows.Window := Windows.Open (1000, 1000, "Simple_Scene");
+
+   Renderer : Renderers.Renderer := Renderers.Create (Window, Scene);
 begin
    Scenes.Print_GLSL (Scene);
+   while Window.Is_Opened loop
+      Window.Poll_Events;
+   end loop;
 end Main;

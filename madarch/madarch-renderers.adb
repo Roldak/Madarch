@@ -2,13 +2,15 @@ with GL;
 with GL.Objects.Programs;
 with GL.Objects.Shaders;
 
-with GLFW_Utils;
 with Shader_Loader;
 with GPU_Types;
 
+with Glfw.Windows.Context;
+
 package body Madarch.Renderers is
    function Create
-     (Scene  : Scenes.Scene;
+     (Window : Windows.Window;
+      Scene  : Scenes.Scene;
       Probes : Probe_Settings := Default_Probe_Settings) return Renderer
    is
       use Shader_Loader;
@@ -50,8 +52,7 @@ package body Madarch.Renderers is
       Irradiance_Program : GL.Objects.Programs.Program;
       Screen_Program     : GL.Objects.Programs.Program;
    begin
-      GLFW_Utils.Init;
-      GLFW_Utils.Open_Window (Width => 1000, Height => 1000, Title => "Madarch");
+      Glfw.Windows.Context.Make_Current (Window);
 
       Load_Shader (Vertex_Shader,
                    "madarch/glsl/identity.glsl",
@@ -74,9 +75,15 @@ package body Madarch.Renderers is
       Screen_Program.Initialize_Id;
 
       R := new Renderer_Internal'
-        (Scene        => Scene,
+        (Window       => Window,
+         Scene        => Scene,
          Scene_Buffer => Scene_Description_Type.Allocate
            (Kind => GPU_Buffers.Uniform_Buffer, Binding => 1));
       return R;
    end Create;
+
+   procedure Render (Self : Renderer) is
+   begin
+      Glfw.Windows.Context.Make_Current (Self.Window);
+   end Render;
 end Madarch.Renderers;

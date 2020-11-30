@@ -1,4 +1,5 @@
 with Madarch.Scenes;
+with Madarch.Windows;
 
 with GPU_Buffers;
 
@@ -13,11 +14,15 @@ package Madarch.Renderers is
    Default_Probe_Settings : constant Probe_Settings;
 
    function Create
-     (Scene  : Scenes.Scene;
+     (Window : Windows.Window;
+      Scene  : Scenes.Scene;
       Probes : Probe_Settings := Default_Probe_Settings) return Renderer;
+
+   procedure Render (Self : Renderer);
 private
    type Renderer_Internal is record
-      Scene : Scenes.Scene;
+      Window : Windows.Window;
+      Scene  : Scenes.Scene;
 
       Scene_Buffer : GPU_Buffers.GPU_Buffer;
    end record;
