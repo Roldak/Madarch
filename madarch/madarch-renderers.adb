@@ -192,4 +192,21 @@ package body Madarch.Renderers is
       Self.Screen_Pass.Render;
       Glfw.Windows.Context.Swap_Buffers (Self.Window);
    end Render;
+
+   procedure Set_Material
+     (Self  : in out Renderer;
+      Index : Positive;
+      Mat   : Materials.Material)
+   is
+      use GPU_Types;
+
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Materials_Buffer);
+
+      L : Locations.Location := Materials_Description_Type.Address;
+   begin
+      L.Component ("materials").Component (Index).Adjust (W);
+      W.Write_Vec3 (Mat.Albedo);
+      W.Write_Float (Mat.Metallic);
+      W.Write_Float (Mat.Roughness);
+   end Set_Material;
 end Madarch.Renderers;

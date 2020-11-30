@@ -3,6 +3,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with Madarch.Components;
 with Madarch.Exprs;
 with Madarch.Lights;
+with Madarch.Materials;
 with Madarch.Primitives;
 with Madarch.Renderers;
 with Madarch.Scenes;
@@ -52,7 +53,13 @@ procedure Main is
    Window : Windows.Window := Windows.Open (1000, 1000, "Simple_Scene");
 
    Renderer : Renderers.Renderer := Renderers.Create (Window, Scene);
+
+   Red_Mat : Materials.Material :=
+     (Albedo    => (0.9, 0.1, 0.1),
+      Metallic  => 0.1,
+      Roughness => 0.9);
 begin
+   Renderers.Set_Material (Renderer, 1, Red_Mat);
    Scenes.Print_GLSL (Scene);
    while Window.Is_Opened loop
       Window.Poll_Events;

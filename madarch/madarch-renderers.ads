@@ -1,5 +1,6 @@
 with GL.Types;
 
+with Madarch.Materials;
 with Madarch.Scenes;
 with Madarch.Windows;
 
@@ -27,6 +28,11 @@ package Madarch.Renderers is
       Probes : Probe_Settings := Default_Probe_Settings) return Renderer;
 
    procedure Render (Self : Renderer);
+
+   procedure Set_Material
+     (Self  : in out Renderer;
+      Index : Positive;
+      Mat   : Materials.Material);
 private
    type Renderer_Internal is record
       Window : Windows.Window;
