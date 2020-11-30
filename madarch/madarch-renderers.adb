@@ -16,6 +16,40 @@ package body Madarch.Renderers is
        GPU_Types.Base.IVec_3.Named ("grid_dimensions"),
        GPU_Types.Base.Vec_3.Named  ("grid_spacing")));
 
+   procedure Setup_Probe_Layout
+     (Self   : Renderer;
+      Probes : Probe_Settings)
+   is
+      use GL;
+      use GPU_Types;
+
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Probes_Buffer);
+
+      L : Locations.Location := Probes_Layout_Type.Address;
+
+      Total_On_Grid : Int :=
+         Probes.Grid_Dimensions (X) *
+         Probes.Grid_Dimensions (Y) *
+         Probes.Grid_Dimensions (Z);
+
+      Total_Count : Int :=
+         Probes.Probe_Count (X) *
+         Probes.Probe_Count (Y);
+   begin
+      if Total_On_Grid /= Total_Count then
+         raise Program_Error with "Probe_Count should match grid dimensions.";
+      end if;
+
+      L.Component ("probe_count").Adjust (W);
+      W.Write_IVec2 (Probes.Probe_Count);
+
+      L.Component ("grid_dimensions").Adjust (W);
+      W.Write_IVec3 (Probes.Grid_Dimensions);
+
+      L.Component ("grid_spacing").Adjust (W);
+      W.Write_Vec3 (Probes.Grid_Spacing);
+   end Setup_Probe_Layout;
+
    Material_Type : GPU_Types.GPU_Type :=
       GPU_Types.Structs.Create
         ((GPU_Types.Base.Vec_3.Named ("albedo"),
@@ -108,7 +142,7 @@ package body Madarch.Renderers is
       Irradiance_Program.Initialize_Id;
       Screen_Program.Initialize_Id;
 
-      return new Renderer_Internal'
+      return R : Renderer := new Renderer_Internal'
         (Window       => Window,
          Scene        => Scene,
 
@@ -144,7 +178,10 @@ package body Madarch.Renderers is
             Fragment_Shader => Radiance_Shader,
 
             Frame_Width  => Int (Window.Width),
-            Frame_Height => Int (Window.Height)));
+            Frame_Height => Int (Window.Height)))
+      do
+         Setup_Probe_Layout (R, Probes);
+      end return;
    end Create;
 
    procedure Render (Self : Renderer) is

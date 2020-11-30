@@ -120,6 +120,18 @@ package body GPU_Buffers is
      Self.Offset := Self.Offset + 4;
    end Write_Float;
 
+   procedure Write_Vec2 (Self : in out Writer; V : Singles.Vector2) is
+      use GL.Objects.Buffers;
+   begin
+      Self.Pad (8);
+      Set_Buffer_Float_Data
+        (Self.Buffer.Kind,
+         Self.Offset,
+         (0 => V (X),
+          1 => V (Y)));
+      Self.Offset := Self.Offset + 8;
+   end Write_Vec2;
+
    procedure Write_Vec3 (Self : in out Writer; V : Singles.Vector3) is
       use GL.Objects.Buffers;
    begin
@@ -132,6 +144,31 @@ package body GPU_Buffers is
           2 => V (Z)));
       Self.Offset := Self.Offset + 12;
    end Write_Vec3;
+
+   procedure Write_IVec2 (Self : in out Writer; V : Ints.Vector2) is
+      use GL.Objects.Buffers;
+   begin
+      Self.Pad (8);
+      Set_Buffer_Int_Data
+        (Self.Buffer.Kind,
+         Self.Offset,
+         (0 => V (X),
+          1 => V (Y)));
+      Self.Offset := Self.Offset + 8;
+   end Write_IVec2;
+
+   procedure Write_IVec3 (Self : in out Writer; V : Ints.Vector3) is
+      use GL.Objects.Buffers;
+   begin
+      Self.Pad (16);
+      Set_Buffer_Int_Data
+        (Self.Buffer.Kind,
+         Self.Offset,
+         (0 => V (X),
+          1 => V (Y),
+          2 => V (Z)));
+      Self.Offset := Self.Offset + 12;
+   end Write_IVec3;
 
    overriding procedure Initialize (Self : in out Writer) is
       use GL.Objects.Buffers;

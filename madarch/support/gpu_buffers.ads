@@ -21,7 +21,10 @@ package GPU_Buffers is
    procedure Seek        (Self : in out Writer; X : Size);
    procedure Write_Int   (Self : in out Writer; X : Int);
    procedure Write_Float (Self : in out Writer; X : Single);
+   procedure Write_Vec2  (Self : in out Writer; V : Singles.Vector2);
    procedure Write_Vec3  (Self : in out Writer; V : Singles.Vector3);
+   procedure Write_IVec2 (Self : in out Writer; V : Ints.Vector2);
+   procedure Write_IVec3 (Self : in out Writer; V : Ints.Vector3);
 
 private
    type Buffer_Target_Access is access constant GL.Objects.Buffers.Buffer_Target;
