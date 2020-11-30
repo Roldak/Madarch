@@ -13,6 +13,10 @@ package Madarch.Windows is
    function Is_Opened (Self : in out Window_Internal) return Boolean;
 
    procedure Poll_Events (Self : Window_Internal);
+
+   function Width  (Self : in out Window_Internal) return Glfw.Size;
+   function Height (Self : in out Window_Internal) return Glfw.Size;
+
 private
    type Window_Internal is new Glfw.Windows.Window with null record;
 

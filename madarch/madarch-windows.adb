@@ -37,4 +37,18 @@ package body Madarch.Windows is
    begin
       Glfw.Input.Poll_Events;
    end Poll_Events;
+
+   function Width  (Self : in out Window_Internal) return Glfw.Size is
+      W, H : Glfw.Size;
+   begin
+      Self.Get_Size (W, H);
+      return W;
+   end Width;
+
+   function Height (Self : in out Window_Internal) return Glfw.Size is
+      W, H : Glfw.Size;
+   begin
+      Self.Get_Size (W, H);
+      return H;
+   end Height;
 end Madarch.Windows;
