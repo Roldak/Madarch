@@ -1,7 +1,8 @@
 with GL.Types;
 
 with Madarch.Materials;
-with madarch.Primitives;
+with Madarch.Lights;
+with Madarch.Primitives;
 with Madarch.Scenes;
 with Madarch.Values;
 with Madarch.Windows;
@@ -42,6 +43,13 @@ package Madarch.Renderers is
       Prim  : Primitives.Primitive;
       Vals  : Values.Value_Array;
       Mat   : Positive);
+
+   procedure Set_Light
+     (Self  : in out Renderer;
+      Index : Positive;
+      Lit   : Lights.Light;
+      Vals  : Values.Value_Array;
+      Pos   : Singles.Vector3);
 private
    type Renderer_Internal is record
       Window : Windows.Window;

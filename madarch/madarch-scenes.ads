@@ -37,6 +37,13 @@ package Madarch.Scenes is
       Prim : Primitives.Primitive;
       Array_Location : out GPU_Types.Locations.Location;
       Count_Location : out GPU_Types.Locations.Location);
+
+   procedure Get_Lights_Location
+     (S    : Scene;
+      Lit  : Lights.Light;
+      Array_Location : out GPU_Types.Locations.Location;
+      Count_Location : out GPU_Types.Locations.Location;
+      Total_Location : out GPU_Types.Locations.Location);
 private
    type Scene_Internal is record
       Prims    : Primitives.Primitive_Array_Access;

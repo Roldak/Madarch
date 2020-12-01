@@ -10,9 +10,14 @@ with Madarch.Scenes;
 with Madarch.Values;
 with Madarch.Windows;
 
+with Math_Utils; use Math_Utils;
+
+with GL.Types;
+
 procedure Main is
    use Madarch;
    use type Madarch.Exprs.Expr;
+   use GL.Types;
 
    Sphere_Center : Components.Component := Components.Create
      ("center", Values.Vector3_Kind);
@@ -62,11 +67,20 @@ procedure Main is
    Sphere_Instance : Values.Value_Array :=
      ((Values.Vector3_Kind, (0.0, 0.0, 2.0)),
       (Values.Float_Kind, 1.0));
+
+   Point_Light_Instance : Values.Value_Array :=
+     (1 => (Values.Vector3_Kind, (0.9, 0.9, 0.9)));
+
+   Time : Single := 0.0;
 begin
    Renderers.Set_Material (Renderer, 1, Red_Mat);
    Renderers.Set_Primitive (Renderer, 1, Sphere, Sphere_Instance, 1);
    while Window.Is_Opened loop
+      Renderers.Set_Light
+        (Renderer, 1, Point_Light, Point_Light_Instance,
+         (Cos (Time) + 1.0, Sin (Time) + 1.0, 3.0));
       Renderers.Render (Renderer);
       Window.Poll_Events;
+      Time := Time + 0.01;
    end loop;
 end Main;

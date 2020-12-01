@@ -687,4 +687,20 @@ package body Madarch.Scenes is
       Count_Location :=
          S.GPU_Type.Address.Component (Prim_Count_Reference (Prim));
    end Get_Primitives_Location;
+
+   procedure Get_Lights_Location
+     (S    : Scene;
+      Lit  : Lights.Light;
+      Array_Location : out GPU_Types.Locations.Location;
+      Count_Location : out GPU_Types.Locations.Location;
+      Total_Location : out GPU_Types.Locations.Location)
+   is
+   begin
+      Array_Location :=
+         S.GPU_Type.Address.Component (Light_Array_Reference (Lit));
+      Count_Location :=
+         S.GPU_Type.Address.Component (Light_Count_Reference (Lit));
+      Total_Location :=
+         S.GPU_Type.Address.Component ("total_light_count");
+   end Get_Lights_Location;
 end Madarch.Scenes;

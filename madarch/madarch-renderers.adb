@@ -246,9 +246,48 @@ package body Madarch.Renderers is
                W.Write_Int (V.Int_Value);
          end case;
       end loop;
-      W.Write_Int (Int (Mat));
+      W.Write_Int (Int (Mat) - 1);
 
       Count_Loc.Adjust (W);
       W.Write_Int (Int (Index));
    end Set_Primitive;
+
+   procedure Set_Light
+     (Self  : in out Renderer;
+      Index : Positive;
+      Lit   : Lights.Light;
+      Vals  : Values.Value_Array;
+      Pos   : Singles.Vector3)
+   is
+      use GPU_Types;
+
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Scene_Buffer);
+
+      Array_Loc : Locations.Location;
+      Count_Loc : Locations.Location;
+      Total_Loc : Locations.Location;
+   begin
+      Scenes.Get_Lights_Location
+        (Self.Scene, Lit, Array_Loc, Count_Loc, Total_Loc);
+
+      Array_Loc.Component (Index).Adjust (W);
+      W.Write_Vec3 (Pos);
+
+      for V of Vals loop
+         case V.Kind is
+            when Values.Vector3_Kind =>
+               W.Write_Vec3 (V.Vector3_Value);
+            when Values.Float_Kind =>
+               W.Write_Float (V.Float_Value);
+            when Values.Int_Kind =>
+               W.Write_Int (V.Int_Value);
+         end case;
+      end loop;
+
+      Count_Loc.Adjust (W);
+      W.Write_Int (Int (Index));
+
+      Total_Loc.Adjust (W);
+      W.Write_Int (Int (Index));
+   end Set_Light;
 end Madarch.Renderers;
