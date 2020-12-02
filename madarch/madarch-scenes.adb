@@ -5,6 +5,10 @@ with Madarch.Components;
 with Madarch.Exprs;
 with Madarch.Values;
 
+with GPU_Types.Base;
+with GPU_Types.Fixed_Arrays;
+with GPU_Types.Structs;
+
 package body Madarch.Scenes is
    LF  : Character renames Ada.Characters.Latin_1.LF;
    DLF : constant String := LF & LF;
@@ -551,6 +555,91 @@ package body Madarch.Scenes is
       return Res;
    end Generate_Code;
 
+   function Compute_Scene_GPU_Type
+     (Prims_Count  : Primitive_Count_Array;
+      Lights_Count : Light_Count_Array) return GPU_Types.GPU_Type
+   is
+      function Compute_Prim_Struct_Type
+        (Prim : Primitives.Primitive) return GPU_Types.GPU_Type
+      is
+         Prim_Comps : Components.Component_Array :=
+            Primitives.Get_Components (Prim);
+
+         Type_Comps : GPU_Types.Named_Component_Array :=
+           (1 .. Prim_Comps'Length + 1 => <>);
+      begin
+         for I in Prim_Comps'Range loop
+            Type_Comps (I) :=
+               Values.GPU_Type (Components.Get_Kind (Prim_Comps (I))).Named
+                 (Components.Get_Name (Prim_Comps (I)));
+         end loop;
+
+         Type_Comps (Prim_Comps'Last + 1) :=
+            GPU_Types.Base.Int.Named ("material_id");
+
+         return GPU_Types.Structs.Create (Type_Comps);
+      end Compute_Prim_Struct_Type;
+
+      function Compute_Light_Struct_Type
+        (Light : Lights.Light) return GPU_Types.GPU_Type
+      is
+         Light_Comps : Components.Component_Array :=
+            Lights.Get_Components (Light);
+
+         Type_Comps : GPU_Types.Named_Component_Array :=
+           (1 .. Light_Comps'Length + 1 => <>);
+      begin
+         Type_Comps (1) :=
+            GPU_Types.Base.Vec_3.Named ("position");
+
+         for I in Light_Comps'Range loop
+            Type_Comps (I + 1) :=
+               Values.GPU_Type (Components.Get_Kind (Light_Comps (I))).Named
+                 (Components.Get_Name (Light_Comps (I)));
+         end loop;
+
+         return GPU_Types.Structs.Create (Type_Comps);
+      end Compute_Light_Struct_Type;
+
+      Component_Count : Positive :=
+        Prims_Count'Length * 2 + Lights_Count'Length * 2 + 1;
+
+      Comps : GPU_Types.Named_Component_Array :=
+        (1 .. Component_Count => <>);
+
+      I : Natural := 1;
+
+      procedure Add (Comp : GPU_Types.Named_Component) is
+      begin
+         Comps (I) := Comp;
+         I := I + 1;
+      end Add;
+   begin
+      for Prim_Count of Prims_Count loop
+         Add (GPU_Types.Base.Int.Named
+           (Prim_Count_Reference (Prim_Count.Prim)));
+
+         Add (GPU_Types.Fixed_Arrays.Create
+           (GL.Types.Int (Prim_Count.Count),
+            Compute_Prim_Struct_Type (Prim_Count.Prim)).Named
+              (Prim_Array_Reference (Prim_Count.Prim)));
+      end loop;
+
+      for Light_Count of Lights_Count loop
+         Add (GPU_Types.Base.Int.Named
+           (Light_Count_Reference (Light_Count.Light)));
+
+         Add (GPU_Types.Fixed_Arrays.Create
+           (GL.Types.Int (Light_Count.Count),
+            Compute_Light_Struct_Type (Light_Count.Light)).Named
+              (Light_Array_Reference (Light_Count.Light)));
+      end loop;
+
+      Add (GPU_Types.Base.Int.Named ("total_light_count"));
+
+      return GPU_Types.Structs.Create (Comps);
+   end Compute_Scene_GPU_Type;
+
    function Compile
      (All_Primitives : Primitive_Count_Array;
       All_Lights     : Light_Count_Array;
@@ -571,14 +660,18 @@ package body Madarch.Scenes is
       end loop;
 
       return new Scene_Internal'
-        (Prims => Prims,
-         Lits  => Lits,
-         GLSL  => Generate_Code
-           (All_Primitives, All_Lights, Prims, Lits, Max_Dist));
+        (Prims    => Prims,
+         Lits     => Lits,
+         GLSL     => Generate_Code
+           (All_Primitives, All_Lights, Prims, Lits, Max_Dist),
+         GPU_Type => Compute_Scene_GPU_Type (All_Primitives, All_Lights));
    end Compile;
 
    procedure Print_GLSL (S : Scene) is
    begin
       Put_Line (To_String (S.GLSL));
    end Print_GLSL;
+
+   function Get_GPU_Type (S : Scene) return GPU_Types.GPU_Type is
+     (S.GPU_Type);
 end Madarch.Scenes;

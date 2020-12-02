@@ -5,6 +5,8 @@ with Madarch.Lights;
 
 with GL.Types;
 
+with GPU_Types;
+
 package Madarch.Scenes is
    type Scene is private;
 
@@ -27,11 +29,14 @@ package Madarch.Scenes is
       Max_Dist       : GL.Types.Single := 20.0) return Scene;
 
    procedure Print_GLSL (S : Scene);
+
+   function Get_GPU_Type (S : Scene) return GPU_Types.GPU_Type;
 private
    type Scene_Internal is record
-      Prims : Primitives.Primitive_Array_Access;
-      Lits  : Lights.Light_Array_Access;
-      GLSL  : Unbounded_String;
+      Prims    : Primitives.Primitive_Array_Access;
+      Lits     : Lights.Light_Array_Access;
+      GLSL     : Unbounded_String;
+      GPU_Type : GPU_Types.GPU_Type;
    end record;
 
    type Scene is access Scene_Internal;

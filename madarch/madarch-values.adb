@@ -1,5 +1,7 @@
 with Math_Utils; use Math_Utils;
 
+with GPU_Types.Base;
+
 package body Madarch.Values is
    use type GLT.Single, GLT.Int, GLT.Singles.Vector3;
 
@@ -107,4 +109,16 @@ package body Madarch.Values is
             raise Program_Error with "Cannot normalize int.";
       end case;
    end Normalize;
+
+   function GPU_Type (K : Value_Kind) return GPU_Types.GPU_Type is
+   begin
+      case K is
+         when Vector3_Kind =>
+            return GPU_Types.Base.Vec_3;
+         when Float_Kind =>
+            return GPU_Types.Base.Float;
+         when Int_Kind =>
+            return GPU_Types.Base.Int;
+      end case;
+   end GPU_Type;
 end Madarch.Values;
