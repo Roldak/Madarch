@@ -282,7 +282,7 @@ package body Madarch.Scenes is
 
       Stmts : Unbounded_String;
    begin
-      Append (Stmts, "dir = l.position - pos");
+      Append (Stmts, "dir = l.position - pos;");
       Append (Stmts, LF);
       Append (Stmts, "dist = length(dir);");
       Append (Stmts, LF);
@@ -366,10 +366,9 @@ package body Madarch.Scenes is
          begin
             Append (Loop_Body, "closest = min(closest, ");
             Append (Loop_Body, Dist_Function_Reference (Prim));
-            Append (Loop_Body, "(x, ");
+            Append (Loop_Body, "(");
             Append (Loop_Body, Prim_Array_Reference (Prim));
-            Append (Loop_Body, "[i])");
-            Append (Loop_Body, ");");
+            Append (Loop_Body, "[i], x));");
             Append (Stmts, For_Loop
               ("i", Prim_Count_Reference (Prim), To_String (Loop_Body)));
             Append (Stmts, LF);
@@ -399,10 +398,9 @@ package body Madarch.Scenes is
             Variable_Expr : Unbounded_String;
          begin
             Append (Variable_Expr, Dist_Function_Reference (Prim));
-            Append (Variable_Expr, "(x, ");
+            Append (Variable_Expr, "(");
             Append (Variable_Expr, Prim_Array_Reference (Prim));
-            Append (Variable_Expr, "[i])");
-            Append (Variable_Expr, ")");
+            Append (Variable_Expr, "[i], x);");
 
             Append (Loop_Body, Variable_Declaration
               ("float", "dist", To_String (Variable_Expr)));
@@ -444,9 +442,9 @@ package body Madarch.Scenes is
 
          Append (Stmts, "normal = ");
          Append (Stmts, Normal_Function_Reference (Prim_Count.Prim));
-         Append (Stmts, "(pos, ");
+         Append (Stmts, "(");
          Append (Stmts, Prim_Array_Reference (Prim_Count.Prim));
-         Append (Stmts, "[index]);");
+         Append (Stmts, "[index], pos);");
          Append (Stmts, LF);
 
          Append (Stmts, "material_id = ");
@@ -667,10 +665,8 @@ package body Madarch.Scenes is
          GPU_Type => Compute_Scene_GPU_Type (All_Primitives, All_Lights));
    end Compile;
 
-   procedure Print_GLSL (S : Scene) is
-   begin
-      Put_Line (To_String (S.GLSL));
-   end Print_GLSL;
+   function Get_GLSL (S : Scene) return String is
+     (To_String (S.GLSL));
 
    function Get_GPU_Type (S : Scene) return GPU_Types.GPU_Type is
      (S.GPU_Type);

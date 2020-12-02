@@ -28,7 +28,7 @@ package Madarch.Scenes is
       All_Lights     : Light_Count_Array;
       Max_Dist       : GL.Types.Single := 20.0) return Scene;
 
-   procedure Print_GLSL (S : Scene);
+   function Get_GLSL (S : Scene) return String;
 
    function Get_GPU_Type (S : Scene) return GPU_Types.GPU_Type;
 
