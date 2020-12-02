@@ -455,7 +455,7 @@ procedure Main is
        Base.Int.Named ("spot_light_count"),
        Spot_Light_Array_Type.Named ("spot_lights"),
 
-       Base.Int.Named ("light_count")));
+       Base.Int.Named ("total_light_count")));
 
    procedure Update_Scene_Primitives
      (Prims : Primitives.Primitive_Array)
@@ -564,7 +564,7 @@ procedure Main is
       L.Component ("spot_light_count").Adjust (W);
       W.Write_Int (Int (Spot_Light_Index) - 1);
 
-      L.Component ("light_count").Adjust (W);
+      L.Component ("total_light_count").Adjust (W);
       W.Write_Int (Int (Lits'Length));
    end Update_Scene_Lights;
 

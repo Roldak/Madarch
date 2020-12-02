@@ -5,7 +5,7 @@ vec3 compute_direct_lighting(vec3 pos, vec3 normal, vec3 dir,
 
    vec3 Lo = vec3(0.0);
 
-   for (int i = 0; i < light_count; ++i) {
+   for (int i = 0; i < total_light_count; ++i) {
       vec3 L;
       float L_dist;
       vec3 radiance = sample_light(i, pos, N, L, L_dist);

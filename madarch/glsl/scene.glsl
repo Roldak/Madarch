@@ -117,7 +117,7 @@ layout(std140, binding = 1) uniform scene_description {
    int spot_light_count;
    SpotLight spot_lights[M_MAX_SPOT_LIGHT_COUNT];
 
-   int light_count;
+   int total_light_count;
 };
 
 float closest_primitive(vec3 x) {
