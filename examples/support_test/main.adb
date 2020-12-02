@@ -729,19 +729,22 @@ begin
    -- load shader sources and compile shaders
    Load_Shader (Vertex_Shader,
                 "madarch/glsl/identity.glsl",
-                No_Macro_Definition_Array, "120");
+                GLSL_Version => "120");
 
    Load_Shader (Image_Shader,
                 "madarch/glsl/draw_screen.glsl",
-                Probe_Layout_Macros & Scene_Macros & Render_Macros, "420");
+                Probe_Layout_Macros & Scene_Macros & Render_Macros,
+                GLSL_Version => "420");
 
    Load_Shader (Radiance_Shader,
                 "madarch/glsl/compute_probe_radiance.glsl",
-                Probe_Layout_Macros & Scene_Macros & Probe_Render_Macros, "420");
+                Probe_Layout_Macros & Scene_Macros & Probe_Render_Macros,
+                GLSL_Version => "420");
 
    Load_Shader (Irradiance_Shader,
                 "madarch/glsl/update_probe_irradiance.glsl",
-                Probe_Layout_Macros, "420");
+                Probe_Layout_Macros,
+                GLSL_Version => "420");
 
    -- setup probes
    Probes_UBO := Probes_Layout_Type.Allocate

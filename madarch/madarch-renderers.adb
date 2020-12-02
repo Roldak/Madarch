@@ -116,6 +116,10 @@ package body Madarch.Renderers is
          Create_Macro_Definition ("M_ADD_INDIRECT_SPECULAR", "1"),
          Create_Macro_Definition ("M_AMBIENT_OCCLUSION_STEPS", "3"));
 
+      File_Substs : File_Substitution_Array :=
+        (1 => Create_File_Substitution
+           ("scene.glsl", Scenes.Get_GLSL (Scene)));
+
       Vertex_Shader   : GL.Objects.Shaders.Shader
         (Kind => GL.Objects.Shaders.Vertex_Shader);
 
@@ -133,22 +137,30 @@ package body Madarch.Renderers is
       Load_Shader
         (Vertex_Shader,
          "madarch/glsl/identity.glsl",
-         No_Macro_Definition_Array, "120");
+         No_Macro_Definition_Array,
+         No_File_Substitution_Array,
+         "120");
 
       Load_Shader
         (Screen_Shader,
          "madarch/glsl/draw_screen.glsl",
-         Probe_Layout_Macros & Scene_Macros & Render_Macros, "420");
+         Probe_Layout_Macros & Scene_Macros & Render_Macros,
+         File_Substs,
+         "420");
 
       Load_Shader
         (Radiance_Shader,
          "madarch/glsl/compute_probe_radiance.glsl",
-         Probe_Layout_Macros & Scene_Macros & Probe_Render_Macros, "420");
+         Probe_Layout_Macros & Scene_Macros & Probe_Render_Macros,
+         File_Substs,
+         "420");
 
       Load_Shader
         (Irradiance_Shader,
          "madarch/glsl/update_probe_irradiance.glsl",
-         Probe_Layout_Macros, "420");
+         Probe_Layout_Macros,
+         No_File_Substitution_Array,
+         "420");
 
       return R : Renderer := new Renderer_Internal'
         (Window       => Window,

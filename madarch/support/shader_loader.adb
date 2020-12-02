@@ -14,15 +14,28 @@ package body Shader_Loader is
       return (Name => XName, Value => XValue);
    end Create_Macro_Definition;
 
+   function Create_File_Substitution
+     (File_Name : String; File_Content : String) return File_Substitution
+   is
+      XName, XContent : XString;
+   begin
+      XName.Set (File_Name);
+      XContent.Set (File_Content);
+      return (File_Name => XName, File_Content => XContent);
+   end Create_File_Substitution;
+
    procedure Load_Shader
      (Shader       : in out GL.Objects.Shaders.Shader;
       Source_File  : String;
       Macros       : Macro_Definition_Array := No_Macro_Definition_Array;
+      File_Substs  : File_Substitution_Array := No_File_Substitution_Array;
       GLSL_Version : String)
    is
       use GNATCOLL;
 
-      function Load_Source (Path : VFS.Virtual_File) return Strings.XString;
+      function Get_Source_From_File_Name
+        (Source_Dir : VFS.Virtual_File;
+         File_Name  : Strings.XString) return Strings.XString;
 
       procedure Resolve_Include_Directives
         (Source_Dir : VFS.Virtual_File;
@@ -37,14 +50,11 @@ package body Shader_Loader is
             declare
                File_Name : Strings.XString := Content.Slice
                   (Included_File_Start + 1, Included_File_End - 1);
-
-               File_Path : VFS.Virtual_File := VFS.Create_From_Dir
-                 (Source_Dir, VFS.Filesystem_String (File_Name.To_String));
             begin
                Content.Replace_Slice
                  (Next_Include,
                   Included_File_End,
-                  Load_Source (File_Path));
+                  Get_Source_From_File_Name (Source_Dir, File_Name));
 
                Resolve_Include_Directives
                  (Source_Dir, Content, Included_File_End);
@@ -52,12 +62,34 @@ package body Shader_Loader is
          end if;
       end Resolve_Include_Directives;
 
-      function Load_Source (Path : VFS.Virtual_File) return Strings.XString is
-         Content : Strings.XString := VFS.Read_File (Path);
+      function Prepare_Content
+        (Source_Dir : VFS.Virtual_File;
+         Content    : Strings.XString) return Strings.XString
+      is
+         Prepared : Strings.XString := Content;
       begin
-         Resolve_Include_Directives (Path.Dir, Content);
-         return Content;
-      end Load_Source;
+         Resolve_Include_Directives (Source_Dir, Prepared);
+         return Prepared;
+      end Prepare_Content;
+
+      function Load_Source (Path : VFS.Virtual_File) return Strings.XString is
+        (Prepare_Content (Path.Dir, VFS.Read_File (Path)));
+
+      function Get_Source_From_File_Name
+        (Source_Dir : VFS.Virtual_File;
+         File_Name  : Strings.XString) return Strings.XString
+      is
+      begin
+         for Subst of File_Substs loop
+            if Subst.File_Name = File_Name then
+               return Prepare_Content (Source_Dir, Subst.File_Content);
+            end if;
+         end loop;
+
+         return Load_Source
+           (VFS.Create_From_Dir
+              (Source_Dir, VFS.Filesystem_String (File_Name.To_String)));
+      end Get_Source_From_File_Name;
 
       function Generate_Macro_Definitions return String is
          Res : Strings.XString;
