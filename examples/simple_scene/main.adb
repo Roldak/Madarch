@@ -4,6 +4,7 @@ with Madarch.Components;
 with Madarch.Exprs;
 with Madarch.Lights;
 with Madarch.Primitives;
+with Madarch.Renderers;
 with Madarch.Scenes;
 with Madarch.Values;
 
@@ -46,6 +47,8 @@ procedure Main is
    Scene : Scenes.Scene := Scenes.Compile
      (All_Primitives => (1 => (Sphere, 20)),
       All_Lights     => (1 => (Point_Light, 4)));
+
+   Renderer : Renderers.Renderer := Renderers.Create (Scene);
 begin
    Scenes.Print_GLSL (Scene);
 end Main;
