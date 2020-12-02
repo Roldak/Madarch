@@ -16,3 +16,6 @@ support_test_gdb: all
 
 simple_scene: all
 	./examples/simple_scene/bin/main
+
+simple_scene_gdb: all
+	gdb --args ./examples/simple_scene/bin/main
