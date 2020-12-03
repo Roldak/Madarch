@@ -1,3 +1,5 @@
+with Madarch.Values;
+
 package body Madarch.Primitives is
    function Create
      (Name     : String;
@@ -31,4 +33,34 @@ package body Madarch.Primitives is
       Inst  : Exprs.Struct_Expr;
       Point : Exprs.Expr) return Exprs.Expr'Class
    is (Prim.Normal (Inst, Point));
+
+   function Eval_Dist
+     (Prim   : Primitive;
+      Entity : Entities.Entity;
+      Point  : Singles.Vector3) return Single
+   is
+      Entity_Expr  : Exprs.Struct_Expr := Exprs.Struct_Identifier ("prim");
+      Point_Expr   : Exprs.Expr        := Exprs.Value_Identifier ("x");
+
+      Dist_Expr : Exprs.Expr'Class :=
+         Get_Dist_Expr (Prim, Entity_Expr, Point_Expr);
+
+      Ctx : Exprs.Eval_Context := Exprs.Create;
+   begin
+      Ctx := Exprs.Append (Ctx, "prim", Entity);
+      Ctx := Exprs.Append (Ctx, "x",    Values.Vector3 (Point));
+
+      declare
+         Res : Values.Value := Dist_Expr.Eval (Ctx);
+      begin
+         case Res.Kind is
+            when Values.Float_Kind =>
+               return Res.Float_Value;
+            when others =>
+               raise Program_Error with "Unexpected value kind.";
+         end case;
+      end;
+
+      return 0.0;
+   end Eval_Dist;
 end Madarch.Primitives;

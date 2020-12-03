@@ -1,13 +1,28 @@
+with Ada.Containers.Hashed_Maps;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Strings.Unbounded.Hash;
 
 with Madarch.Components; use Madarch.Components;
 with Madarch.Values; use Madarch.Values;
+with Madarch.Entities; use Madarch.Entities;
 
 package Madarch.Exprs is
    type Expr is tagged private;
    type Struct_Expr is tagged private;
 
    type Eval_Context is private;
+
+   function Create return Eval_Context;
+
+   function Append
+     (Self : Eval_Context;
+      Key  : String;
+      Val  : Entity) return Eval_Context;
+
+   function Append
+     (Self : Eval_Context;
+      Key  : String;
+      Val  : Value) return Eval_Context;
 
    function Eval (E : Expr; Ctx : Eval_Context) return Value;
    function To_GLSL (E : Expr) return String;
@@ -30,8 +45,18 @@ private
    type Expr_Node is abstract tagged null record;
    type Expr_Access is access all Expr_Node'Class;
 
+   function Unbounded_Eq (L, R : Unbounded_String) return Boolean is
+     (L = R);
+
+   package Entity_Maps is new Ada.Containers.Hashed_Maps
+     (Unbounded_String, Entity, Hash, Unbounded_Eq);
+
+   package Value_Maps is new Ada.Containers.Hashed_Maps
+     (Unbounded_String, Value, Hash, Unbounded_Eq);
+
    type Eval_Context is record
-      null;
+      Ents : Entity_Maps.Map;
+      Vals : Value_Maps.Map;
    end record;
 
    function Eval (E : Expr_Node; Ctx : Eval_Context) return Value is abstract;

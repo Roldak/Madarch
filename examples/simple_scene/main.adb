@@ -1,6 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
 with Madarch.Components;
+with Madarch.Entities;
 with Madarch.Exprs;
 with Madarch.Lights;
 with Madarch.Materials;
@@ -65,20 +66,29 @@ procedure Main is
       Roughness => 0.9);
 
    Sphere_Instance : Values.Value_Array :=
-     ((Values.Vector3_Kind, (0.0, 0.0, 2.0)),
+     ((Values.Vector3_Kind, (1.0, 1.0, 2.0)),
       (Values.Float_Kind, 1.0));
 
    Point_Light_Instance : Values.Value_Array :=
      (1 => (Values.Vector3_Kind, (0.9, 0.9, 0.9)));
 
+   Sphere_Ent : Entities.Entity := Entities.Create
+     (((Sphere_Center, Values.Vector3 ((1.0, 1.0, 2.0))),
+       (Sphere_Radius, Values.Float (1.0))));
+
    Time : Single := 0.0;
+
+   Dist : Single := Primitives.Eval_Dist
+     (Sphere, Sphere_Ent, (0.0, 0.0, 0.0));
 begin
+   Ada.Text_IO.Put_Line (Dist'Image);
+
    Renderers.Set_Material (Renderer, 1, Red_Mat);
    Renderers.Set_Primitive (Renderer, 1, Sphere, Sphere_Instance, 1);
    while Window.Is_Opened loop
       Renderers.Set_Light
         (Renderer, 1, Point_Light, Point_Light_Instance,
-         (Cos (Time) + 1.0, Sin (Time) + 1.0, 3.0));
+         (Cos (Time) + 1.0, Sin (Time) + 1.0, 1.0));
       Renderers.Render (Renderer);
       Window.Poll_Events;
       Time := Time + 0.01;

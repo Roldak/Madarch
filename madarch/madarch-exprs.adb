@@ -1,6 +1,55 @@
 with GL;
 
 package body Madarch.Exprs is
+   function Create return Eval_Context is
+     (others => <>);
+
+   function Append
+     (Self : Eval_Context;
+      Key  : String;
+      Val  : Entity) return Eval_Context
+   is
+      R : Eval_Context := Self;
+   begin
+      R.Ents.Insert (To_Unbounded_String (Key), Val);
+      return R;
+   end Append;
+
+   function Get
+     (Ctx : Eval_Context;
+      Exp : Struct_Expr) return Entity
+   is
+      Cursor : Entity_Maps.Cursor := Ctx.Ents.Find (Exp.Name);
+   begin
+      if Entity_Maps.Has_Element (Cursor) then
+         return Entity_Maps.Element (Cursor);
+      end if;
+      raise Program_Error with "Key not in eval context entities";
+   end Get;
+
+   function Get
+     (Ctx : Eval_Context;
+      Exp : Ident) return Value
+   is
+      Cursor : Value_Maps.Cursor := Ctx.Vals.Find (Exp.Name);
+   begin
+      if Value_Maps.Has_Element (Cursor) then
+         return Value_Maps.Element (Cursor);
+      end if;
+      raise Program_Error with "Key not in eval context values";
+   end Get;
+
+   function Append
+     (Self : Eval_Context;
+      Key  : String;
+      Val  : Value) return Eval_Context
+   is
+      R : Eval_Context := Self;
+   begin
+      R.Vals.Insert (To_Unbounded_String (Key), Val);
+      return R;
+   end Append;
+
    function Literal (V : Value) return Expr is
      (Value => new Lit'(V => V));
 
@@ -43,7 +92,7 @@ package body Madarch.Exprs is
    --  Ident
 
    function Eval (I : Ident; Ctx : Eval_Context) return Value is
-     (Values.Float (0.0));
+     (Get (Ctx, I));
 
    function To_GLSL (I : Ident) return String is
      (To_String (I.Name));
@@ -130,8 +179,9 @@ package body Madarch.Exprs is
    --  Get_Component
 
    function Eval (G : Get_Component; Ctx : Eval_Context) return Value is
+      Ent : Entity := Get (Ctx, G.Prefix);
    begin
-      return Values.Float (0.0);
+      return Entities.Get (Ent, G.Suffix);
    end Eval;
 
    function To_GLSL (G : Get_Component) return String is

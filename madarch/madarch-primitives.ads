@@ -2,8 +2,13 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with Madarch.Exprs;
 with Madarch.Components;
+with Madarch.Entities;
+
+with GL.Types;
 
 package Madarch.Primitives is
+   use GL.Types;
+
    type Primitive is private;
    type Primitive_Array is array (Positive range <>) of Primitive;
    type Primitive_Array_Access is access all Primitive_Array;
@@ -32,6 +37,11 @@ package Madarch.Primitives is
      (Prim  : Primitive;
       Inst  : Exprs.Struct_Expr;
       Point : Exprs.Expr) return Exprs.Expr'Class;
+
+   function Eval_Dist
+     (Prim   : Primitive;
+      Entity : Entities.Entity;
+      Point  : Singles.Vector3) return Single;
 private
    type Primitive_Internal is record
       Name     : Unbounded_String;
