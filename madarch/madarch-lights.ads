@@ -10,8 +10,8 @@ package Madarch.Lights is
 
    type Light_Sample_Function is access function
      (L : Exprs.Struct_Expr;
-      P : Exprs.Expr'Class;
-      N : Exprs.Expr'Class) return Exprs.Expr'Class;
+      Pos, Normal : Exprs.Expr'Class;
+      Dir, Dist   : Exprs.Expr'Class) return Exprs.Expr'Class;
 
    type Light_Position_Function is access function
      (L : Exprs.Struct_Expr) return Exprs.Expr'Class;
@@ -28,10 +28,10 @@ package Madarch.Lights is
      (L : Light) return Components.Component_Array;
 
    function Get_Sample_Expr
-     (L     : Light;
-      Inst  : Exprs.Struct_Expr;
-      Point : Exprs.Expr;
-      Norm  : Exprs.Expr) return Exprs.Expr'Class;
+     (L           : Light;
+      Inst        : Exprs.Struct_Expr;
+      Pos, Normal : Exprs.Expr;
+      Dir, Dist   : Exprs.Expr) return Exprs.Expr'Class;
 
    function Get_Position_Expr
      (L : Light; Inst : Exprs.Struct_Expr) return Exprs.Expr'Class;

@@ -271,9 +271,13 @@ package body Madarch.Scenes is
       Normal_Param_Expr : Exprs.Expr :=
          Exprs.Value_Identifier (Normal_Param_Name);
 
-      Sample_Expr : Exprs.Expr'Class :=
-         Lights.Get_Sample_Expr
-           (Lit, Light_Param_Expr, Pos_Param_Expr, Normal_Param_Expr);
+      Dir_Param_Expr  : Exprs.Expr := Exprs.Value_Identifier ("dir");
+      Dist_Param_Expr : Exprs.Expr := Exprs.Value_Identifier ("dist");
+
+      Sample_Expr : Exprs.Expr'Class := Lights.Get_Sample_Expr
+        (Lit, Light_Param_Expr,
+         Pos_Param_Expr, Normal_Param_Expr,
+         Dir_Param_Expr, Dist_Param_Expr);
 
       Position_Expr : Exprs.Expr'Class :=
          Lights.Get_Position_Expr (Lit, Light_Param_Expr);

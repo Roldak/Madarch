@@ -21,11 +21,11 @@ package body Madarch.Lights is
    is (L.Comps.all);
 
    function Get_Sample_Expr
-     (L     : Light;
-      Inst  : Exprs.Struct_Expr;
-      Point : Exprs.Expr;
-      Norm  : Exprs.Expr) return Exprs.Expr'Class
-   is (L.Sample (Inst, Point, Norm));
+     (L           : Light;
+      Inst        : Exprs.Struct_Expr;
+      Pos, Normal : Exprs.Expr;
+      Dir, Dist   : Exprs.Expr) return Exprs.Expr'Class
+   is (L.Sample (Inst, Pos, Normal, Dir, Dist));
 
    function Get_Position_Expr
      (L : Light; Inst : Exprs.Struct_Expr) return Exprs.Expr'Class

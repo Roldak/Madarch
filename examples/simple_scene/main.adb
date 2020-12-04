@@ -42,7 +42,7 @@ procedure Main is
       Primitives.Planes.Create ((0.0, 1.0, 0.0), 1.0, 0);
 
    Point_Light_Instance : Entities.Entity :=
-      Lights.Point_Lights.Create ((0.0, 5.0, 0.0), (0.9, 0.9, 0.9));
+      Lights.Point_Lights.Create ((0.0, 3.0, 0.0), (0.9, 0.9, 0.9));
 
    Time : Single := 0.0;
 

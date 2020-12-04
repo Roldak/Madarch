@@ -35,6 +35,12 @@ package Madarch.Exprs is
    function "-" (L, R : Expr) return Expr;
    function "*" (L, R : Expr) return Expr;
    function "/" (L, R : Expr) return Expr;
+
+   function "+" (L : Expr; R : Value) return Expr is (L + Literal (R));
+   function "-" (L : Expr; R : Value) return Expr is (L - Literal (R));
+   function "*" (L : Expr; R : Value) return Expr is (L * Literal (R));
+   function "/" (L : Expr; R : Value) return Expr is (L / Literal (R));
+
    function Dot (L, R : Expr) return Expr;
 
    function Length (E : Expr) return Expr;

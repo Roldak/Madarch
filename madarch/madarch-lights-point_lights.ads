@@ -18,8 +18,8 @@ package Madarch.Lights.Point_Lights is
      (L.Get (Position));
 
    function Get_Color
-     (L : Struct_Expr; P : Expr'Class; N : Expr'Class) return Expr'Class
-   is (L.Get (Color));
+     (L : Struct_Expr; Pos, Normal, Dir, Dist : Expr'Class) return Expr'Class
+   is (L.Get (Color) / (Dist * Dist * Values.Float (0.03)));
 
    Point_Light : constant Light := Create
      ("PointLight",
