@@ -42,8 +42,7 @@ package Madarch.Renderers is
      (Self  : in out Renderer;
       Index : Positive;
       Prim  : Primitives.Primitive;
-      Ent   : Entities.Entity;
-      Mat   : Positive);
+      Ent   : Entities.Entity);
 
    procedure Set_Light
      (Self  : in out Renderer;

@@ -13,15 +13,19 @@ package Madarch.Primitives is
    type Primitive_Array is array (Positive range <>) of Primitive;
    type Primitive_Array_Access is access all Primitive_Array;
 
-   type Struct_Point_Function is access function
+   type Primitive_Point_Function is access function
      (S : Exprs.Struct_Expr;
       P : Exprs.Expr'Class) return Exprs.Expr'Class;
+
+   type Primitive_Function is access function
+     (S : Exprs.Struct_Expr) return Exprs.Expr'Class;
 
    function Create
      (Name     : String;
       Comps    : Components.Component_Array;
-      Distance : Struct_Point_Function;
-      Normal   : Struct_Point_Function) return Primitive;
+      Distance : Primitive_Point_Function;
+      Normal   : Primitive_Point_Function;
+      Material : Primitive_Function) return Primitive;
 
    function Get_Name (Prim : Primitive) return String;
 
@@ -38,6 +42,10 @@ package Madarch.Primitives is
       Inst  : Exprs.Struct_Expr;
       Point : Exprs.Expr) return Exprs.Expr'Class;
 
+   function Get_Material_Expr
+     (Prim : Primitive;
+      Inst : Exprs.Struct_Expr) return Exprs.Expr'Class;
+
    function Eval_Dist
      (Prim   : Primitive;
       Entity : Entities.Entity;
@@ -46,8 +54,9 @@ private
    type Primitive_Internal is record
       Name     : Unbounded_String;
       Comps    : Components.Component_Array_Access;
-      Distance : Struct_Point_Function;
-      Normal   : Struct_Point_Function;
+      Distance : Primitive_Point_Function;
+      Normal   : Primitive_Point_Function;
+      Material : Primitive_Function;
    end record;
 
    type Primitive is access Primitive_Internal;

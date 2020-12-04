@@ -261,8 +261,7 @@ package body Madarch.Renderers is
      (Self  : in out Renderer;
       Index : Positive;
       Prim  : Primitives.Primitive;
-      Ent   : Entities.Entity;
-      Mat   : Positive)
+      Ent   : Entities.Entity)
    is
       use GPU_Types;
 

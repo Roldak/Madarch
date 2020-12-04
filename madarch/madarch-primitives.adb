@@ -4,15 +4,17 @@ package body Madarch.Primitives is
    function Create
      (Name     : String;
       Comps    : Components.Component_Array;
-      Distance : Struct_Point_Function;
-      Normal   : Struct_Point_Function) return Primitive
+      Distance : Primitive_Point_Function;
+      Normal   : Primitive_Point_Function;
+      Material : Primitive_Function) return Primitive
    is
    begin
       return new Primitive_Internal'
         (Name     => To_Unbounded_String (Name),
          Comps    => new Components.Component_Array'(Comps),
          Distance => Distance,
-         Normal   => Normal);
+         Normal   => Normal,
+         Material => Material);
    end Create;
 
    function Get_Name (Prim : Primitive) return String is
@@ -33,6 +35,11 @@ package body Madarch.Primitives is
       Inst  : Exprs.Struct_Expr;
       Point : Exprs.Expr) return Exprs.Expr'Class
    is (Prim.Normal (Inst, Point));
+
+   function Get_Material_Expr
+     (Prim : Primitive;
+      Inst : Exprs.Struct_Expr) return Exprs.Expr'Class
+   is (Prim.Material (Inst));
 
    function Eval_Dist
      (Prim   : Primitive;

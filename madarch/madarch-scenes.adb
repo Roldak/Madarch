@@ -75,8 +75,6 @@ package body Madarch.Scenes is
          Append (Res, ";");
          Append (Res, LF);
       end loop;
-      Append (Res, "int material_id;");
-      Append (Res, LF);
       Append (Res, "};");
       return Res;
    end Primitive_Struct_Declaration;
@@ -434,6 +432,15 @@ package body Madarch.Scenes is
    function Primitive_Info
      (Prims_Count : Primitive_Count_Array) return Unbounded_String
    is
+      function Get_Material
+        (Prim : Primitives.Primitive) return String
+      is
+         Name : String := Prim_Array_Reference (Prim) & "[index]";
+         Inst : Exprs.Struct_Expr := Exprs.Struct_Identifier (Name);
+      begin
+         return Primitives.Get_Material_Expr (Prim, Inst).To_GLSL;
+      end Get_Material;
+
       Stmts : Unbounded_String;
    begin
       for Prim_Count of Prims_Count loop
@@ -450,8 +457,8 @@ package body Madarch.Scenes is
          Append (Stmts, LF);
 
          Append (Stmts, "material_id = ");
-         Append (Stmts, Prim_Array_Reference (Prim_Count.Prim));
-         Append (Stmts, "[index].material_id;");
+         Append (Stmts, Get_Material (Prim_Count.Prim));
+         Append (Stmts, ";");
          Append (Stmts, LF);
 
          Append (Stmts, "return;");
@@ -566,16 +573,13 @@ package body Madarch.Scenes is
             Primitives.Get_Components (Prim);
 
          Type_Comps : GPU_Types.Named_Component_Array :=
-           (1 .. Prim_Comps'Length + 1 => <>);
+           (1 .. Prim_Comps'Length => <>);
       begin
          for I in Prim_Comps'Range loop
             Type_Comps (I) :=
                Values.GPU_Type (Components.Get_Kind (Prim_Comps (I))).Named
                  (Components.Get_Name (Prim_Comps (I)));
          end loop;
-
-         Type_Comps (Prim_Comps'Last + 1) :=
-            GPU_Types.Base.Int.Named ("material_id");
 
          return GPU_Types.Structs.Create (Type_Comps);
       end Compute_Prim_Struct_Type;
