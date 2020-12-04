@@ -60,26 +60,22 @@ procedure Main is
 
    Renderer : Renderers.Renderer := Renderers.Create (Window, Scene);
 
-   Red_Mat : Materials.Material :=
-     (Albedo    => (0.9, 0.1, 0.1),
-      Metallic  => 0.1,
-      Roughness => 0.9);
+   Red_Mat : Entities.Entity := Entities.Create
+     (((Materials.Albedo, Values.Vector3 ((0.9, 0.1, 0.1))),
+       (Materials.Metallic, Values.Float (0.1)),
+       (Materials.Roughness, Values.Float (0.9))));
 
-   Sphere_Instance : Values.Value_Array :=
-     ((Values.Vector3_Kind, (1.0, 1.0, 2.0)),
-      (Values.Float_Kind, 1.0));
-
-   Point_Light_Instance : Values.Value_Array :=
-     (1 => (Values.Vector3_Kind, (0.9, 0.9, 0.9)));
-
-   Sphere_Ent : Entities.Entity := Entities.Create
+   Sphere_Instance : Entities.Entity := Entities.Create
      (((Sphere_Center, Values.Vector3 ((1.0, 1.0, 2.0))),
        (Sphere_Radius, Values.Float (1.0))));
+
+   Point_Light_Instance : Entities.Entity := Entities.Create
+     ((1 => (Light_Color, Values.Vector3 ((0.9, 0.9, 0.9)))));
 
    Time : Single := 0.0;
 
    Dist : Single := Primitives.Eval_Dist
-     (Sphere, Sphere_Ent, (0.0, 0.0, 0.0));
+     (Sphere, Sphere_Instance, (0.0, 0.0, 0.0));
 begin
    Ada.Text_IO.Put_Line (Dist'Image);
 

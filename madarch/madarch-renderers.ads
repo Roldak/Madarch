@@ -1,5 +1,6 @@
 with GL.Types;
 
+with Madarch.Entities;
 with Madarch.Materials;
 with Madarch.Lights;
 with Madarch.Primitives;
@@ -35,20 +36,20 @@ package Madarch.Renderers is
    procedure Set_Material
      (Self  : in out Renderer;
       Index : Positive;
-      Mat   : Materials.Material);
+      Ent   : Entities.Entity);
 
    procedure Set_Primitive
      (Self  : in out Renderer;
       Index : Positive;
       Prim  : Primitives.Primitive;
-      Vals  : Values.Value_Array;
+      Ent   : Entities.Entity;
       Mat   : Positive);
 
    procedure Set_Light
      (Self  : in out Renderer;
       Index : Positive;
       Lit   : Lights.Light;
-      Vals  : Values.Value_Array;
+      Ent   : Entities.Entity;
       Pos   : Singles.Vector3);
 private
    type Renderer_Internal is record

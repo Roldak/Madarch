@@ -13,6 +13,8 @@ with GPU_Types.Structs;
 
 with Glfw.Windows.Context;
 
+with Madarch.Components;
+
 package body Madarch.Renderers is
    procedure Setup_Camera (R : Renderer) is
       use GL;
@@ -214,10 +216,36 @@ package body Madarch.Renderers is
       Glfw.Windows.Context.Swap_Buffers (Self.Window);
    end Render;
 
+   procedure Write_Value (W : in out GPU_Buffers.Writer; V : Values.Value) is
+   begin
+      case V.Kind is
+         when Values.Vector3_Kind =>
+            W.Write_Vec3 (V.Vector3_Value);
+         when Values.Float_Kind =>
+            W.Write_Float (V.Float_Value);
+         when Values.Int_Kind =>
+            W.Write_Int (V.Int_Value);
+      end case;
+   end Write_Value;
+
+   procedure Write_Entity
+     (W   : in out GPU_Buffers.Writer;
+      Loc : GPU_Types.Locations.Location;
+      Ent : Entities.Entity)
+   is
+      procedure Write_Component (C : Components.Component; V : Values.Value) is
+      begin
+         Loc.Component (Components.Get_Name (C)).Adjust (W);
+         Write_Value (W, V);
+      end Write_Component;
+   begin
+      Entities.Foreach (Ent, Write_Component'Unrestricted_Access);
+   end Write_Entity;
+
    procedure Set_Material
      (Self  : in out Renderer;
       Index : Positive;
-      Mat   : Materials.Material)
+      Ent   : Entities.Entity)
    is
       use GPU_Types;
 
@@ -225,17 +253,15 @@ package body Madarch.Renderers is
 
       L : Locations.Location := Materials_Description_Type.Address;
    begin
-      L.Component ("materials").Component (Index).Adjust (W);
-      W.Write_Vec3 (Mat.Albedo);
-      W.Write_Float (Mat.Metallic);
-      W.Write_Float (Mat.Roughness);
+      Write_Entity
+        (W, L.Component ("materials").Component (Index), Ent);
    end Set_Material;
 
    procedure Set_Primitive
      (Self  : in out Renderer;
       Index : Positive;
       Prim  : Primitives.Primitive;
-      Vals  : Values.Value_Array;
+      Ent   : Entities.Entity;
       Mat   : Positive)
    is
       use GPU_Types;
@@ -247,18 +273,8 @@ package body Madarch.Renderers is
    begin
       Scenes.Get_Primitives_Location (Self.Scene, Prim, Array_Loc, Count_Loc);
 
-      Array_Loc.Component (Index).Adjust (W);
-      for V of Vals loop
-         case V.Kind is
-            when Values.Vector3_Kind =>
-               W.Write_Vec3 (V.Vector3_Value);
-            when Values.Float_Kind =>
-               W.Write_Float (V.Float_Value);
-            when Values.Int_Kind =>
-               W.Write_Int (V.Int_Value);
-         end case;
-      end loop;
-      W.Write_Int (Int (Mat) - 1);
+      Write_Entity
+        (W, Array_Loc.Component (Index), Ent);
 
       Count_Loc.Adjust (W);
       W.Write_Int (Int (Index));
@@ -268,7 +284,7 @@ package body Madarch.Renderers is
      (Self  : in out Renderer;
       Index : Positive;
       Lit   : Lights.Light;
-      Vals  : Values.Value_Array;
+      Ent   : Entities.Entity;
       Pos   : Singles.Vector3)
    is
       use GPU_Types;
@@ -282,19 +298,8 @@ package body Madarch.Renderers is
       Scenes.Get_Lights_Location
         (Self.Scene, Lit, Array_Loc, Count_Loc, Total_Loc);
 
-      Array_Loc.Component (Index).Adjust (W);
-      W.Write_Vec3 (Pos);
-
-      for V of Vals loop
-         case V.Kind is
-            when Values.Vector3_Kind =>
-               W.Write_Vec3 (V.Vector3_Value);
-            when Values.Float_Kind =>
-               W.Write_Float (V.Float_Value);
-            when Values.Int_Kind =>
-               W.Write_Int (V.Int_Value);
-         end case;
-      end loop;
+      Write_Entity
+        (W, Array_Loc.Component (Index), Ent);
 
       Count_Loc.Adjust (W);
       W.Write_Int (Int (Index));

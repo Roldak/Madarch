@@ -60,7 +60,5 @@ package body Madarch.Primitives is
                raise Program_Error with "Unexpected value kind.";
          end case;
       end;
-
-      return 0.0;
    end Eval_Dist;
 end Madarch.Primitives;

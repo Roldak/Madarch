@@ -10,6 +10,12 @@ package Madarch.Entities is
 
    function Get
      (Self : Entity; Comp : Components.Component) return Values.Value;
+
+   type Component_Value_Procedure is access
+      procedure (C : Components.Component; V : Values.Value);
+
+   procedure Foreach
+     (Self : Entity; Proc : Component_Value_Procedure);
 private
    type Component_Value_Array_Access is
       access Components.Component_Value_Array;
