@@ -74,6 +74,17 @@ package body Madarch.Values is
       end case;
    end "/";
 
+   function Dot (L, R : Value) return Value is
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Vector3_Kind =>
+            return (Float_Kind, Dot (L.Vector3_Value, R.Vector3_Value));
+         when others =>
+            raise Program_Error with "Dot is only allowed on vectors";
+      end case;
+   end Dot;
+
    function "-" (V : Value) return Value is
    begin
       case V.Kind is

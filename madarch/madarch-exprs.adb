@@ -77,6 +77,10 @@ package body Madarch.Exprs is
    function "/" (L, R : Expr) return Expr is
      (Value => new Bin_Op'(Bin_Div, L, R));
 
+   function Dot (L, R : Expr) return Expr is
+     (Value => new Builtin_Call'(Builtin_Dot,
+                                 new Expr_Array'((L, R))));
+
    function Length (E : Expr) return Expr is
      (Value => new Un_Op'(Un_Length, E));
 
@@ -174,6 +178,40 @@ package body Madarch.Exprs is
          when Un_Normalize => "normalize");
    begin
       return O_GLSL & "(" & E_GLSL & ")";
+   end To_GLSL;
+
+   --  Builtin_Call
+
+   function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value is
+      Arg_Values : Value_Array (B.Args'Range);
+   begin
+      for I in Arg_Values'Range loop
+         Arg_Values (I) := B.Args.all (I).Eval (Ctx);
+      end loop;
+
+      case B.Builtin is
+         when Builtin_Dot =>
+            return Dot (Arg_Values (1), Arg_Values (2));
+      end case;
+   end Eval;
+
+   function To_GLSL (B : Builtin_Call) return String is
+      Result : Unbounded_String;
+
+      Builtin_Name : String :=
+        (case B.Builtin is
+           when Builtin_Dot => "dot");
+   begin
+      Append (Result, Builtin_Name);
+      Append (Result, "(");
+      for I in B.Args.all'Range loop
+         Append (Result, B.Args (I).To_GLSL);
+         if I /= B.Args.all'Last then
+            Append (Result, ", ");
+         end if;
+      end loop;
+      Append (Result, ")");
+      return To_String (Result);
    end To_GLSL;
 
    --  Get_Component

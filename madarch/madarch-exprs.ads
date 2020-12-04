@@ -35,6 +35,7 @@ package Madarch.Exprs is
    function "-" (L, R : Expr) return Expr;
    function "*" (L, R : Expr) return Expr;
    function "/" (L, R : Expr) return Expr;
+   function Dot (L, R : Expr) return Expr;
 
    function Length (E : Expr) return Expr;
    function Normalize (E : Expr) return Expr;
@@ -65,6 +66,9 @@ private
    type Expr is tagged record
       Value : Expr_Access;
    end record;
+
+   type Expr_Array is array (Positive range <>) of Expr;
+   type Expr_Array_Access is access Expr_Array;
 
    type Ident is new Expr_Node with record
       Name : Unbounded_String;
@@ -99,6 +103,16 @@ private
 
    function Eval (U : Un_Op; Ctx : Eval_Context) return Value;
    function To_GLSL (U : Un_Op) return String;
+
+   type Builtin_Kind is (Builtin_Dot);
+
+   type Builtin_Call is new Expr_Node with record
+      Builtin : Builtin_Kind;
+      Args    : Expr_Array_Access;
+   end record;
+
+   function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value;
+   function To_GLSL (B : Builtin_Call) return String;
 
    type Struct_Expr is tagged record
       Name : Unbounded_String;
