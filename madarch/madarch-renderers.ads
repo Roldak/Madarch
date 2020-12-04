@@ -34,21 +34,21 @@ package Madarch.Renderers is
    procedure Render (Self : Renderer);
 
    procedure Set_Material
-     (Self  : in out Renderer;
-      Index : Positive;
-      Ent   : Entities.Entity);
+     (Self   : in out Renderer;
+      Index  : Positive;
+      Entity : Entities.Entity);
 
    procedure Set_Primitive
-     (Self  : in out Renderer;
-      Index : Positive;
-      Prim  : Primitives.Primitive;
-      Ent   : Entities.Entity);
+     (Self   : in out Renderer;
+      Index  : Positive;
+      Prim   : Primitives.Primitive;
+      Entity : Entities.Entity);
 
    procedure Set_Light
-     (Self  : in out Renderer;
-      Index : Positive;
-      Lit   : Lights.Light;
-      Ent   : Entities.Entity);
+     (Self   : in out Renderer;
+      Index  : Positive;
+      Lit    : Lights.Light;
+      Entity : Entities.Entity);
 private
    type Renderer_Internal is record
       Window : Windows.Window;

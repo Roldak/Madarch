@@ -243,9 +243,9 @@ package body Madarch.Renderers is
    end Write_Entity;
 
    procedure Set_Material
-     (Self  : in out Renderer;
-      Index : Positive;
-      Ent   : Entities.Entity)
+     (Self   : in out Renderer;
+      Index  : Positive;
+      Entity : Entities.Entity)
    is
       use GPU_Types;
 
@@ -254,14 +254,14 @@ package body Madarch.Renderers is
       L : Locations.Location := Materials_Description_Type.Address;
    begin
       Write_Entity
-        (W, L.Component ("materials").Component (Index), Ent);
+        (W, L.Component ("materials").Component (Index), Entity);
    end Set_Material;
 
    procedure Set_Primitive
-     (Self  : in out Renderer;
-      Index : Positive;
-      Prim  : Primitives.Primitive;
-      Ent   : Entities.Entity)
+     (Self   : in out Renderer;
+      Index  : Positive;
+      Prim   : Primitives.Primitive;
+      Entity : Entities.Entity)
    is
       use GPU_Types;
 
@@ -273,17 +273,17 @@ package body Madarch.Renderers is
       Scenes.Get_Primitives_Location (Self.Scene, Prim, Array_Loc, Count_Loc);
 
       Write_Entity
-        (W, Array_Loc.Component (Index), Ent);
+        (W, Array_Loc.Component (Index), Entity);
 
       Count_Loc.Adjust (W);
       W.Write_Int (Int (Index));
    end Set_Primitive;
 
    procedure Set_Light
-     (Self  : in out Renderer;
-      Index : Positive;
-      Lit   : Lights.Light;
-      Ent   : Entities.Entity)
+     (Self   : in out Renderer;
+      Index  : Positive;
+      Lit    : Lights.Light;
+      Entity : Entities.Entity)
    is
       use GPU_Types;
 
@@ -297,7 +297,7 @@ package body Madarch.Renderers is
         (Self.Scene, Lit, Array_Loc, Count_Loc, Total_Loc);
 
       Write_Entity
-        (W, Array_Loc.Component (Index), Ent);
+        (W, Array_Loc.Component (Index), Entity);
 
       Count_Loc.Adjust (W);
       W.Write_Int (Int (Index));
