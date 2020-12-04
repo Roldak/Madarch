@@ -30,10 +30,8 @@ procedure Main is
 
    Renderer : Renderers.Renderer := Renderers.Create (Window, Scene);
 
-   Red_Mat : Entities.Entity := Entities.Create
-     (((Materials.Albedo, Values.Vector3 ((0.9, 0.1, 0.1))),
-       (Materials.Metallic, Values.Float (0.1)),
-       (Materials.Roughness, Values.Float (0.9))));
+   Red_Mat : Entities.Entity :=
+      Materials.Create ((0.9, 0.1, 0.1), 0.1, 0.9);
 
    Sphere_Instance : Entities.Entity :=
       Primitives.Spheres.Create ((1.0, 1.0, 2.0), 1.0, 0);
