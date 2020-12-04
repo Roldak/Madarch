@@ -39,8 +39,15 @@ procedure Main is
       Sphere_Dist'Unrestricted_Access,
       Sphere_Normal'Unrestricted_Access);
 
+   Light_Position : Components.Component := Components.Create
+     ("position", Values.Vector3_Kind);
+
    Light_Color : Components.Component := Components.Create
      ("color", Values.Vector3_Kind);
+
+   function Point_Light_Position
+     (L : Exprs.Struct_Expr) return Exprs.Expr'Class
+   is (L.Get (Light_Position));
 
    function Sample_Point_Light
      (L : Exprs.Struct_Expr; P : Exprs.Expr'Class; N : Exprs.Expr'Class)
@@ -49,8 +56,9 @@ procedure Main is
 
    Point_Light : Lights.Light := Lights.Create
      ("PointLight",
-      (1 => Light_Color),
-      Sample_Point_Light'Unrestricted_Access);
+      (Light_Position, Light_Color),
+      Sample_Point_Light'Unrestricted_Access,
+      Point_Light_Position'Unrestricted_Access);
 
    Scene : Scenes.Scene := Scenes.Compile
      (All_Primitives => (1 => (Sphere, 20)),
@@ -70,7 +78,8 @@ procedure Main is
        (Sphere_Radius, Values.Float (1.0))));
 
    Point_Light_Instance : Entities.Entity := Entities.Create
-     ((1 => (Light_Color, Values.Vector3 ((0.9, 0.9, 0.9)))));
+     (((Light_Color, Values.Vector3 ((0.9, 0.9, 0.9))),
+       (Light_Position, Values.Vector3 ((0.0, 5.0, 0.0)))));
 
    Time : Single := 0.0;
 
@@ -81,10 +90,8 @@ begin
 
    Renderers.Set_Material (Renderer, 1, Red_Mat);
    Renderers.Set_Primitive (Renderer, 1, Sphere, Sphere_Instance, 1);
+   Renderers.Set_Light (Renderer, 1, Point_Light, Point_Light_Instance);
    while Window.Is_Opened loop
-      Renderers.Set_Light
-        (Renderer, 1, Point_Light, Point_Light_Instance,
-         (Cos (Time) + 1.0, Sin (Time) + 1.0, 1.0));
       Renderers.Render (Renderer);
       Window.Poll_Events;
       Time := Time + 0.01;

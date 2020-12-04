@@ -49,8 +49,7 @@ package Madarch.Renderers is
      (Self  : in out Renderer;
       Index : Positive;
       Lit   : Lights.Light;
-      Ent   : Entities.Entity;
-      Pos   : Singles.Vector3);
+      Ent   : Entities.Entity);
 private
    type Renderer_Internal is record
       Window : Windows.Window;

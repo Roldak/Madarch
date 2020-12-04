@@ -90,9 +90,6 @@ package body Madarch.Scenes is
       Append (Res, " {");
       Append (Res, LF);
 
-      Append (Res, "vec3 position;");
-      Append (Res, LF);
-
       for Comp of Lights.Get_Components (Lit) loop
          Append (Res, Component_Declaration (Comp));
          Append (Res, ";");
@@ -280,9 +277,14 @@ package body Madarch.Scenes is
          Lights.Get_Sample_Expr
            (Lit, Light_Param_Expr, Pos_Param_Expr, Normal_Param_Expr);
 
+      Position_Expr : Exprs.Expr'Class :=
+         Lights.Get_Position_Expr (Lit, Light_Param_Expr);
+
       Stmts : Unbounded_String;
    begin
-      Append (Stmts, "dir = l.position - pos;");
+      Append (Stmts, "dir = ");
+      Append (Stmts, Position_Expr.To_GLSL);
+      Append (Stmts, " - pos;");
       Append (Stmts, LF);
       Append (Stmts, "dist = length(dir);");
       Append (Stmts, LF);
@@ -585,13 +587,10 @@ package body Madarch.Scenes is
             Lights.Get_Components (Light);
 
          Type_Comps : GPU_Types.Named_Component_Array :=
-           (1 .. Light_Comps'Length + 1 => <>);
+           (1 .. Light_Comps'Length => <>);
       begin
-         Type_Comps (1) :=
-            GPU_Types.Base.Vec_3.Named ("position");
-
          for I in Light_Comps'Range loop
-            Type_Comps (I + 1) :=
+            Type_Comps (I) :=
                Values.GPU_Type (Components.Get_Kind (Light_Comps (I))).Named
                  (Components.Get_Name (Light_Comps (I)));
          end loop;

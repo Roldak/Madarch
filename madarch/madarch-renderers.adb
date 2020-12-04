@@ -284,8 +284,7 @@ package body Madarch.Renderers is
      (Self  : in out Renderer;
       Index : Positive;
       Lit   : Lights.Light;
-      Ent   : Entities.Entity;
-      Pos   : Singles.Vector3)
+      Ent   : Entities.Entity)
    is
       use GPU_Types;
 

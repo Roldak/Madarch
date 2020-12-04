@@ -13,10 +13,14 @@ package Madarch.Lights is
       P : Exprs.Expr'Class;
       N : Exprs.Expr'Class) return Exprs.Expr'Class;
 
+   type Light_Position_Function is access function
+     (L : Exprs.Struct_Expr) return Exprs.Expr'Class;
+
    function Create
-     (Name   : String;
-      Comps  : Components.Component_Array;
-      Sample : Light_Sample_Function) return Light;
+     (Name     : String;
+      Comps    : Components.Component_Array;
+      Sample   : Light_Sample_Function;
+      Position : Light_Position_Function) return Light;
 
    function Get_Name (L : Light) return String;
 
@@ -28,11 +32,15 @@ package Madarch.Lights is
       Inst  : Exprs.Struct_Expr;
       Point : Exprs.Expr;
       Norm  : Exprs.Expr) return Exprs.Expr'Class;
+
+   function Get_Position_Expr
+     (L : Light; Inst : Exprs.Struct_Expr) return Exprs.Expr'Class;
 private
    type Light_Internal is record
-      Name   : Unbounded_String;
-      Comps  : Components.Component_Array_Access;
-      Sample : Light_Sample_Function;
+      Name     : Unbounded_String;
+      Comps    : Components.Component_Array_Access;
+      Sample   : Light_Sample_Function;
+      Position : Light_Position_Function;
    end record;
 
    type Light is access Light_Internal;
