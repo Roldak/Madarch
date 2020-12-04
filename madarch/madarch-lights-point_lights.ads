@@ -17,14 +17,14 @@ package Madarch.Lights.Point_Lights is
    function Get_Position (L : Struct_Expr) return Expr'Class is
      (L.Get (Position));
 
-   function Sample
+   function Get_Color
      (L : Struct_Expr; P : Expr'Class; N : Expr'Class) return Expr'Class
    is (L.Get (Color));
 
-   Point_Light : Light := Create
+   Point_Light : constant Light := Create
      ("PointLight",
       (Position, Color),
-      Sample'Access,
+      Get_Color'Access,
       Get_Position'Access);
 
    function Create
