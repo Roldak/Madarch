@@ -1,3 +1,7 @@
+with Ada.Unchecked_Conversion;
+
+with System;
+
 with Madarch.Values;
 
 package body Madarch.Primitives is
@@ -68,4 +72,10 @@ package body Madarch.Primitives is
          end case;
       end;
    end Eval_Dist;
+
+   function Convert is new Ada.Unchecked_Conversion
+     (System.Address, Long_Integer) with Inline;
+
+   function Hash (Prim : Primitive) return Ada.Containers.Hash_Type is
+     (Ada.Containers.Hash_Type (Convert (Prim.all'Address)));
 end Madarch.Primitives;

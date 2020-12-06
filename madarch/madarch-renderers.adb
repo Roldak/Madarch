@@ -200,7 +200,9 @@ package body Madarch.Renderers is
             Fragment_Shader => Screen_Shader,
 
             Frame_Width  => Int (Window.Width),
-            Frame_Height => Int (Window.Height)))
+            Frame_Height => Int (Window.Height)),
+
+         All_Primitives => <>)
       do
          Setup_Probe_Layout (R, Probes);
          Setup_Camera (R);
@@ -257,13 +259,25 @@ package body Madarch.Renderers is
         (W, L.Component ("materials").Component (Index), Entity);
    end Set_Material;
 
-   procedure Set_Primitive
+   procedure Add_Primitive
      (Self   : in out Renderer;
-      Index  : Positive;
       Prim   : Primitives.Primitive;
       Entity : Entities.Entity)
    is
       use GPU_Types;
+
+      Index : Positive;
+
+      procedure Process_Element
+        (K : Primitives.Primitive; E : in out Entity_Vectors.Vector)
+      is
+      begin
+         E.Append (Entity);
+         Index := Positive (E.Length);
+      end Process_Element;
+
+      Cursor   : Primitive_Entity_Maps.Cursor;
+      Inserted : Boolean;
 
       W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Scene_Buffer);
 
@@ -272,12 +286,17 @@ package body Madarch.Renderers is
    begin
       Scenes.Get_Primitives_Location (Self.Scene, Prim, Array_Loc, Count_Loc);
 
+      Primitive_Entity_Maps.Insert
+        (Self.All_Primitives, Prim, Cursor, Inserted);
+      Primitive_Entity_Maps.Update_Element
+        (Self.All_Primitives, Cursor, Process_Element'Access);
+
       Write_Entity
         (W, Array_Loc.Component (Index), Entity);
 
       Count_Loc.Adjust (W);
       W.Write_Int (Int (Index));
-   end Set_Primitive;
+   end Add_Primitive;
 
    procedure Set_Light
      (Self   : in out Renderer;

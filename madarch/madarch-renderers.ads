@@ -1,3 +1,6 @@
+with Ada.Containers.Hashed_Maps;
+with Ada.Containers.Vectors;
+
 with GL.Types;
 
 with Madarch.Entities;
@@ -38,9 +41,8 @@ package Madarch.Renderers is
       Index  : Positive;
       Entity : Entities.Entity);
 
-   procedure Set_Primitive
+   procedure Add_Primitive
      (Self   : in out Renderer;
-      Index  : Positive;
       Prim   : Primitives.Primitive;
       Entity : Entities.Entity);
 
@@ -50,6 +52,16 @@ package Madarch.Renderers is
       Lit    : Lights.Light;
       Entity : Entities.Entity);
 private
+   package Entity_Vectors is new Ada.Containers.Vectors
+     (Positive, Entities.Entity, Entities."=");
+
+   package Primitive_Entity_Maps is new Ada.Containers.Hashed_Maps
+     (Primitives.Primitive,
+      Entity_Vectors.Vector,
+      Primitives.Hash,
+      Primitives."=",
+      Entity_Vectors."=");
+
    type Renderer_Internal is record
       Window : Windows.Window;
       Scene  : Scenes.Scene;
@@ -61,6 +73,8 @@ private
       Radiance_Pass   : Render_Passes.Framebuffer_Render_Pass;
       Irradiance_Pass : Render_Passes.Framebuffer_Render_Pass;
       Screen_Pass     : Render_Passes.Screen_Render_Pass;
+
+      All_Primitives  : Primitive_Entity_Maps.Map;
    end record;
 
    Default_Probe_Settings : constant Probe_Settings := (others => <>);

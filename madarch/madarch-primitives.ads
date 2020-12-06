@@ -1,3 +1,4 @@
+with Ada.Containers;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with Madarch.Exprs;
@@ -50,6 +51,8 @@ package Madarch.Primitives is
      (Prim   : Primitive;
       Entity : Entities.Entity;
       Point  : Singles.Vector3) return Single;
+
+   function Hash (Prim : Primitive) return Ada.Containers.Hash_Type;
 private
    type Primitive_Internal is record
       Name     : Unbounded_String;

@@ -40,8 +40,6 @@ procedure Main is
 
    Time : Single := 0.0;
 
-   Prim_Count : Natural := 1;
-
    Planes : Entities.Entity_Array :=
      (Primitives.Planes.Create ((0.0,  1.0, 0.0), 1.0, 0),
       Primitives.Planes.Create ((0.0, -1.0, 0.0), 7.0, 0),
@@ -51,8 +49,7 @@ procedure Main is
       Primitives.Planes.Create ((0.0, 0.0, -1.0), 7.0, 0));
 begin
    for Plane of Planes loop
-      Renderers.Set_Primitive (Renderer, Prim_Count, Primitives.Planes.Plane, Plane);
-      Prim_Count := Prim_Count + 1;
+      Renderers.Add_Primitive (Renderer, Primitives.Planes.Plane, Plane);
    end loop;
 
    Renderers.Set_Material
@@ -64,8 +61,8 @@ begin
    Renderers.Set_Material
      (Renderer, 4, Materials.Create ((0.1, 0.1, 0.1), 0.9, 0.1));
 
-   Renderers.Set_Primitive
-     (Renderer, Prim_Count, Primitives.Spheres.Sphere, Sphere_Instance);
+   Renderers.Add_Primitive
+     (Renderer, Primitives.Spheres.Sphere, Sphere_Instance);
 
    Renderers.Set_Light (Renderer, 1, Lights.Point_Lights.Point_Light, Point_Light_Instance);
 
