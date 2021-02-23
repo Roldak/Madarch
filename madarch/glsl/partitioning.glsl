@@ -17,14 +17,13 @@ float partitioning_closest (vec3 x) {
       return closest_primitive(x);
    }
 
-   partition_info info = partition_data[data_index];
    float closest = max_dist;
 
-   for (int i = 0; i < info.Sphere_count; ++i) {
-      closest = min(closest, dist_to_Sphere (prim_Spheres[info.Sphere_indices[i]], x));
+   for (int i = 0; i < partition_data[data_index].Sphere_count; ++i) {
+      closest = min(closest, dist_to_Sphere (prim_Spheres[partition_data[data_index].Sphere_indices[i]], x));
    }
-   for (int i = 0; i < info.Plane_count; ++i) {
-      closest = min(closest, dist_to_Plane (prim_Planes[info.Plane_indices[i]], x));
+   for (int i = 0; i < partition_data[data_index].Plane_count; ++i) {
+      closest = min(closest, dist_to_Plane (prim_Planes[partition_data[data_index].Plane_indices[i]], x));
    }
    return closest;
 }
@@ -36,21 +35,20 @@ float partitioning_closest_info(vec3 x, out int index) {
       return closest_primitive_info(x, index);
    }
 
-   partition_info info = partition_data[data_index];
    float closest = max_dist;
 
-   for (int i = 0; i < info.Sphere_count; ++i) {
-      float dist = dist_to_Sphere (prim_Spheres[info.Sphere_indices[i]], x);
+   for (int i = 0; i < partition_data[data_index].Sphere_count; ++i) {
+      float dist = dist_to_Sphere (prim_Spheres[partition_data[data_index].Sphere_indices[i]], x);
       if (dist < closest) {
          closest = dist;
-         index = info.Sphere_indices[i];
+         index = partition_data[data_index].Sphere_indices[i];
       }
    }
-   for (int i = 0; i < info.Plane_count; ++i) {
-      float dist = dist_to_Plane (prim_Planes[info.Plane_indices[i]], x);
+   for (int i = 0; i < partition_data[data_index].Plane_count; ++i) {
+      float dist = dist_to_Plane (prim_Planes[partition_data[data_index].Plane_indices[i]], x);
       if (dist < closest) {
          closest = dist;
-         index = 20 + info.Plane_indices[i];
+         index = 20 + partition_data[data_index].Plane_indices[i];
       }
    }
    return closest;
