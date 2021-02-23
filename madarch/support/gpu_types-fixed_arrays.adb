@@ -11,7 +11,7 @@ package body GPU_Types.Fixed_Arrays is
 
    overriding function Alignment (X : Fixed_Array) return Types.Size is
    begin
-      return X.Component.Alignment;
+      return 16;
    end Alignment;
 
    overriding function Size (X : Fixed_Array) return Types.Size is
