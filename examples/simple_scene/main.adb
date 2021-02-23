@@ -1,4 +1,5 @@
 with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Calendar;
 
 with Madarch.Components;
 with Madarch.Entities;
@@ -40,6 +41,8 @@ procedure Main is
 
    Time : Single := 0.0;
 
+   FPS_Clock : Ada.Calendar.Time;
+
    Planes : Entities.Entity_Array :=
      (Primitives.Planes.Create ((0.0,  1.0, 0.0), 1.0, 0),
       Primitives.Planes.Create ((0.0, -1.0, 0.0), 7.0, 0),
@@ -67,7 +70,10 @@ begin
    Renderers.Set_Light (Renderer, 1, Lights.Point_Lights.Point_Light, Point_Light_Instance);
 
    while Window.Is_Opened loop
+      FPS_Clock := Ada.Calendar.Clock;
       Renderers.Render (Renderer);
+      Ada.Text_IO.Put_Line
+        (Ada.Calendar."-"(Ada.Calendar.Clock, FPS_Clock)'Image);
       Window.Poll_Events;
       Time := Time + 0.01;
    end loop;
