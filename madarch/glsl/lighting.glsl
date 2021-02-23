@@ -58,7 +58,7 @@ float compute_ambient_occlusion(vec3 pos, vec3 normal) {
    for (int i = 0; i < M_AMBIENT_OCCLUSION_STEPS; ++i) {
       vec3 p = pos + normal * (i + 1) * ao_step_size;
       float factor = 1.0 / pow(2.0, i);
-      ao_sum += factor * closest_primitive(p);
+      ao_sum += factor * partitioning_closest(p);
       max_ao_sum += factor * (i + 1) * ao_step_size;
    }
 

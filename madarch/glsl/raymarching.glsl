@@ -6,7 +6,7 @@ float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) 
    float prev_dist = 1e20;
 
    for (float total_dist = min_dist; total_dist < max_dist;) {
-      float dist = closest_primitive(from + dir * total_dist);
+      float dist = partitioning_closest(from + dir * total_dist);
 
       if (dist < epsilon) {
          return 0.0;
@@ -24,7 +24,7 @@ float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) 
 
 bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll) {
    for (float total_dist = 0; total_dist < max_dist;) {
-      float dist = closest_primitive_info(from + dir * total_dist, index);
+      float dist = partitioning_closest_info(from + dir * total_dist, index);
 
       if (dist < epsilon) {
          coll = from + dir * total_dist;
@@ -38,7 +38,7 @@ bool raycast(vec3 from, vec3 dir, out int index, out vec3 coll) {
 
 bool raycast_hit_position(vec3 from, vec3 dir, float max_dist, out vec3 coll) {
    for (float total_dist = 0; total_dist < max_dist;) {
-      float dist = closest_primitive(from + dir * total_dist);
+      float dist = partitioning_closest(from + dir * total_dist);
 
       if (dist < epsilon) {
          coll = from + dir * total_dist;
