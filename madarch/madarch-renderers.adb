@@ -25,7 +25,7 @@ package body Madarch.Renderers is
       Camera_Orientation : Uniforms.Uniform :=
          R.Screen_Pass.Uniform ("camera_orientation");
    begin
-      Uniforms.Set_Single (Camera_Position, Singles.Vector3'(0.0, 0.0, 0.0));
+      Uniforms.Set_Single (Camera_Position, Singles.Vector3'(2.0, 2.0, 0.0));
       Uniforms.Set_Single (Camera_Orientation, Singles.Identity3);
    end Setup_Camera;
 

@@ -50,9 +50,35 @@ procedure Main is
       Primitives.Planes.Create ((-1.0, 0.0, 0.0), 7.0, 2),
       Primitives.Planes.Create ((0.0, 0.0,  1.0), 6.0, 0),
       Primitives.Planes.Create ((0.0, 0.0, -1.0), 7.0, 0));
+
+   Spheres : Entities.Entity_Array :=
+     (Primitives.Spheres.Create ((0.5, 3.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((1.5, 3.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((2.5, 3.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((3.5, 3.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((4.5, 3.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((5.5, 3.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((0.5, 0.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((1.5, 0.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((2.5, 0.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((3.5, 0.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((4.5, 0.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((5.5, 0.5, 2.0), 0.5, 3),
+      Primitives.Spheres.Create ((0.5, 3.5, 5.0), 0.5, 3),
+      Primitives.Spheres.Create ((1.5, 3.5, 5.0), 0.5, 3),
+      Primitives.Spheres.Create ((2.5, 3.5, 5.0), 0.5, 3),
+      Primitives.Spheres.Create ((3.5, 3.5, 5.0), 0.5, 3),
+      Primitives.Spheres.Create ((4.5, 3.5, 5.0), 0.5, 3),
+      Primitives.Spheres.Create ((5.5, 3.5, 5.0), 0.5, 3),
+      Primitives.Spheres.Create ((0.5, 0.5, 5.0), 0.5, 3),
+      Primitives.Spheres.Create ((1.5, 0.5, 5.0), 0.5, 3));
 begin
    for Plane of Planes loop
       Renderers.Add_Primitive (Renderer, Primitives.Planes.Plane, Plane);
+   end loop;
+
+   for Sphere of Spheres loop
+      Renderers.Add_Primitive (Renderer, Primitives.Spheres.Sphere, Sphere);
    end loop;
 
    Renderers.Set_Material
@@ -63,9 +89,6 @@ begin
      (Renderer, 3, Materials.Create ((0.0, 0.0, 1.0), 0.0, 0.6));
    Renderers.Set_Material
      (Renderer, 4, Materials.Create ((0.1, 0.1, 0.1), 0.9, 0.1));
-
-   Renderers.Add_Primitive
-     (Renderer, Primitives.Spheres.Sphere, Sphere_Instance);
 
    Renderers.Set_Light (Renderer, 1, Lights.Point_Lights.Point_Light, Point_Light_Instance);
 
