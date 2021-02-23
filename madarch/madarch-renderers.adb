@@ -408,8 +408,11 @@ package body Madarch.Renderers is
             end loop;
          end Write_Partitioning_Info;
 
+         use type Singles.Vector3;
+
          Center  : Singles.Vector3 :=
-           (Single (X) + 0.5, Single (Y) + 0.5, Single (Z) + 0.5);
+           (Single (X) + 0.5, Single (Y) + 0.5, Single (Z) + 0.5)
+           - Singles.Vector3'(1.0, 1.0, 1.0);
          Closest : Single := 1.0e10;
 
          procedure Find_Closest (Cursor : Primitive_Entity_Maps.Cursor) is

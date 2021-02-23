@@ -11,11 +11,8 @@ layout(std140, binding=0) buffer partition_data_buffer {
 };
 
 float partitioning_closest (vec3 x) {
-   vec3 fx = floor(x);
+   vec3 fx = clamp(floor(x) + vec3(1, 1, 1), vec3(0), vec3(9));
    int data_index = int(fx.x * 100 + fx.y * 10 + fx.z);
-   if (fx != clamp(fx, vec3(0), vec3(9))) {
-      return closest_primitive(x);
-   }
 
    float closest = max_dist;
 
@@ -29,11 +26,8 @@ float partitioning_closest (vec3 x) {
 }
 
 float partitioning_closest_info(vec3 x, out int index) {
-   vec3 fx = floor(x);
+   vec3 fx = clamp(floor(x) + vec3(1, 1, 1), vec3(0), vec3(9));
    int data_index = int(fx.x * 100 + fx.y * 10 + fx.z);
-   if (fx != clamp(fx, vec3(0), vec3(9))) {
-      return closest_primitive_info(x, index);
-   }
 
    float closest = max_dist;
 
