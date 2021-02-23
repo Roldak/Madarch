@@ -92,6 +92,8 @@ begin
 
    Renderers.Set_Light (Renderer, 1, Lights.Point_Lights.Point_Light, Point_Light_Instance);
 
+   Renderers.Update_Partionning (Renderer);
+
    while Window.Is_Opened loop
       FPS_Clock := Ada.Calendar.Clock;
       Renderers.Render (Renderer);

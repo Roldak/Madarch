@@ -51,6 +51,8 @@ package Madarch.Renderers is
       Index  : Positive;
       Lit    : Lights.Light;
       Entity : Entities.Entity);
+
+   procedure Update_Partionning (Self : in out Renderer);
 private
    package Entity_Vectors is new Ada.Containers.Vectors
      (Positive, Entities.Entity, Entities."=");
@@ -75,6 +77,8 @@ private
       Screen_Pass     : Render_Passes.Screen_Render_Pass;
 
       All_Primitives  : Primitive_Entity_Maps.Map;
+
+      Partitioning_Buffer : GPU_Buffers.GPU_Buffer;
    end record;
 
    Default_Probe_Settings : constant Probe_Settings := (others => <>);

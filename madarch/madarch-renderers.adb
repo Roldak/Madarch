@@ -82,6 +82,20 @@ package body Madarch.Renderers is
         ((GPU_Types.Base.Int.Named ("material_count"),
           Material_Array_Type.Named ("materials")));
 
+   Index_Array_Type : GPU_Types.GPU_Type :=
+      GPU_Types.Fixed_Arrays.Create (10, GPU_Types.Base.Int);
+
+   Partitioning_Info_Type : GPU_Types.GPU_Type :=
+      GPU_Types.Structs.Create
+        ((GPU_Types.Base.Int.Named ("Sphere_count"),
+          Index_Array_Type.Named ("Sphere_indices"),
+
+          GPU_Types.Base.Int.Named ("Plane_count"),
+          Index_Array_Type.Named ("Plane_indices")));
+
+   Partitioning_Data_Type : GPU_Types.GPU_Type :=
+      GPU_Types.Fixed_Arrays.Create (10 * 10 * 10, Partitioning_Info_Type);
+
    function Create
      (Window : Windows.Window;
       Scene  : Scenes.Scene;
@@ -136,6 +150,8 @@ package body Madarch.Renderers is
    begin
       Glfw.Windows.Context.Make_Current (Window);
 
+      Ada.Text_IO.Put_Line (Partitioning_Data_Type.Size'Image);
+
       Load_Shader
         (Vertex_Shader,
          "madarch/glsl/identity.glsl",
@@ -148,21 +164,21 @@ package body Madarch.Renderers is
          "madarch/glsl/draw_screen.glsl",
          Probe_Layout_Macros & Scene_Macros & Render_Macros,
          File_Substs,
-         "420");
+         "430");
 
       Load_Shader
         (Radiance_Shader,
          "madarch/glsl/compute_probe_radiance.glsl",
          Probe_Layout_Macros & Scene_Macros & Probe_Render_Macros,
          File_Substs,
-         "420");
+         "430");
 
       Load_Shader
         (Irradiance_Shader,
          "madarch/glsl/update_probe_irradiance.glsl",
          Probe_Layout_Macros,
          No_File_Substitution_Array,
-         "420");
+         "430");
 
       return R : Renderer := new Renderer_Internal'
         (Window       => Window,
@@ -202,7 +218,10 @@ package body Madarch.Renderers is
             Frame_Width  => Int (Window.Width),
             Frame_Height => Int (Window.Height)),
 
-         All_Primitives => <>)
+         All_Primitives => <>,
+
+         Partitioning_Buffer => Partitioning_Data_Type.Allocate
+           (Kind => GPU_Buffers.Shader_Storage_Buffer, Binding => 0))
       do
          Setup_Probe_Layout (R, Probes);
          Setup_Camera (R);
@@ -259,6 +278,41 @@ package body Madarch.Renderers is
         (W, L.Component ("materials").Component (Index), Entity);
    end Set_Material;
 
+   generic
+      with package Vectors is new Ada.Containers.Vectors (<>);
+      with package Maps is new Ada.Containers.Hashed_Maps
+        (Element_Type => Vectors.Vector, others => <>);
+   function Append_Element_G
+     (M : in out Maps.Map;
+      K : Maps.Key_Type;
+      V : Vectors.Element_Type) return Natural;
+
+   function Append_Element_G
+     (M : in out Maps.Map;
+      K : Maps.Key_Type;
+      V : Vectors.Element_Type) return Natural
+   is
+      Res : Natural;
+
+      procedure Add_It
+        (K : Maps.Key_Type; E : in out Vectors.Vector)
+      is
+      begin
+         E.Append (V);
+         Res := Natural (E.Length);
+      end Add_It;
+
+      Cursor   : Maps.Cursor;
+      Inserted : Boolean;
+   begin
+      M.Insert (K, Cursor, Inserted);
+      M.Update_Element (Cursor, Add_It'Access);
+      return Res;
+   end Append_Element_G;
+
+   function Append_Entity is new Append_Element_G
+     (Entity_Vectors, Primitive_Entity_Maps);
+
    procedure Add_Primitive
      (Self   : in out Renderer;
       Prim   : Primitives.Primitive;
@@ -266,18 +320,7 @@ package body Madarch.Renderers is
    is
       use GPU_Types;
 
-      Index : Positive;
-
-      procedure Process_Element
-        (K : Primitives.Primitive; E : in out Entity_Vectors.Vector)
-      is
-      begin
-         E.Append (Entity);
-         Index := Positive (E.Length);
-      end Process_Element;
-
-      Cursor   : Primitive_Entity_Maps.Cursor;
-      Inserted : Boolean;
+      Count : Natural := Append_Entity (Self.All_Primitives, Prim, Entity);
 
       W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Scene_Buffer);
 
@@ -286,16 +329,11 @@ package body Madarch.Renderers is
    begin
       Scenes.Get_Primitives_Location (Self.Scene, Prim, Array_Loc, Count_Loc);
 
-      Primitive_Entity_Maps.Insert
-        (Self.All_Primitives, Prim, Cursor, Inserted);
-      Primitive_Entity_Maps.Update_Element
-        (Self.All_Primitives, Cursor, Process_Element'Access);
-
       Write_Entity
-        (W, Array_Loc.Component (Index), Entity);
+        (W, Array_Loc.Component (Count), Entity);
 
       Count_Loc.Adjust (W);
-      W.Write_Int (Int (Index));
+      W.Write_Int (Int (Count));
    end Add_Primitive;
 
    procedure Set_Light
@@ -324,4 +362,95 @@ package body Madarch.Renderers is
       Total_Loc.Adjust (W);
       W.Write_Int (Int (Index));
    end Set_Light;
+
+   package Natural_Vectors is new Ada.Containers.Vectors (Positive, Natural);
+   package Primitive_Natural_Maps is new Ada.Containers.Hashed_Maps
+     (Primitives.Primitive,
+      Natural_Vectors.Vector,
+      Primitives.Hash,
+      Primitives."=",
+      Natural_Vectors."=");
+
+   function Append_Natural is new Append_Element_G
+     (Natural_Vectors, Primitive_Natural_Maps);
+
+   procedure Update_Partionning (Self : in out Renderer) is
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Partitioning_Buffer);
+
+      procedure Process_Point (X, Y, Z : Integer) is
+         Candidates : Primitive_Natural_Maps.Map;
+
+         Point_Loc : GPU_Types.Locations.Location :=
+            Partitioning_Data_Type.Address.Component
+              (X * 100 + Y * 10 + Z + 1);
+
+         procedure Write_Partitioning_Info
+            (Cursor : Primitive_Natural_Maps.Cursor)
+         is
+            Prim : Primitives.Primitive := Primitive_Natural_Maps.Key (Cursor);
+
+            Count_Loc : GPU_Types.Locations.Location :=
+               Point_Loc.Component (Primitives.Get_Name (Prim) & "_count");
+            Array_Loc : GPU_Types.Locations.Location :=
+               Point_Loc.Component (Primitives.Get_Name (Prim) & "_indices");
+
+            Vec : Natural_Vectors.Vector
+               renames Primitive_Natural_Maps.Element (Cursor);
+
+            Index : Positive := 1;
+         begin
+            Count_Loc.Adjust (W);
+            W.Write_Int (Int (Vec.Length));
+            for E of Vec loop
+               Array_Loc.Component (Index).Adjust (W);
+               W.Write_Int (Int (E));
+               Index := Index + 1;
+            end loop;
+         end Write_Partitioning_Info;
+
+         Center  : Singles.Vector3 :=
+           (Single (X) + 0.5, Single (Y) + 0.5, Single (Z) + 0.5);
+         Closest : Single := 1.0e10;
+
+         procedure Find_Closest (Cursor : Primitive_Entity_Maps.Cursor) is
+            Prim : Primitives.Primitive := Primitive_Entity_Maps.Key (Cursor);
+            Dist : Single;
+         begin
+            for Ent of Primitive_Entity_Maps.Element (Cursor) loop
+               Dist := Primitives.Eval_Dist (Prim, Ent, Center);
+               if Dist < Closest then
+                  Closest := Dist;
+               end if;
+            end loop;
+         end Find_Closest;
+
+         procedure Find_Candidates (Cursor : Primitive_Entity_Maps.Cursor) is
+            Prim : Primitives.Primitive := Primitive_Entity_Maps.Key (Cursor);
+            Dist : Single;
+
+            Dummy_Count : Natural;
+            Index : Natural := 0;
+         begin
+            for Ent of Primitive_Entity_Maps.Element (Cursor) loop
+               Dist := Primitives.Eval_Dist (Prim, Ent, Center);
+               if Dist < Closest + 0.87 then
+                  Dummy_Count := Append_Natural (Candidates, Prim, Index);
+               end if;
+               Index := Index + 1;
+            end loop;
+         end Find_Candidates;
+      begin
+         Self.All_Primitives.Iterate (Find_Closest'Access);
+         Self.All_Primitives.Iterate (Find_Candidates'Access);
+         Candidates.Iterate (Write_Partitioning_Info'Access);
+      end Process_Point;
+   begin
+      for X in 0 .. 9 loop
+         for Y in 0 .. 9 loop
+            for Z in 0 .. 9 loop
+               Process_Point (X, Y, Z);
+            end loop;
+         end loop;
+      end loop;
+   end Update_Partionning;
 end Madarch.Renderers;
