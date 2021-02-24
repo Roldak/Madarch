@@ -83,7 +83,7 @@ package body Madarch.Renderers is
           Material_Array_Type.Named ("materials")));
 
    Index_Array_Type : GPU_Types.GPU_Type :=
-      GPU_Types.Fixed_Arrays.Create (10, GPU_Types.Base.Int);
+      GPU_Types.Fixed_Arrays.Create (20, GPU_Types.Base.Int);
 
    Partitioning_Info_Type : GPU_Types.GPU_Type :=
       GPU_Types.Structs.Create
@@ -436,7 +436,7 @@ package body Madarch.Renderers is
          begin
             for Ent of Primitive_Entity_Maps.Element (Cursor) loop
                Dist := Primitives.Eval_Dist (Prim, Ent, Center);
-               if Dist < Closest + 0.87 then
+               if Dist < Closest + 1.74 then
                   Dummy_Count := Append_Natural (Candidates, Prim, Index);
                end if;
                Index := Index + 1;
