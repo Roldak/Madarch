@@ -1,9 +1,9 @@
 struct partition_info {
     int Sphere_count;
-    int Sphere_indices[20];
+    int Sphere_indices[10];
 
     int Plane_count;
-    int Plane_indices[20];
+    int Plane_indices[10];
 };
 
 layout(std140, binding=0) buffer partition_data_buffer {

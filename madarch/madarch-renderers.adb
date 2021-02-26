@@ -1,3 +1,4 @@
+with Ada.Containers.Hashed_Sets;
 with Ada.Text_IO;
 
 with GL;
@@ -5,6 +6,7 @@ with GL.Objects.Programs;
 with GL.Objects.Shaders;
 with GL.Uniforms;
 
+with Math_Utils;
 with Shader_Loader;
 with GPU_Types;
 with GPU_Types.Base;
@@ -83,7 +85,7 @@ package body Madarch.Renderers is
           Material_Array_Type.Named ("materials")));
 
    Index_Array_Type : GPU_Types.GPU_Type :=
-      GPU_Types.Fixed_Arrays.Create (20, GPU_Types.Base.Int);
+      GPU_Types.Fixed_Arrays.Create (10, GPU_Types.Base.Int);
 
    Partitioning_Info_Type : GPU_Types.GPU_Type :=
       GPU_Types.Structs.Create
@@ -375,6 +377,9 @@ package body Madarch.Renderers is
      (Natural_Vectors, Primitive_Natural_Maps);
 
    procedure Update_Partionning (Self : in out Renderer) is
+      function To_Vec (X, Y, Z : Integer) return Singles.Vector3 is
+        ((Single (X), Single (Y), Single (Z)));
+
       W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Partitioning_Buffer);
 
       procedure Process_Point (X, Y, Z : Integer) is
@@ -410,9 +415,10 @@ package body Madarch.Renderers is
 
          use type Singles.Vector3;
 
+         Grid_Pos : Singles.Vector3 :=
+            To_Vec (X, Y, Z) - (1.0, 1.0, 1.0);
          Center  : Singles.Vector3 :=
-           (Single (X) + 0.5, Single (Y) + 0.5, Single (Z) + 0.5)
-           - Singles.Vector3'(1.0, 1.0, 1.0);
+            Grid_Pos + (0.5, 0.5, 0.5);
          Closest : Single := 1.0e10;
 
          procedure Find_Closest (Cursor : Primitive_Entity_Maps.Cursor) is
@@ -427,7 +433,26 @@ package body Madarch.Renderers is
             end loop;
          end Find_Closest;
 
-         procedure Find_Candidates (Cursor : Primitive_Entity_Maps.Cursor) is
+         type Precandidate is record
+            Prim  : Primitives.Primitive;
+            Ent   : Entities.Entity;
+            Index : Natural;
+         end record;
+
+         use type Ada.Containers.Hash_Type;
+
+         function Hash (X : Precandidate) return Ada.Containers.Hash_Type is
+           (Primitives.Hash (X.Prim) + Ada.Containers.Hash_Type (X.Index));
+
+         package Precandidate_Vectors is new Ada.Containers.Vectors
+           (Positive, Precandidate);
+
+         package Precandidate_Sets is new Ada.Containers.Hashed_Sets
+           (Precandidate, Hash, "=");
+
+         Precandidates : Precandidate_Vectors.Vector;
+
+         procedure Find_Precandidates (Cursor : Primitive_Entity_Maps.Cursor) is
             Prim : Primitives.Primitive := Primitive_Entity_Maps.Key (Cursor);
             Dist : Single;
 
@@ -437,14 +462,69 @@ package body Madarch.Renderers is
             for Ent of Primitive_Entity_Maps.Element (Cursor) loop
                Dist := Primitives.Eval_Dist (Prim, Ent, Center);
                if Dist < Closest + 1.74 then
-                  Dummy_Count := Append_Natural (Candidates, Prim, Index);
+                  Precandidates.Append ((Prim, Ent, Index));
                end if;
                Index := Index + 1;
+            end loop;
+         end Find_Precandidates;
+
+         procedure Find_Candidates is
+            use type Ada.Containers.Count_Type;
+
+            Accepted : Precandidate_Sets.Set;
+
+            procedure Test_Point (P : Singles.Vector3) is
+               Closest       : Single  := 1.0e10;
+               Closest_Index : Natural := 0;
+
+               Dist          : Single   := 0.0;
+               Index         : Positive := 1;
+            begin
+               for C of Precandidates loop
+                  Dist := Primitives.Eval_Dist (C.Prim, C.Ent, P);
+                  if Dist < Closest then
+                     Closest := Dist;
+                     Closest_Index := Index;
+                  end if;
+                  Index := Index + 1;
+               end loop;
+
+               declare
+                  Candidate : Precandidate := Precandidates (Closest_Index);
+                  Inserted  : Boolean;
+
+                  Dummy_Cursor : Precandidate_Sets.Cursor;
+                  Dummy_Count  : Natural;
+               begin
+                  Accepted.Insert (Candidate, Dummy_Cursor, Inserted);
+                  if Inserted then
+                     Dummy_Count := Append_Natural
+                       (Candidates, Candidate.Prim, Candidate.Index);
+                  end if;
+               end;
+            end Test_Point;
+
+            Res : constant Singles.Vector3 := (3.0, 3.0, 3.0);
+            One : constant Singles.Vector3 := (1.0, 1.0, 1.0);
+         begin
+            for SX in 1 .. Integer (Res (GL.X)) loop
+               for SY in 1 .. Integer (Res (GL.Y)) loop
+                  for SZ in 1 .. Integer (Res (GL.Z)) loop
+                     declare
+                        Cmp : Singles.Vector3 := To_Vec (SX, SY, SZ);
+                        Off : Singles.Vector3 := Math_Utils.Div
+                          (Cmp - One, Res - One);
+                     begin
+                        Test_Point (Grid_Pos + Off);
+                     end;
+                  end loop;
+               end loop;
             end loop;
          end Find_Candidates;
       begin
          Self.All_Primitives.Iterate (Find_Closest'Access);
-         Self.All_Primitives.Iterate (Find_Candidates'Access);
+         Self.All_Primitives.Iterate (Find_Precandidates'Access);
+         Find_Candidates;
          Candidates.Iterate (Write_Partitioning_Info'Access);
       end Process_Point;
    begin
