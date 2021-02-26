@@ -25,6 +25,16 @@ package body Madarch.Scenes is
       end case;
    end Type_Reference;
 
+   function Vector3_String (V : Singles.Vector3) return String is
+     ("vec3(" & V (GL.X)'Image &
+      ", "    & V (GL.Y)'Image &
+      ", "    & V (GL.Z)'Image & ")");
+
+   function Vector3_String (V : Ints.Vector3) return String is
+     ("vec3(" & V (GL.X)'Image &
+      ", "    & V (GL.Y)'Image &
+      ", "    & V (GL.Z)'Image & ")");
+
    function Dist_Function_Reference
      (Prim : Primitives.Primitive) return String
    is ("dist_to_" & Primitives.Get_Name (Prim));
@@ -558,10 +568,23 @@ package body Madarch.Scenes is
      (Partitioning : Partitioning_Settings) return Unbounded_String
    is
       Res : Unbounded_String;
+
+      Dims : Ints.Vector3 := Partitioning.Grid_Dimensions;
    begin
-      Append (Res, "vec3 fx = clamp(floor(x) + vec3(1, 1, 1), vec3(0), vec3(9));");
+      Append (Res, "vec3 fx = clamp(floor((x - ");
+      Append (Res, Vector3_String (Partitioning.Grid_Offset));
+      Append (Res, ") / ");
+      Append (Res, Vector3_String (Partitioning.Grid_Spacing));
+      Append (Res, "), vec3(0), ");
+      Append (Res, Vector3_String (Partitioning.Grid_Dimensions));
+      Append (Res, ");");
       Append (Res, LF);
-      Append (Res, "int data_index = int(fx.x * 100 + fx.y * 10 + fx.z);");
+
+      Append (Res, "int data_index = int(fx.x * ");
+      Append (Res, Int'Image (Dims (GL.Y) * Dims (GL.Z)));
+      Append (Res, " + fx.y * ");
+      Append (Res, Int'Image (Dims (GL.Z)));
+      Append (Res, " + fx.z);");
       Append (Res, LF);
       return Res;
    end Partitioning_Index;

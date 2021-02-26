@@ -369,12 +369,18 @@ package body Madarch.Renderers is
 
       W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Partitioning_Buffer);
 
+      Settings : constant Scenes.Partitioning_Settings :=
+         Scenes.Get_Partitioning_Settings (Self.Scene);
+
       procedure Process_Point (X, Y, Z : Integer) is
          Candidates : Primitive_Natural_Maps.Map;
 
          Point_Loc : GPU_Types.Locations.Location :=
             Scenes.Get_Partitioning_GPU_Type (Self.Scene).Address.Component
-              (X * 100 + Y * 10 + Z + 1);
+              (  X * Integer (Settings.Grid_Dimensions (GL.Y)
+                              * Settings.Grid_Dimensions (GL.Z))
+               + Y * Integer (Settings.Grid_Dimensions (GL.Z))
+               + Z + 1);
 
          procedure Write_Partitioning_Info
             (Cursor : Primitive_Natural_Maps.Cursor)
@@ -403,9 +409,14 @@ package body Madarch.Renderers is
          use type Singles.Vector3;
 
          Grid_Pos : Singles.Vector3 :=
-            To_Vec (X, Y, Z) - (1.0, 1.0, 1.0);
+            Math_Utils.Mul (To_Vec (X, Y, Z), Settings.Grid_Spacing)
+            + Settings.Grid_Offset;
+
+         Cell_Diag : Single := Math_Utils.Length (Settings.Grid_Spacing);
+
          Center  : Singles.Vector3 :=
-            Grid_Pos + (0.5, 0.5, 0.5);
+            Grid_Pos + Settings.Grid_Spacing * 0.5;
+
          Closest : Single := 1.0e10;
 
          procedure Find_Closest (Cursor : Primitive_Entity_Maps.Cursor) is
@@ -448,7 +459,7 @@ package body Madarch.Renderers is
          begin
             for Ent of Primitive_Entity_Maps.Element (Cursor) loop
                Dist := Primitives.Eval_Dist (Prim, Ent, Center);
-               if Dist < Closest + 1.74 then
+               if Dist < Closest + Cell_Diag then
                   Precandidates.Append ((Prim, Ent, Index));
                end if;
                Index := Index + 1;
@@ -502,7 +513,9 @@ package body Madarch.Renderers is
                         Off : Singles.Vector3 := Math_Utils.Div
                           (Cmp - One, Res - One);
                      begin
-                        Test_Point (Grid_Pos + Off);
+                        Test_Point
+                          (Math_Utils.Mul (Off, Settings.Grid_Spacing)
+                           + Grid_Pos);
                      end;
                   end loop;
                end loop;
@@ -515,10 +528,10 @@ package body Madarch.Renderers is
          Candidates.Iterate (Write_Partitioning_Info'Access);
       end Process_Point;
    begin
-      for X in 0 .. 9 loop
-         for Y in 0 .. 9 loop
-            for Z in 0 .. 9 loop
-               Process_Point (X, Y, Z);
+      for X in 0 .. Settings.Grid_Dimensions (GL.X) - 1 loop
+         for Y in 0 .. Settings.Grid_Dimensions (GL.Y) - 1 loop
+            for Z in 0 .. Settings.Grid_Dimensions (GL.Z) - 1 loop
+               Process_Point (Integer (X), Integer (Y), Integer (Z));
             end loop;
          end loop;
       end loop;

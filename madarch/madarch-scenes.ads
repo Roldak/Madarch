@@ -27,9 +27,9 @@ package Madarch.Scenes is
 
    type Partitioning_Settings is record
       Index_Count     : Natural := 10;
-      Grid_Dimensions : Ints.Vector3    := (10, 10, 10);
+      Grid_Dimensions : Ints.Vector3    := (10, 10, 20);
       Grid_Spacing    : Singles.Vector3 := (1.0, 1.0, 1.0);
-      Grid_Offset     : Singles.Vector3 := (-1.0, -1.0, -1.0);
+      Grid_Offset     : Singles.Vector3 := (-1.0, -1.0, -10.0);
    end record;
 
    Default_Partitioning_Settings : constant Partitioning_Settings;
