@@ -184,6 +184,7 @@ package body Madarch.Scenes is
       Append (Res, " = ");
       Append (Res, Value);
       Append (Res, ";");
+      Append (Res, LF);
       return Res;
    end Variable_Declaration;
 
@@ -362,7 +363,6 @@ package body Madarch.Scenes is
       Stmts : Unbounded_String;
    begin
       Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
-      Append (Stmts, LF);
 
       for Prim of Prims.all loop
          declare
@@ -393,7 +393,6 @@ package body Madarch.Scenes is
       Total : Natural := 0;
    begin
       Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
-      Append (Stmts, LF);
 
       for Prim_Count of Prims_Count loop
          declare
@@ -408,7 +407,6 @@ package body Madarch.Scenes is
 
             Append (Loop_Body, Variable_Declaration
               ("float", "dist", To_String (Variable_Expr)));
-            Append (Loop_Body, LF);
             Append (Loop_Body, "if (dist < closest) {");
             Append (Loop_Body, LF);
             Append (Loop_Body, "closest = dist;");
@@ -520,18 +518,176 @@ package body Madarch.Scenes is
          To_String (Stmts));
    end Sample_Light;
 
+   function Partitioning_Info_Struct_Declaration
+     (Partitioning : Partitioning_Settings;
+      Prims        : Primitives.Primitive_Array_Access) return Unbounded_String
+   is
+      Res : Unbounded_String;
+   begin
+      Append (Res, "struct partition_info {");
+      Append (Res, LF);
+      for Prim of Prims.all loop
+         Append (Res, "int ");
+         Append (Res, Prim_Count_Reference (Prim));
+         Append (Res, ";");
+         Append (Res, LF);
+
+         Append (Res, "int ");
+         Append (Res, Prim_Array_Reference (Prim));
+         Append (Res, "[");
+         Append (Res, Partitioning.Index_Count'Image);
+         Append (Res, "];");
+         Append (Res, DLF);
+      end loop;
+      Append (Res, "};");
+      return Res;
+   end Partitioning_Info_Struct_Declaration;
+
+   function Partitioning_Data_Buffer return Unbounded_String is
+      Res : Unbounded_String;
+   begin
+      Append (Res, "layout (std140, binding=0) buffer partition_data_buffer {");
+      Append (Res, LF);
+      Append (Res, "partition_info partition_data[];");
+      Append (Res, LF);
+      Append (Res, "};");
+      return Res;
+   end Partitioning_Data_Buffer;
+
+   function Partitioning_Index
+     (Partitioning : Partitioning_Settings) return Unbounded_String
+   is
+      Res : Unbounded_String;
+   begin
+      Append (Res, "vec3 fx = clamp(floor(x) + vec3(1, 1, 1), vec3(0), vec3(9));");
+      Append (Res, LF);
+      Append (Res, "int data_index = int(fx.x * 100 + fx.y * 10 + fx.z);");
+      Append (Res, LF);
+      return Res;
+   end Partitioning_Index;
+
+   function Partitioning_Closest_Primitive
+     (Partitioning : Partitioning_Settings;
+      Prims        : Primitives.Primitive_Array_Access) return Unbounded_String
+   is
+      Stmts : Unbounded_String;
+
+      Partition_Info : String := "partition_data[data_index]";
+   begin
+      Append (Stmts, Partitioning_Index (Partitioning));
+      Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
+
+      for Prim of Prims.all loop
+         declare
+            Count_Name : String := Primitives.Get_Name (Prim) & "_count";
+            Count_Var  : Unbounded_String := Variable_Declaration
+              ("int",
+               Count_Name,
+               Partition_Info & "." & Prim_Count_Reference (Prim));
+
+            Index_Array : String :=
+               Partition_Info & "." & Prim_Array_Reference (Prim);
+
+            Loop_Body : Unbounded_String;
+         begin
+            Append (Stmts, Count_Var);
+
+            Append (Loop_Body, "closest = min(closest, ");
+            Append (Loop_Body, Dist_Function_Reference (Prim));
+            Append (Loop_Body, "(");
+            Append (Loop_Body, Prim_Array_Reference (Prim));
+            Append (Loop_Body, "[");
+            Append (Loop_Body, Index_Array);
+            Append (Loop_Body, "[i]], x));");
+            Append (Stmts, For_Loop
+              ("i", Count_Name, To_String (Loop_Body)));
+            Append (Stmts, LF);
+         end;
+      end loop;
+
+      return Function_Declaration
+        ("float", "partitioning_closest",
+         (1 => Create ("vec3", "x")),
+         "closest",
+         To_String (Stmts));
+   end Partitioning_Closest_Primitive;
+
+   function Partitioning_Closest_Primitive_Info
+     (Partitioning : Partitioning_Settings;
+      Prims_Count  : Primitive_Count_Array) return Unbounded_String
+   is
+      Stmts : Unbounded_String;
+      Total : Natural := 0;
+
+      Partition_Info : String := "partition_data[data_index]";
+   begin
+      Append (Stmts, Partitioning_Index (Partitioning));
+      Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
+
+      for Prim_Count of Prims_Count loop
+         declare
+            Prim : Primitives.Primitive renames Prim_Count.Prim;
+
+            Count_Name : String := Primitives.Get_Name (Prim) & "_count";
+            Count_Var  : Unbounded_String := Variable_Declaration
+              ("int",
+               Count_Name,
+               Partition_Info & "." & Prim_Count_Reference (Prim));
+
+            Index_Array : String :=
+               Partition_Info & "." & Prim_Array_Reference (Prim);
+            Loop_Body : Unbounded_String;
+
+            Variable_Expr : Unbounded_String;
+         begin
+            Append (Stmts, Count_Var);
+
+            Append (Variable_Expr, Dist_Function_Reference (Prim));
+            Append (Variable_Expr, "(");
+            Append (Variable_Expr, Prim_Array_Reference (Prim));
+            Append (Variable_Expr, "[prim_index], x)");
+
+            Append (Loop_Body, Variable_Declaration
+              ("int", "prim_index", Index_Array & "[i]"));
+            Append (Loop_Body, Variable_Declaration
+              ("float", "dist", To_String (Variable_Expr)));
+            Append (Loop_Body, "if (dist < closest) {");
+            Append (Loop_Body, LF);
+            Append (Loop_Body, "closest = dist;");
+            Append (Loop_Body, LF);
+            Append (Loop_Body, "index = ");
+            Append (Loop_Body, Total'Image);
+            Append (Loop_Body, " + prim_index;");
+            Append (Loop_Body, LF);
+            Append (Loop_Body, "}");
+
+            Append (Stmts, For_Loop
+              ("i", Count_Name, To_String (Loop_Body)));
+            Append (Stmts, LF);
+         end;
+         Total := Total + Prim_Count.Count;
+      end loop;
+
+      return Function_Declaration
+        ("float", "partitioning_closest_info",
+         (1 => Create ("vec3", "x"), 2 => Create ("int", "index", "out")),
+         "closest",
+         To_String (Stmts));
+   end Partitioning_Closest_Primitive_Info;
+
    function Generate_Code
      (Prims_Count  : Primitive_Count_Array;
       Lights_Count : Light_Count_Array;
       Prims        : Primitives.Primitive_Array_Access;
       Lits         : Lights.Light_Array_Access;
-      Max_Dist     : GL.Types.Single) return Unbounded_String
+      Max_Dist     : GL.Types.Single;
+      Partitioning : Partitioning_Settings) return Unbounded_String
    is
       Res : Unbounded_String;
    begin
       Append (Res, Variable_Declaration
         ("float", "max_dist", Max_Dist'Image, Const => True));
-      Append (Res, DLF);
+      Append (Res, LF);
 
       for Prim of Prims.all loop
          Append (Res, Primitive_Struct_Declaration (Prim));
@@ -562,6 +718,20 @@ package body Madarch.Scenes is
       Append (Res, DLF);
 
       Append (Res, Sample_Light (Lits));
+      Append (Res, DLF);
+
+      Append (Res, Partitioning_Info_Struct_Declaration (Partitioning, Prims));
+      Append (Res, DLF);
+
+      Append (Res, Partitioning_Data_Buffer);
+      Append (Res, DLF);
+
+      Append (Res, Partitioning_Closest_Primitive (Partitioning, Prims));
+      Append (Res, DLF);
+
+      Append (Res, Partitioning_Closest_Primitive_Info
+        (Partitioning, Prims_Count));
+      Append (Res, DLF);
 
       return Res;
    end Generate_Code;
@@ -648,6 +818,7 @@ package body Madarch.Scenes is
    function Compile
      (All_Primitives : Primitive_Count_Array;
       All_Lights     : Light_Count_Array;
+      Partitioning   : Partitioning_Settings := Default_Partitioning_Settings;
       Max_Dist       : GL.Types.Single := 20.0) return Scene
    is
       Prims : Primitives.Primitive_Array_Access :=
@@ -668,7 +839,7 @@ package body Madarch.Scenes is
         (Prims    => Prims,
          Lits     => Lits,
          GLSL     => Generate_Code
-           (All_Primitives, All_Lights, Prims, Lits, Max_Dist),
+           (All_Primitives, All_Lights, Prims, Lits, Max_Dist, Partitioning),
          GPU_Type => Compute_Scene_GPU_Type (All_Primitives, All_Lights));
    end Compile;
 

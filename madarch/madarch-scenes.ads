@@ -8,6 +8,8 @@ with GL.Types;
 with GPU_Types;
 
 package Madarch.Scenes is
+   use GL.Types;
+
    type Scene is private;
 
    type Primitive_Count is record
@@ -23,10 +25,20 @@ package Madarch.Scenes is
    type Primitive_Count_Array is array (Positive range <>) of Primitive_Count;
    type Light_Count_Array is array (Positive range <>) of Light_Count;
 
+   type Partitioning_Settings is record
+      Index_Count     : Natural := 10;
+      Grid_Dimensions : Ints.Vector3    := (10, 10, 10);
+      Grid_Spacing    : Singles.Vector3 := (1.0, 1.0, 1.0);
+      Grid_Offset     : Singles.Vector3 := (-1.0, -1.0, -1.0);
+   end record;
+
+   Default_Partitioning_Settings : constant Partitioning_Settings;
+
    function Compile
      (All_Primitives : Primitive_Count_Array;
       All_Lights     : Light_Count_Array;
-      Max_Dist       : GL.Types.Single := 20.0) return Scene;
+      Partitioning   : Partitioning_Settings := Default_Partitioning_Settings;
+      Max_Dist       : Single := 20.0) return Scene;
 
    function Get_GLSL (S : Scene) return String;
 
@@ -53,4 +65,7 @@ private
    end record;
 
    type Scene is access Scene_Internal;
+
+   Default_Partitioning_Settings : constant Partitioning_Settings :=
+     (others => <>);
 end Madarch.Scenes;

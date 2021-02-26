@@ -4,7 +4,6 @@ uniform float time;
 #include "probe_utils.glsl"
 #include "random.glsl"
 #include "scene.glsl"
-#include "partitioning.glsl"
 #include "materials.glsl"
 #include "raymarching.glsl"
 #include "cook_torrance_brdf.glsl"
