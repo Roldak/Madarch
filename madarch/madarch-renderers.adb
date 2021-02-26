@@ -84,20 +84,6 @@ package body Madarch.Renderers is
         ((GPU_Types.Base.Int.Named ("material_count"),
           Material_Array_Type.Named ("materials")));
 
-   Index_Array_Type : GPU_Types.GPU_Type :=
-      GPU_Types.Fixed_Arrays.Create (10, GPU_Types.Base.Int);
-
-   Partitioning_Info_Type : GPU_Types.GPU_Type :=
-      GPU_Types.Structs.Create
-        ((GPU_Types.Base.Int.Named ("Sphere_count"),
-          Index_Array_Type.Named ("Sphere_indices"),
-
-          GPU_Types.Base.Int.Named ("Plane_count"),
-          Index_Array_Type.Named ("Plane_indices")));
-
-   Partitioning_Data_Type : GPU_Types.GPU_Type :=
-      GPU_Types.Fixed_Arrays.Create (10 * 10 * 10, Partitioning_Info_Type);
-
    function Create
      (Window : Windows.Window;
       Scene  : Scenes.Scene;
@@ -110,6 +96,9 @@ package body Madarch.Renderers is
 
       Scene_Description_Type : GPU_Types.GPU_Type :=
          Scenes.Get_GPU_Type (Scene);
+
+      Scene_Partitioning_Type : GPU_Types.GPU_Type :=
+         Scenes.Get_Partitioning_GPU_Type (Scene);
 
       Probe_Layout_Macros : Macro_Definition_Array :=
         (Create_Macro_Definition
@@ -151,8 +140,6 @@ package body Madarch.Renderers is
         (Kind => GL.Objects.Shaders.Fragment_Shader);
    begin
       Glfw.Windows.Context.Make_Current (Window);
-
-      Ada.Text_IO.Put_Line (Partitioning_Data_Type.Size'Image);
 
       Load_Shader
         (Vertex_Shader,
@@ -222,7 +209,7 @@ package body Madarch.Renderers is
 
          All_Primitives => <>,
 
-         Partitioning_Buffer => Partitioning_Data_Type.Allocate
+         Partitioning_Buffer => Scene_Partitioning_Type.Allocate
            (Kind => GPU_Buffers.Shader_Storage_Buffer, Binding => 0))
       do
          Setup_Probe_Layout (R, Probes);
@@ -386,7 +373,7 @@ package body Madarch.Renderers is
          Candidates : Primitive_Natural_Maps.Map;
 
          Point_Loc : GPU_Types.Locations.Location :=
-            Partitioning_Data_Type.Address.Component
+            Scenes.Get_Partitioning_GPU_Type (Self.Scene).Address.Component
               (X * 100 + Y * 10 + Z + 1);
 
          procedure Write_Partitioning_Info

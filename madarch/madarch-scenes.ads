@@ -44,6 +44,10 @@ package Madarch.Scenes is
 
    function Get_GPU_Type (S : Scene) return GPU_Types.GPU_Type;
 
+   function Get_Partitioning_Settings (S : Scene) return Partitioning_Settings;
+
+   function Get_Partitioning_GPU_Type (S : Scene) return GPU_Types.GPU_Type;
+
    procedure Get_Primitives_Location
      (S    : Scene;
       Prim : Primitives.Primitive;
@@ -62,6 +66,9 @@ private
       Lits     : Lights.Light_Array_Access;
       GLSL     : Unbounded_String;
       GPU_Type : GPU_Types.GPU_Type;
+
+      Partitioning_Config   : Partitioning_Settings;
+      Partitioning_GPU_Type : GPU_Types.GPU_Type;
    end record;
 
    type Scene is access Scene_Internal;

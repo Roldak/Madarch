@@ -815,6 +815,37 @@ package body Madarch.Scenes is
       return GPU_Types.Structs.Create (Comps);
    end Compute_Scene_GPU_Type;
 
+   function Compute_Partitioning_GPU_Type
+     (Partitioning : Partitioning_Settings;
+      Prims        : Primitives.Primitive_Array_Access)
+      return GPU_Types.GPU_Type
+   is
+      Index_Array_Type : GPU_Types.GPU_Type :=
+         GPU_Types.Fixed_Arrays.Create
+           (Int (Partitioning.Index_Count), GPU_Types.Base.Int);
+
+      Comps : GPU_Types.Named_Component_Array :=
+        (1 .. 2 * Prims'Length => <>);
+
+      I : Natural := 1;
+
+      procedure Add (Comp : GPU_Types.Named_Component) is
+      begin
+         Comps (I) := Comp;
+         I := I + 1;
+      end Add;
+
+      Dims : Ints.Vector3 := Partitioning.Grid_Dimensions;
+   begin
+      for Prim of Prims.all loop
+         Add (GPU_Types.Base.Int.Named (Primitives.Get_Name (Prim) & "_count"));
+         Add (Index_Array_Type.Named (Primitives.Get_Name (Prim) & "_indices"));
+      end loop;
+      return GPU_Types.Fixed_Arrays.Create
+        (Dims (GL.X) * Dims (GL.Y) * Dims (GL.Z),
+         GPU_Types.Structs.Create (Comps));
+   end Compute_Partitioning_GPU_Type;
+
    function Compile
      (All_Primitives : Primitive_Count_Array;
       All_Lights     : Light_Count_Array;
@@ -840,7 +871,11 @@ package body Madarch.Scenes is
          Lits     => Lits,
          GLSL     => Generate_Code
            (All_Primitives, All_Lights, Prims, Lits, Max_Dist, Partitioning),
-         GPU_Type => Compute_Scene_GPU_Type (All_Primitives, All_Lights));
+         GPU_Type => Compute_Scene_GPU_Type (All_Primitives, All_Lights),
+
+         Partitioning_Config => Partitioning,
+         Partitioning_GPU_Type =>
+            Compute_Partitioning_GPU_Type (Partitioning, Prims));
    end Compile;
 
    function Get_GLSL (S : Scene) return String is
@@ -848,6 +883,12 @@ package body Madarch.Scenes is
 
    function Get_GPU_Type (S : Scene) return GPU_Types.GPU_Type is
      (S.GPU_Type);
+
+   function Get_Partitioning_Settings
+     (S : Scene) return Partitioning_Settings is (S.Partitioning_Config);
+
+   function Get_Partitioning_GPU_Type (S : Scene) return GPU_Types.GPU_Type is
+     (S.Partitioning_GPU_Type);
 
    procedure Get_Primitives_Location
      (S    : Scene;
