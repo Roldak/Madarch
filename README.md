@@ -10,6 +10,7 @@ Ray marching engine in Ada and GLSL.
 - Glossy reflections (*WIP*).
 - World-space ambient occlusion.
 - Arbitrary meshes (voxelization, *WIP*).
+- Space partitioning (3D grid).
 
 ## Illustrations
 
