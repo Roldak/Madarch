@@ -13,18 +13,6 @@ package body Madarch.Scenes is
    LF  : Character renames Ada.Characters.Latin_1.LF;
    DLF : constant String := LF & LF;
 
-   function Type_Reference (Kind : Values.Value_Kind) return String is
-   begin
-      case Kind is
-         when Values.Vector3_Kind =>
-            return "vec3";
-         when Values.Float_Kind =>
-            return "float";
-         when Values.Int_Kind =>
-            return "int";
-      end case;
-   end Type_Reference;
-
    function Vector3_String (V : Singles.Vector3) return String is
      ("vec3(" & V (GL.X)'Image &
       ", "    & V (GL.Y)'Image &
@@ -67,7 +55,7 @@ package body Madarch.Scenes is
      (Comp : Components.Component) return String
    is
    begin
-      return Type_Reference (Components.Get_Kind (Comp))
+      return Values.To_GLSL (Components.Get_Kind (Comp))
              & " "
              & Components.Get_Name (Comp);
    end Component_Declaration;

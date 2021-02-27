@@ -62,6 +62,9 @@ package body Madarch.Exprs is
    function Eval (E : Expr; Ctx : Eval_Context) return Value is
      (E.Value.Eval (Ctx));
 
+   function Pre_GLSL (E : Expr) return String is
+     (E.Value.Pre_GLSL);
+
    function To_GLSL (E : Expr) return String is
      (E.Value.To_GLSL);
 
@@ -92,6 +95,18 @@ package body Madarch.Exprs is
    begin
       return R;
    end Get;
+
+   function Let_In
+     (Value    : Expr;
+      Kind     : Value_Kind;
+      Name     : String;
+      Body_Fun : Expr_Function) return Expr
+   is
+   begin
+      return
+        (Value => new Var_Body'
+           (Value, Kind, To_Unbounded_String (Name), Body_Fun));
+   end Let_In;
 
    --  Ident
 
@@ -143,6 +158,13 @@ package body Madarch.Exprs is
       end case;
    end Eval;
 
+   function Pre_GLSL (B : Bin_Op) return String is
+      Pre_LHS : String := B.Lhs.Pre_GLSL;
+      Pre_RHS : String := B.Rhs.Pre_GLSL;
+   begin
+      return Pre_LHS & Pre_RHS;
+   end Pre_GLSL;
+
    function To_GLSL (B : Bin_Op) return String is
       L_GLSL : String := B.Lhs.To_GLSL;
       R_GLSL : String := B.Rhs.To_GLSL;
@@ -170,6 +192,11 @@ package body Madarch.Exprs is
       end case;
    end Eval;
 
+   function Pre_GLSL (U : Un_Op) return String is
+   begin
+      return U.E.Pre_GLSL;
+   end Pre_GLSL;
+
    function To_GLSL (U : Un_Op) return String is
       E_GLSL : String := U.E.To_GLSL;
       O_GLSL : String := (case U.Op is
@@ -194,6 +221,15 @@ package body Madarch.Exprs is
             return Dot (Arg_Values (1), Arg_Values (2));
       end case;
    end Eval;
+
+   function Pre_GLSL (B : Builtin_Call) return String is
+      Res : Unbounded_String;
+   begin
+      for A of B.Args.all loop
+         Append (Res, A.Pre_GLSL);
+      end loop;
+      return To_String (Res);
+   end Pre_GLSL;
 
    function To_GLSL (B : Builtin_Call) return String is
       Result : Unbounded_String;
@@ -227,5 +263,29 @@ package body Madarch.Exprs is
       S_GLSL : String := Get_Name (G.Suffix);
    begin
       return P_GLSL & "." & S_GLSL;
+   end To_GLSL;
+
+   -- Var_Body
+
+   function Eval (V : Var_Body; Ctx : Eval_Context) return Value is
+      Var_Val  : Value := V.Value.Eval (Ctx);
+      Var_Expr : Expr  := Literal (Var_Val);
+   begin
+      return V.Content (Var_Expr).Eval (Ctx);
+   end Eval;
+
+   function Pre_GLSL (V : Var_Body) return String is
+      Pre_Val  : String := V.Value.Pre_GLSL;
+      Var_Typ  : String := To_GLSL (V.Kind);
+      Var_Val  : String := V.Value.To_GLSL;
+      Var_Name : String := To_String (V.Name);
+   begin
+      return Pre_Val & Var_Typ & " " & Var_Name & " = " & Var_Val & ";";
+   end Pre_GLSL;
+
+   function To_GLSL  (V : Var_Body) return String is
+      Res : Expr := V.Content (Value_Identifier (To_String (V.Name)));
+   begin
+      return Res.To_GLSL;
    end To_GLSL;
 end Madarch.Exprs;

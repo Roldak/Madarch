@@ -25,7 +25,8 @@ package Madarch.Exprs is
       Val  : Value) return Eval_Context;
 
    function Eval (E : Expr; Ctx : Eval_Context) return Value;
-   function To_GLSL (E : Expr) return String;
+   function Pre_GLSL (E : Expr) return String;
+   function To_GLSL  (E : Expr) return String;
 
    function Literal (V : Value) return Expr;
    function Value_Identifier (N : String) return Expr;
@@ -48,6 +49,14 @@ package Madarch.Exprs is
 
    function Get (E : Struct_Expr; C : Component) return Expr'Class;
 
+   type Expr_Function is access function (E : Expr) return Expr;
+
+   function Let_In
+     (Value    : Expr;
+      Kind     : Value_Kind;
+      Name     : String;
+      Body_Fun : Expr_Function) return Expr;
+
 private
    type Expr_Node is abstract tagged null record;
    type Expr_Access is access all Expr_Node'Class;
@@ -67,7 +76,8 @@ private
    end record;
 
    function Eval (E : Expr_Node; Ctx : Eval_Context) return Value is abstract;
-   function To_GLSL (E : Expr_Node) return String is abstract;
+   function Pre_GLSL (E : Expr_Node) return String is ("");
+   function To_GLSL  (E : Expr_Node) return String is abstract;
 
    type Expr is tagged record
       Value : Expr_Access;
@@ -98,7 +108,8 @@ private
    end record;
 
    function Eval (B : Bin_Op; Ctx : Eval_Context) return Value;
-   function To_GLSL (B : Bin_Op) return String;
+   function Pre_GLSL (B : Bin_Op) return String;
+   function To_GLSL  (B : Bin_Op) return String;
 
    type Un_Op_Kind is (Un_Min, Un_Length, Un_Normalize);
 
@@ -108,7 +119,8 @@ private
    end record;
 
    function Eval (U : Un_Op; Ctx : Eval_Context) return Value;
-   function To_GLSL (U : Un_Op) return String;
+   function Pre_GLSL (U : Un_Op) return String;
+   function To_GLSL  (U : Un_Op) return String;
 
    type Builtin_Kind is (Builtin_Dot);
 
@@ -118,7 +130,8 @@ private
    end record;
 
    function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value;
-   function To_GLSL (B : Builtin_Call) return String;
+   function Pre_GLSL (B : Builtin_Call) return String;
+   function To_GLSL  (B : Builtin_Call) return String;
 
    type Struct_Expr is tagged record
       Name : Unbounded_String;
@@ -130,5 +143,16 @@ private
    end record;
 
    function Eval (G : Get_Component; Ctx : Eval_Context) return Value;
-   function To_GLSL (G : Get_Component) return String;
+   function To_GLSL  (G : Get_Component) return String;
+
+   type Var_Body is new Expr_Node with record
+      Value   : Expr;
+      Kind    : Value_Kind;
+      Name    : Unbounded_String;
+      Content : Expr_Function;
+   end record;
+
+   function Eval (V : Var_Body; Ctx : Eval_Context) return Value;
+   function Pre_GLSL (V : Var_Body) return String;
+   function To_GLSL  (V : Var_Body) return String;
 end Madarch.Exprs;

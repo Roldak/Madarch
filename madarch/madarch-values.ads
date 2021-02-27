@@ -7,6 +7,8 @@ package Madarch.Values is
 
    type Value_Kind is (Vector3_Kind, Float_Kind, Int_Kind);
 
+   function To_GLSL (K : Value_Kind) return String;
+
    type Value (Kind : Value_Kind := Float_Kind) is record
       case Kind is
          when Vector3_Kind =>

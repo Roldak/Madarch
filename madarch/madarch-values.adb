@@ -22,6 +22,18 @@ package body Madarch.Values is
       end if;
    end Check_Kinds;
 
+   function To_GLSL (K : Value_Kind) return String is
+   begin
+      case K is
+         when Values.Vector3_Kind =>
+            return "vec3";
+         when Values.Float_Kind =>
+            return "float";
+         when Values.Int_Kind =>
+            return "int";
+      end case;
+   end To_GLSL;
+
    function "+" (L, R : Value) return Value is
    begin
       Check_Kinds (L, R);
