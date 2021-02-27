@@ -190,3 +190,5 @@ vec3 sample_light(int index, vec3 pos, vec3 normal, out vec3 dir, out float dist
    }
 }
 
+#define partitioning_closest closest_primitive
+#define partitioning_closest_info closest_primitive_info
