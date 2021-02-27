@@ -25,8 +25,11 @@ package Madarch.Scenes is
    type Primitive_Count_Array is array (Positive range <>) of Primitive_Count;
    type Light_Count_Array is array (Positive range <>) of Light_Count;
 
+   type Partitioning_Border_Behavior is (Clamp, Fallback);
+
    type Partitioning_Settings is record
       Index_Count     : Natural := 10;
+      Border_Behavior : Partitioning_Border_Behavior := Clamp;
       Grid_Dimensions : Ints.Vector3    := (10, 10, 20);
       Grid_Spacing    : Singles.Vector3 := (1.0, 1.0, 1.0);
       Grid_Offset     : Singles.Vector3 := (-1.5, -1.5, -10.0);

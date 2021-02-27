@@ -584,10 +584,15 @@ package body Madarch.Scenes is
       Append (Res, ");");
       Append (Res, LF);
 
-      Append (Res, "if (fx != cfx) {");
-      Append (Res, LF);
-      Append (Res, Fallback_Stmts);
-      Append (Res, "}");
+      if Partitioning.Border_Behavior = Clamp then
+         Append (Res, "fx = cfx;");
+      else
+         Append (Res, "if (fx != cfx) {");
+         Append (Res, LF);
+         Append (Res, Fallback_Stmts);
+         Append (Res, "}");
+      end if;
+
       Append (Res, LF);
 
       Append (Res, "int data_index = int(fx.x * ");
