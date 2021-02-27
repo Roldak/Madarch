@@ -565,19 +565,29 @@ package body Madarch.Scenes is
    end Partitioning_Data_Buffer;
 
    function Partitioning_Index
-     (Partitioning : Partitioning_Settings) return Unbounded_String
+     (Partitioning   : Partitioning_Settings;
+      Fallback_Stmts : String) return Unbounded_String
    is
       Res : Unbounded_String;
 
       Dims : Ints.Vector3 := Partitioning.Grid_Dimensions;
    begin
-      Append (Res, "vec3 fx = clamp(floor((x - ");
+      Append (Res, "vec3 fx = floor((x - ");
       Append (Res, Vector3_String (Partitioning.Grid_Offset));
       Append (Res, ") / ");
       Append (Res, Vector3_String (Partitioning.Grid_Spacing));
-      Append (Res, "), vec3(0), ");
+      Append (Res, ");");
+      Append (Res, LF);
+
+      Append (Res, "vec3 cfx = clamp(fx, vec3(0), ");
       Append (Res, Vector3_String (Partitioning.Grid_Dimensions));
       Append (Res, ");");
+      Append (Res, LF);
+
+      Append (Res, "if (fx != cfx) {");
+      Append (Res, LF);
+      Append (Res, Fallback_Stmts);
+      Append (Res, "}");
       Append (Res, LF);
 
       Append (Res, "int data_index = int(fx.x * ");
@@ -597,7 +607,8 @@ package body Madarch.Scenes is
 
       Partition_Info : String := "partition_data[data_index]";
    begin
-      Append (Stmts, Partitioning_Index (Partitioning));
+      Append (Stmts, Partitioning_Index
+        (Partitioning, "return closest_primitive (x);"));
       Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
 
       for Prim of Prims.all loop
@@ -644,7 +655,8 @@ package body Madarch.Scenes is
 
       Partition_Info : String := "partition_data[data_index]";
    begin
-      Append (Stmts, Partitioning_Index (Partitioning));
+      Append (Stmts, Partitioning_Index
+        (Partitioning, "return closest_primitive_info (x, index);"));
       Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
 
       for Prim_Count of Prims_Count loop
