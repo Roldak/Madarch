@@ -97,6 +97,34 @@ package body Madarch.Values is
       end case;
    end Dot;
 
+   function Min (L, R : Value) return Value is
+      use GL.Types;
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Vector3_Kind =>
+            return (Vector3_Kind, Min (L.Vector3_Value, R.Vector3_Value));
+         when Float_Kind =>
+            return (Float_Kind, Single'Min (L.Float_Value, R.Float_Value));
+         when Int_Kind =>
+            return (Int_Kind, GL.Types.Int'Min (L.Int_Value, R.Int_Value));
+      end case;
+   end Min;
+
+   function Max (L, R : Value) return Value is
+      use GL.Types;
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Vector3_Kind =>
+            return (Vector3_Kind, Max (L.Vector3_Value, R.Vector3_Value));
+         when Float_Kind =>
+            return (Float_Kind, Single'Max (L.Float_Value, R.Float_Value));
+         when Int_Kind =>
+            return (Int_Kind, GL.Types.Int'Max (L.Int_Value, R.Int_Value));
+      end case;
+   end Max;
+
    function "-" (V : Value) return Value is
    begin
       case V.Kind is

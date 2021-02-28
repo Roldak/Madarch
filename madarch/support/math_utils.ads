@@ -47,6 +47,18 @@ package Math_Utils is
    function Cross (X, Y : Singles.Vector3) return Singles.Vector3
       renames Singles.Cross_Product;
 
+   function Min (X, Y : Singles.Vector3) return Singles.Vector3 is
+     ((Single'Min (X (GL.X), Y (GL.X)),
+       Single'Min (X (GL.Y), Y (GL.Y)),
+       Single'Min (X (GL.Z), Y (GL.Z))))
+      with Inline;
+
+   function Max (X, Y : Singles.Vector3) return Singles.Vector3 is
+     ((Single'Max (X (GL.X), Y (GL.X)),
+       Single'Max (X (GL.Y), Y (GL.Y)),
+       Single'Max (X (GL.Z), Y (GL.Z))))
+      with Inline;
+
    function Dot2 (V : Singles.Vector3) return Single is
      (Singles.Dot_Product (V, V))
       with Inline;

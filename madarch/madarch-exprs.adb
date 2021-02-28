@@ -84,6 +84,14 @@ package body Madarch.Exprs is
      (Value => new Builtin_Call'(Builtin_Dot,
                                  new Expr_Array'((L, R))));
 
+   function Min (L, R : Expr) return Expr is
+     (Value => new Builtin_Call'(Builtin_Min,
+                                 new Expr_Array'((L, R))));
+
+   function Max (L, R : Expr) return Expr is
+     (Value => new Builtin_Call'(Builtin_Max,
+                                 new Expr_Array'((L, R))));
+
    function Length (E : Expr) return Expr is
      (Value => new Un_Op'(Un_Length, E));
 
@@ -225,6 +233,10 @@ package body Madarch.Exprs is
       case B.Builtin is
          when Builtin_Dot =>
             return Dot (Arg_Values (1), Arg_Values (2));
+         when Builtin_Min =>
+            return Min (Arg_Values (1), Arg_Values (2));
+         when Builtin_Max =>
+            return Max (Arg_Values (1), Arg_Values (2));
       end case;
    end Eval;
 
@@ -242,7 +254,9 @@ package body Madarch.Exprs is
 
       Builtin_Name : String :=
         (case B.Builtin is
-           when Builtin_Dot => "dot");
+           when Builtin_Dot => "dot",
+           when Builtin_Min => "min",
+           when Builtin_Max => "max");
    begin
       Append (Result, Builtin_Name);
       Append (Result, "(");

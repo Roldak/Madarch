@@ -43,6 +43,8 @@ package Madarch.Exprs is
    function "/" (L : Expr; R : Value) return Expr is (L / Literal (R));
 
    function Dot (L, R : Expr) return Expr;
+   function Min (L, R : Expr) return Expr;
+   function Max (L, R : Expr) return Expr;
 
    function Length (E : Expr) return Expr;
    function Normalize (E : Expr) return Expr;
@@ -123,7 +125,7 @@ private
    function Pre_GLSL (U : Un_Op) return String;
    function To_GLSL  (U : Un_Op) return String;
 
-   type Builtin_Kind is (Builtin_Dot);
+   type Builtin_Kind is (Builtin_Dot, Builtin_Min, Builtin_Max);
 
    type Builtin_Call is new Expr_Node with record
       Builtin : Builtin_Kind;
