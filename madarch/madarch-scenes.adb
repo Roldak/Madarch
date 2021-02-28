@@ -228,7 +228,8 @@ package body Madarch.Scenes is
          Dist_Function_Reference (Prim),
          (1 => Create (Primitives.Get_Name (Prim), Prim_Param_Name),
           2 => Create ("vec3", Point_Param_Name)),
-         Dist_Expr.To_GLSL);
+         Dist_Expr.To_GLSL,
+         Dist_Expr.Pre_GLSL);
    end Primitive_Dist_Function;
 
    function Primitive_Normal_Function
@@ -251,7 +252,8 @@ package body Madarch.Scenes is
          Normal_Function_Reference (Prim),
          (1 => Create (Primitives.Get_Name (Prim), Prim_Param_Name),
           2 => Create ("vec3", Point_Param_Name)),
-         Dist_Expr.To_GLSL);
+         Dist_Expr.To_GLSL,
+         Dist_Expr.Pre_GLSL);
    end Primitive_Normal_Function;
 
    function Light_Sample_Function
@@ -284,6 +286,7 @@ package body Madarch.Scenes is
       Stmts : Unbounded_String;
    begin
       Append (Stmts, "dir = ");
+      Append (Stmts, Position_Expr.Pre_GLSL);
       Append (Stmts, Position_Expr.To_GLSL);
       Append (Stmts, " - pos;");
       Append (Stmts, LF);
@@ -301,7 +304,7 @@ package body Madarch.Scenes is
           4 => Create ("vec3", "dir", "out"),
           5 => Create ("float", "dist", "out")),
          Sample_Expr.To_GLSL,
-         To_String (Stmts));
+         To_String (Stmts) & Sample_Expr.Pre_GLSL);
    end Light_Sample_Function;
 
    function Scene_Description
