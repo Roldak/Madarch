@@ -133,6 +133,18 @@ package body Madarch.Values is
       end case;
    end Normalize;
 
+   function Abs_Value (V : Value) return Value is
+   begin
+      case V.Kind is
+         when Vector3_Kind =>
+            return (Vector3_Kind, Vec_Abs (V.Vector3_Value));
+         when Float_Kind =>
+            return (Float_Kind, abs V.Float_Value);
+         when Int_Kind =>
+            return (Int_Kind, abs V.Int_Value);
+      end case;
+   end Abs_Value;
+
    function GPU_Type (K : Value_Kind) return GPU_Types.GPU_Type is
    begin
       case K is

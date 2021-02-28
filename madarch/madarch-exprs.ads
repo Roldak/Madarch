@@ -46,6 +46,7 @@ package Madarch.Exprs is
 
    function Length (E : Expr) return Expr;
    function Normalize (E : Expr) return Expr;
+   function Abs_Value (E : Expr) return Expr;
 
    function Get (E : Struct_Expr; C : Component) return Expr'Class;
 
@@ -111,7 +112,7 @@ private
    function Pre_GLSL (B : Bin_Op) return String;
    function To_GLSL  (B : Bin_Op) return String;
 
-   type Un_Op_Kind is (Un_Min, Un_Length, Un_Normalize);
+   type Un_Op_Kind is (Un_Min, Un_Length, Un_Normalize, Un_Abs);
 
    type Un_Op is new Expr_Node with record
       Op : Un_Op_Kind;

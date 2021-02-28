@@ -58,4 +58,8 @@ package Math_Utils is
    function Normalize (V : Singles.Vector3) return Singles.Vector3 is
      (Singles."/" (V, Length (V)))
      with Inline;
+
+   function Vec_Abs (V : Singles.Vector3) return Singles.Vector3 is
+     ((abs V (GL.X), abs V (GL.Y), abs V (GL.Z)))
+     with Inline;
 end Math_Utils;

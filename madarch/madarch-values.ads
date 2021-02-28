@@ -35,6 +35,7 @@ package Madarch.Values is
    function "-" (V : Value) return Value;
    function Length (V : Value) return Value;
    function Normalize (V : Value) return Value;
+   function Abs_Value (V : Value) return Value;
 
    function GPU_Type (K : Value_Kind) return GPU_Types.GPU_Type;
 end Madarch.Values;

@@ -96,6 +96,9 @@ package body Madarch.Exprs is
       return R;
    end Get;
 
+   function Abs_Value (E : Expr) return Expr is
+     (Value => new Un_Op'(Un_Abs, E));
+
    function Let_In
      (Value    : Expr;
       Kind     : Value_Kind;
@@ -189,6 +192,8 @@ package body Madarch.Exprs is
             return Length (E_Value);
          when Un_Normalize =>
             return Normalize (E_Value);
+         when Un_Abs =>
+            return Abs_Value (E_Value);
       end case;
    end Eval;
 
@@ -202,7 +207,8 @@ package body Madarch.Exprs is
       O_GLSL : String := (case U.Op is
          when Un_Min => "-",
          when Un_Length => "length",
-         when Un_Normalize => "normalize");
+         when Un_Normalize => "normalize",
+         when Un_Abs => "abs");
    begin
       return O_GLSL & "(" & E_GLSL & ")";
    end To_GLSL;
