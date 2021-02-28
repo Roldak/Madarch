@@ -1,4 +1,5 @@
 with GL;
+with GL.Types;
 
 package body Madarch.Exprs is
    function Create return Eval_Context is
@@ -112,6 +113,9 @@ package body Madarch.Exprs is
 
    function Abs_Value (E : Expr) return Expr is
      (Value => new Un_Op'(Un_Abs, E));
+
+   function To_Float (E : Expr) return Expr is
+     (Value => new Un_Op'(Un_Float, E));
 
    function Get (E : Struct_Expr; C : Component) return Expr'Class is
       R : Expr := (Value => new Get_Component'(E, C));
@@ -229,6 +233,14 @@ package body Madarch.Exprs is
             return Normalize (E_Value);
          when Un_Abs =>
             return Abs_Value (E_Value);
+         when Un_Float =>
+            return (case E_Value.Kind is
+               when Vector3_Kind =>
+                  raise Program_Error with "Invalid cast.",
+               when Float_Kind =>
+                  E_Value,
+               when Int_Kind =>
+                  Values.Float (GL.Types.Single (E_Value.Int_Value)));
       end case;
    end Eval;
 
@@ -243,7 +255,8 @@ package body Madarch.Exprs is
          when Un_Min => "-",
          when Un_Length => "length",
          when Un_Normalize => "normalize",
-         when Un_Abs => "abs");
+         when Un_Abs => "abs",
+         when Un_Float => "float");
    begin
       return O_GLSL & "(" & E_GLSL & ")";
    end To_GLSL;

@@ -123,7 +123,8 @@ private
    function Pre_GLSL (B : Bin_Op) return String;
    function To_GLSL  (B : Bin_Op) return String;
 
-   type Un_Op_Kind is (Un_Min, Un_Length, Un_Normalize, Un_Abs);
+   type Un_Op_Kind is (Un_Min, Un_Length, Un_Normalize, Un_Abs,
+                       Un_Float);
 
    type Un_Op is new Expr_Node with record
       Op : Un_Op_Kind;
