@@ -117,6 +117,9 @@ package body Madarch.Exprs is
    function To_Float (E : Expr) return Expr is
      (Value => new Un_Op'(Un_Float, E));
 
+   function Sign (E : Expr) return Expr is
+     (Value => new Un_Op'(Un_Sign, E));
+
    function Get (E : Struct_Expr; C : Component) return Expr'Class is
       R : Expr := (Value => new Get_Component'(E, C));
    begin
@@ -222,6 +225,8 @@ package body Madarch.Exprs is
    --  Un_Op
 
    function Eval (U : Un_Op; Ctx : Eval_Context) return Value is
+      use type GL.Types.Single;
+
       E_Value : Value := U.E.Eval (Ctx);
    begin
       case U.Op is
@@ -241,6 +246,13 @@ package body Madarch.Exprs is
                   E_Value,
                when Int_Kind =>
                   Values.Float (GL.Types.Single (E_Value.Int_Value)));
+         when Un_Sign =>
+            return (case E_Value.Kind is
+               when Float_Kind =>
+                  Values.Float
+                    (if E_Value.Float_Value < 0.0 then -1.0 else 1.0),
+               when others =>
+                  raise Program_Error with "sign not applicable.");
       end case;
    end Eval;
 
@@ -256,7 +268,8 @@ package body Madarch.Exprs is
          when Un_Length => "length",
          when Un_Normalize => "normalize",
          when Un_Abs => "abs",
-         when Un_Float => "float");
+         when Un_Float => "float",
+         when Un_Sign => "sign");
    begin
       return O_GLSL & "(" & E_GLSL & ")";
    end To_GLSL;
