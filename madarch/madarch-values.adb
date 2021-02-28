@@ -86,6 +86,61 @@ package body Madarch.Values is
       end case;
    end "/";
 
+   function To_Int (B : Boolean) return GL.Types.Int is
+     (if B then 1 else 0);
+
+   function "<"  (L, R : Value) return Value is
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Float_Kind =>
+            return (Int_Kind, To_Int (L.Float_Value < R.Float_Value));
+         when Int_Kind =>
+            return (Int_Kind, To_Int (L.Int_Value < R.Int_Value));
+         when others =>
+            raise Program_Error with "'<' not applicable to vector3.";
+      end case;
+   end "<";
+
+   function ">"  (L, R : Value) return Value is
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Float_Kind =>
+            return (Int_Kind, To_Int (L.Float_Value > R.Float_Value));
+         when Int_Kind =>
+            return (Int_Kind, To_Int (L.Int_Value > R.Int_Value));
+         when others =>
+            raise Program_Error with "'>' not applicable to vector3.";
+      end case;
+   end ">";
+
+   function "<=" (L, R : Value) return Value is
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Float_Kind =>
+            return (Int_Kind, To_Int (L.Float_Value <= R.Float_Value));
+         when Int_Kind =>
+            return (Int_Kind, To_Int (L.Int_Value <= R.Int_Value));
+         when others =>
+            raise Program_Error with "'<=' not applicable to vector3.";
+      end case;
+   end "<=";
+
+   function ">=" (L, R : Value) return Value is
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Float_Kind =>
+            return (Int_Kind, To_Int (L.Float_Value >= R.Float_Value));
+         when Int_Kind =>
+            return (Int_Kind, To_Int (L.Int_Value >= R.Int_Value));
+         when others =>
+            raise Program_Error with "'>=' not applicable to vector3.";
+      end case;
+   end ">=";
+
    function Dot (L, R : Value) return Value is
    begin
       Check_Kinds (L, R);

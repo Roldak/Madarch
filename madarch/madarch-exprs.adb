@@ -80,6 +80,18 @@ package body Madarch.Exprs is
    function "/" (L, R : Expr) return Expr is
      (Value => new Bin_Op'(Bin_Div, L, R));
 
+   function "<"  (L, R : Expr) return Expr is
+     (Value => new Bin_Op'(Bin_Lt, L, R));
+
+   function ">"  (L, R : Expr) return Expr is
+     (Value => new Bin_Op'(Bin_Gt, L, R));
+
+   function "<=" (L, R : Expr) return Expr is
+     (Value => new Bin_Op'(Bin_Lte, L, R));
+
+   function ">=" (L, R : Expr) return Expr is
+     (Value => new Bin_Op'(Bin_Gte, L, R));
+
    function Dot (L, R : Expr) return Expr is
      (Value => new Builtin_Call'(Builtin_Dot,
                                  new Expr_Array'((L, R))));
@@ -169,6 +181,14 @@ package body Madarch.Exprs is
             return L_Value * R_Value;
          when Bin_Div =>
             return L_Value / R_Value;
+         when Bin_Lt =>
+            return L_Value < R_Value;
+         when Bin_Gt =>
+            return L_Value > R_Value;
+         when Bin_Lte =>
+            return L_Value <= R_Value;
+         when Bin_Gte =>
+            return L_Value >= R_Value;
       end case;
    end Eval;
 
@@ -186,7 +206,11 @@ package body Madarch.Exprs is
          when Bin_Add => "+",
          when Bin_Sub => "-",
          when Bin_Mul => "*",
-         when Bin_Div => "/");
+         when Bin_Div => "/",
+         when Bin_Lt  => "<",
+         when Bin_Gt  => ">",
+         when Bin_Lte => "<=",
+         when Bin_Gte => ">=");
    begin
       return "(" & L_GLSL & ")" & O_GLSL & "(" & R_GLSL & ")";
    end To_GLSL;

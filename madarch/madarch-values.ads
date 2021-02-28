@@ -30,6 +30,12 @@ package Madarch.Values is
    function "-" (L, R : Value) return Value;
    function "*" (L, R : Value) return Value;
    function "/" (L, R : Value) return Value;
+
+   function "<"  (L, R : Value) return Value;
+   function ">"  (L, R : Value) return Value;
+   function "<=" (L, R : Value) return Value;
+   function ">=" (L, R : Value) return Value;
+
    function Dot (L, R : Value) return Value;
    function Min (L, R : Value) return Value;
    function Max (L, R : Value) return Value;

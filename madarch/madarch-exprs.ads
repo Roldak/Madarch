@@ -39,6 +39,11 @@ package Madarch.Exprs is
    function "*" (L, R : Expr) return Expr;
    function "/" (L, R : Expr) return Expr;
 
+   function "<"  (L, R : Expr) return Expr;
+   function ">"  (L, R : Expr) return Expr;
+   function "<=" (L, R : Expr) return Expr;
+   function ">=" (L, R : Expr) return Expr;
+
    function "+" (L : Expr; R : Value) return Expr is (L + Literal (R));
    function "-" (L : Expr; R : Value) return Expr is (L - Literal (R));
    function "*" (L : Expr; R : Value) return Expr is (L * Literal (R));
@@ -106,7 +111,8 @@ private
    function Eval (L : Lit; Ctx : Eval_Context) return Value;
    function To_GLSL (L : Lit) return String;
 
-   type Bin_Op_Kind is (Bin_Add, Bin_Sub, Bin_Mul, Bin_Div);
+   type Bin_Op_Kind is (Bin_Add, Bin_Sub, Bin_Mul, Bin_Div,
+                        Bin_Lt, Bin_Gt, Bin_Lte, Bin_Gte);
 
    type Bin_Op is new Expr_Node with record
       Op : Bin_Op_Kind;
