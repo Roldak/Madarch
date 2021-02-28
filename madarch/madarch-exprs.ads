@@ -2,6 +2,8 @@ with Ada.Containers.Hashed_Maps;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Strings.Unbounded.Hash;
 
+with GL;
+
 with Madarch.Components; use Madarch.Components;
 with Madarch.Values; use Madarch.Values;
 with Madarch.Entities; use Madarch.Entities;
@@ -51,6 +53,7 @@ package Madarch.Exprs is
    function Abs_Value (E : Expr) return Expr;
 
    function Get (E : Struct_Expr; C : Component) return Expr'Class;
+   function Get (E : Expr; C : GL.Index_3D) return Expr;
 
    type Expr_Function is access function (E : Expr) return Expr;
 
@@ -135,6 +138,15 @@ private
    function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value;
    function Pre_GLSL (B : Builtin_Call) return String;
    function To_GLSL  (B : Builtin_Call) return String;
+
+   type Project_Axis is new Expr_Node with record
+      E : Expr;
+      A : GL.Index_3D;
+   end record;
+
+   function Eval (P : Project_Axis; Ctx : Eval_Context) return Value;
+   function Pre_GLSL (P : Project_Axis) return String;
+   function To_GLSL  (P : Project_Axis) return String;
 
    type Struct_Expr is tagged record
       Name : Unbounded_String;

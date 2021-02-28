@@ -98,14 +98,17 @@ package body Madarch.Exprs is
    function Normalize (E : Expr) return Expr is
      (Value => new Un_Op'(Un_Normalize, E));
 
+   function Abs_Value (E : Expr) return Expr is
+     (Value => new Un_Op'(Un_Abs, E));
+
    function Get (E : Struct_Expr; C : Component) return Expr'Class is
       R : Expr := (Value => new Get_Component'(E, C));
    begin
       return R;
    end Get;
 
-   function Abs_Value (E : Expr) return Expr is
-     (Value => new Un_Op'(Un_Abs, E));
+   function Get (E : Expr; C : GL.Index_3D) return Expr is
+     (Value => new Project_Axis'(E, C));
 
    function Let_In
      (Value    : Expr;
@@ -268,6 +271,32 @@ package body Madarch.Exprs is
       end loop;
       Append (Result, ")");
       return To_String (Result);
+   end To_GLSL;
+
+   -- Project_Axis
+
+   function Eval (P : Project_Axis; Ctx : Eval_Context) return Value is
+      V : Value := P.E.Eval (Ctx);
+   begin
+      case V.Kind is
+         when Vector3_Kind =>
+            return Values.Float (V.Vector3_Value (P.A));
+         when others =>
+            raise Program_Error with "Cannot project component.";
+      end case;
+   end Eval;
+
+   function Pre_GLSL (P : Project_Axis) return String is
+     (P.E.Pre_GLSL);
+
+   function To_GLSL  (P : Project_Axis) return String is
+      E_GLSL : String := P.E.To_GLSL;
+      A_GLSL : String := (case P.A is
+         when GL.X => "x",
+         when GL.Y => "y",
+         when GL.Z => "z");
+   begin
+      return E_GLSL & "." & A_GLSL;
    end To_GLSL;
 
    --  Get_Component
