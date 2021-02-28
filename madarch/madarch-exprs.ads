@@ -56,17 +56,16 @@ package Madarch.Exprs is
    function Length (E : Expr) return Expr;
    function Normalize (E : Expr) return Expr;
    function Abs_Value (E : Expr) return Expr;
+   function To_Float (E : Expr) return Expr;
 
    function Get (E : Struct_Expr; C : Component) return Expr'Class;
    function Get (E : Expr; C : GL.Index_3D) return Expr;
 
-   type Expr_Function is access function (E : Expr) return Expr;
-
    function Let_In
-     (Value    : Expr;
-      Kind     : Value_Kind;
-      Name     : String;
-      Body_Fun : Expr_Function) return Expr;
+     (Value   : Expr;
+      Kind    : Value_Kind;
+      Name    : String;
+      In_Body : Expr) return Expr;
 
 private
    type Expr_Node is abstract tagged null record;
@@ -171,7 +170,7 @@ private
       Value   : Expr;
       Kind    : Value_Kind;
       Name    : Unbounded_String;
-      Content : Expr_Function;
+      In_Body : Expr;
    end record;
 
    function Eval (V : Var_Body; Ctx : Eval_Context) return Value;
