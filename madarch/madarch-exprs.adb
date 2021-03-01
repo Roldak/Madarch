@@ -105,6 +105,9 @@ package body Madarch.Exprs is
      (Value => new Builtin_Call'(Builtin_Max,
                                  new Expr_Array'((L, R))));
 
+   function "-" (E : Expr) return Expr is
+     (Value => new Un_Op'(Un_Min, E));
+
    function Length (E : Expr) return Expr is
      (Value => new Un_Op'(Un_Length, E));
 

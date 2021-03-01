@@ -53,6 +53,7 @@ package Madarch.Exprs is
    function Min (L, R : Expr) return Expr;
    function Max (L, R : Expr) return Expr;
 
+   function "-" (E : Expr) return Expr;
    function Length (E : Expr) return Expr;
    function Normalize (E : Expr) return Expr;
    function Abs_Value (E : Expr) return Expr;
