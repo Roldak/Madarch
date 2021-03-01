@@ -63,6 +63,8 @@ package Madarch.Scenes is
       Array_Location : out GPU_Types.Locations.Location;
       Count_Location : out GPU_Types.Locations.Location;
       Total_Location : out GPU_Types.Locations.Location);
+
+   function Get_Primitives (S : Scene) return Primitives.Primitive_Array;
 private
    type Scene_Internal is record
       Prims    : Primitives.Primitive_Array_Access;

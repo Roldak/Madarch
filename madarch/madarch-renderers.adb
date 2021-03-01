@@ -382,21 +382,23 @@ package body Madarch.Renderers is
                + Y * Integer (Settings.Grid_Dimensions (GL.Z))
                + Z + 1);
 
-         procedure Write_Partitioning_Info
-            (Cursor : Primitive_Natural_Maps.Cursor)
-         is
-            Prim : Primitives.Primitive := Primitive_Natural_Maps.Key (Cursor);
+         Array_Loc : GPU_Types.Locations.Location :=
+            Point_Loc.Component ("indices");
 
+         Index : Positive := 1;
+
+         procedure Write_Partitioning_Info (Prim : Primitives.Primitive) is
             Count_Loc : GPU_Types.Locations.Location :=
                Point_Loc.Component (Primitives.Get_Name (Prim) & "_count");
-            Array_Loc : GPU_Types.Locations.Location :=
-               Point_Loc.Component (Primitives.Get_Name (Prim) & "_indices");
 
-            Vec : Natural_Vectors.Vector
-               renames Primitive_Natural_Maps.Element (Cursor);
+            Cursor : Primitive_Natural_Maps.Cursor :=
+               Candidates.Find (Prim);
 
-            Index : Positive := 1;
+            Vec : Natural_Vectors.Vector;
          begin
+            if Primitive_Natural_Maps.Has_Element (Cursor) then
+               Vec := Primitive_Natural_Maps.Element (Cursor);
+            end if;
             Count_Loc.Adjust (W);
             W.Write_Int (Int (Vec.Length));
             for E of Vec loop
@@ -525,7 +527,9 @@ package body Madarch.Renderers is
          Self.All_Primitives.Iterate (Find_Closest'Access);
          Self.All_Primitives.Iterate (Find_Precandidates'Access);
          Find_Candidates;
-         Candidates.Iterate (Write_Partitioning_Info'Access);
+         for Prim of Scenes.Get_Primitives (Self.Scene) loop
+            Write_Partitioning_Info (Prim);
+         end loop;
       end Process_Point;
    begin
       for X in 0 .. Settings.Grid_Dimensions (GL.X) - 1 loop

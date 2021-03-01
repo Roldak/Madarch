@@ -532,14 +532,11 @@ package body Madarch.Scenes is
          Append (Res, Prim_Count_Reference (Prim));
          Append (Res, ";");
          Append (Res, LF);
-
-         Append (Res, "int ");
-         Append (Res, Prim_Array_Reference (Prim));
-         Append (Res, "[");
-         Append (Res, Partitioning.Index_Count'Image);
-         Append (Res, "];");
-         Append (Res, DLF);
       end loop;
+      Append (Res, "int indices[");
+      Append (Res, Partitioning.Index_Count'Image);
+      Append (Res, "];");
+      Append (Res, LF);
       Append (Res, "};");
       return Res;
    end Partitioning_Info_Struct_Declaration;
@@ -606,33 +603,27 @@ package body Madarch.Scenes is
       Append (Stmts, Partitioning_Index
         (Partitioning, "return closest_primitive (x);"));
       Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
+      Append (Stmts, Variable_Declaration ("int", "i", "0"));
+      Append (Stmts, Variable_Declaration ("int", "size", "0"));
 
       for Prim of Prims.all loop
-         declare
-            Count_Name : String := Primitives.Get_Name (Prim) & "_count";
-            Count_Var  : Unbounded_String := Variable_Declaration
-              ("int",
-               Count_Name,
-               Partition_Info & "." & Prim_Count_Reference (Prim));
+         Append (Stmts, "size += ");
+         Append (Stmts, Partition_Info & "." & Prim_Count_Reference (Prim));
+         Append (Stmts, ";");
+         Append (Stmts, LF);
 
-            Index_Array : String :=
-               Partition_Info & "." & Prim_Array_Reference (Prim);
-
-            Loop_Body : Unbounded_String;
-         begin
-            Append (Stmts, Count_Var);
-
-            Append (Loop_Body, "closest = min(closest, ");
-            Append (Loop_Body, Dist_Function_Reference (Prim));
-            Append (Loop_Body, "(");
-            Append (Loop_Body, Prim_Array_Reference (Prim));
-            Append (Loop_Body, "[");
-            Append (Loop_Body, Index_Array);
-            Append (Loop_Body, "[i]], x));");
-            Append (Stmts, For_Loop
-              ("i", Count_Name, To_String (Loop_Body)));
-            Append (Stmts, LF);
-         end;
+         Append (Stmts, "for (; i < size; ++i) {");
+         Append (Stmts, LF);
+         Append (Stmts, "closest = min(closest, ");
+         Append (Stmts, Dist_Function_Reference (Prim));
+         Append (Stmts, "(");
+         Append (Stmts, Prim_Array_Reference (Prim));
+         Append (Stmts, "[");
+         Append (Stmts, Partition_Info);
+         Append (Stmts, ".indices[i]], x));");
+         Append (Stmts, LF);
+         Append (Stmts, "}");
+         Append (Stmts, LF);
       end loop;
 
       return Function_Declaration
@@ -654,46 +645,42 @@ package body Madarch.Scenes is
       Append (Stmts, Partitioning_Index
         (Partitioning, "return closest_primitive_info (x, index);"));
       Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
+      Append (Stmts, Variable_Declaration ("int", "i", "0"));
+      Append (Stmts, Variable_Declaration ("int", "size", "0"));
 
       for Prim_Count of Prims_Count loop
          declare
             Prim : Primitives.Primitive renames Prim_Count.Prim;
 
-            Count_Name : String := Primitives.Get_Name (Prim) & "_count";
-            Count_Var  : Unbounded_String := Variable_Declaration
-              ("int",
-               Count_Name,
-               Partition_Info & "." & Prim_Count_Reference (Prim));
-
-            Index_Array : String :=
-               Partition_Info & "." & Prim_Array_Reference (Prim);
-            Loop_Body : Unbounded_String;
-
             Variable_Expr : Unbounded_String;
          begin
-            Append (Stmts, Count_Var);
+            Append (Stmts, "size += ");
+            Append (Stmts, Partition_Info & "." & Prim_Count_Reference (Prim));
+            Append (Stmts, ";");
+            Append (Stmts, LF);
 
             Append (Variable_Expr, Dist_Function_Reference (Prim));
             Append (Variable_Expr, "(");
             Append (Variable_Expr, Prim_Array_Reference (Prim));
             Append (Variable_Expr, "[prim_index], x)");
 
-            Append (Loop_Body, Variable_Declaration
-              ("int", "prim_index", Index_Array & "[i]"));
-            Append (Loop_Body, Variable_Declaration
+            Append (Stmts, "for (; i < size; ++i) {");
+            Append (Stmts, LF);
+            Append (Stmts, Variable_Declaration
+              ("int", "prim_index", Partition_Info & ".indices[i]"));
+            Append (Stmts, Variable_Declaration
               ("float", "dist", To_String (Variable_Expr)));
-            Append (Loop_Body, "if (dist < closest) {");
-            Append (Loop_Body, LF);
-            Append (Loop_Body, "closest = dist;");
-            Append (Loop_Body, LF);
-            Append (Loop_Body, "index = ");
-            Append (Loop_Body, Total'Image);
-            Append (Loop_Body, " + prim_index;");
-            Append (Loop_Body, LF);
-            Append (Loop_Body, "}");
-
-            Append (Stmts, For_Loop
-              ("i", Count_Name, To_String (Loop_Body)));
+            Append (Stmts, "if (dist < closest) {");
+            Append (Stmts, LF);
+            Append (Stmts, "closest = dist;");
+            Append (Stmts, LF);
+            Append (Stmts, "index = ");
+            Append (Stmts, Total'Image);
+            Append (Stmts, " + prim_index;");
+            Append (Stmts, LF);
+            Append (Stmts, "}");
+            Append (Stmts, LF);
+            Append (Stmts, "}");
             Append (Stmts, LF);
          end;
          Total := Total + Prim_Count.Count;
@@ -856,7 +843,7 @@ package body Madarch.Scenes is
            (Int (Partitioning.Index_Count), GPU_Types.Base.Int);
 
       Comps : GPU_Types.Named_Component_Array :=
-        (1 .. 2 * Prims'Length => <>);
+        (1 .. Prims'Length + 1 => <>);
 
       I : Natural := 1;
 
@@ -870,8 +857,8 @@ package body Madarch.Scenes is
    begin
       for Prim of Prims.all loop
          Add (GPU_Types.Base.Int.Named (Primitives.Get_Name (Prim) & "_count"));
-         Add (Index_Array_Type.Named (Primitives.Get_Name (Prim) & "_indices"));
       end loop;
+      Add (Index_Array_Type.Named ("indices"));
       return GPU_Types.Fixed_Arrays.Create
         (Dims (GL.X) * Dims (GL.Y) * Dims (GL.Z),
          GPU_Types.Structs.Create (Comps));
@@ -949,4 +936,7 @@ package body Madarch.Scenes is
       Total_Location :=
          S.GPU_Type.Address.Component ("total_light_count");
    end Get_Lights_Location;
+
+   function Get_Primitives (S : Scene) return Primitives.Primitive_Array is
+     (S.Prims.all);
 end Madarch.Scenes;
