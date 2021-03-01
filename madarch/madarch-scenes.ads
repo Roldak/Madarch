@@ -42,11 +42,14 @@ package Madarch.Scenes is
 
    Default_Partitioning_Settings : constant Partitioning_Settings;
 
+   type Codegen_Loop_Strategy is (Split, Unify);
+
    function Compile
      (All_Primitives : Primitive_Count_Array;
       All_Lights     : Light_Count_Array;
       Partitioning   : Partitioning_Settings := Default_Partitioning_Settings;
-      Max_Dist       : Single := 20.0) return Scene;
+      Max_Dist       : Single := 20.0;
+      Loop_Strategy  : Codegen_Loop_Strategy := Unify) return Scene;
 
    function Get_GLSL (S : Scene) return String;
 

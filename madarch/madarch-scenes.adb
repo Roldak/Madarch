@@ -593,38 +593,118 @@ package body Madarch.Scenes is
    end Partitioning_Index;
 
    function Partitioning_Closest_Primitive
-     (Partitioning : Partitioning_Settings;
-      Prims        : Primitives.Primitive_Array_Access) return Unbounded_String
+     (Partitioning  : Partitioning_Settings;
+      Prims         : Primitives.Primitive_Array_Access;
+      Loop_Strategy : Codegen_Loop_Strategy) return Unbounded_String
    is
       Stmts : Unbounded_String;
 
       Partition_Info : String := "partition_data[data_index]";
+      Ith_Index : String := Partition_Info & ".indices[i]";
+
+      procedure Emit_Split_Loop is
+      begin
+         Append (Stmts, Variable_Declaration ("int", "i", "0"));
+         Append (Stmts, Variable_Declaration ("int", "size", "0"));
+
+         for Prim of Prims.all loop
+            Append (Stmts, "size += ");
+            Append (Stmts, Partition_Info & "." & Prim_Count_Reference (Prim));
+            Append (Stmts, ";");
+            Append (Stmts, LF);
+
+            Append (Stmts, "for (; i < size; ++i) {");
+            Append (Stmts, LF);
+            Append (Stmts, "closest = min(closest, ");
+            Append (Stmts, Dist_Function_Reference (Prim));
+            Append (Stmts, "(");
+            Append (Stmts, Prim_Array_Reference (Prim));
+            Append (Stmts, "[");
+            Append (Stmts, Ith_Index);
+            Append (Stmts, "], x));");
+            Append (Stmts, LF);
+            Append (Stmts, "}");
+            Append (Stmts, LF);
+         end loop;
+      end Emit_Split_Loop;
+
+      procedure Emit_Unified_Loop is
+         Prim_Index : Positive := 1;
+
+         function Subtotal (I : Natural) return String is
+            N : String := I'Image;
+         begin
+            if I = 0 then
+               return "0";
+            else
+               return "subtotal_" & N (N'First + 1 .. N'Last);
+            end if;
+         end Subtotal;
+
+         function Prim_Count (Prim : Primitives.Primitive) return String is
+           (Primitives.Get_Name (Prim) & "_count");
+      begin
+         for Prim of Prims.all loop
+            Append (Stmts, Variable_Declaration
+              ("int",
+               Prim_Count (Prim),
+               Partition_Info & "." & Prim_Count_Reference (Prim)));
+
+            Append (Stmts, Variable_Declaration
+              ("int",
+               Subtotal (Prim_Index),
+               Subtotal (Prim_Index - 1) & " + " & Prim_Count (Prim)));
+
+            Prim_Index := Prim_Index + 1;
+         end loop;
+
+
+         Append (Stmts, "for (int i = 0; i < ");
+         Append (Stmts, Subtotal (Prims'Length));
+         Append (Stmts, "; ++i) {");
+         Append (Stmts, LF);
+
+         Append (Stmts, Variable_Declaration
+           ("int", "prim_index", Ith_Index));
+
+         Prim_Index := 1;
+
+         for Prim of Prims.all loop
+            if Prim_Index > 1 then
+               Append (Stmts, "else ");
+            end if;
+            if Prim_Index < Prims'Length then
+               Append (Stmts, "if (i < ");
+               Append (Stmts, Subtotal (Prim_Index));
+               Append (Stmts, ") ");
+            end if;
+            Append (Stmts, "{");
+            Append (Stmts, LF);
+            Append (Stmts, "closest = min(closest, ");
+            Append (Stmts, Dist_Function_Reference (Prim));
+            Append (Stmts, "(");
+            Append (Stmts, Prim_Array_Reference (Prim));
+            Append (Stmts, "[prim_index], x));");
+            Append (Stmts, LF);
+            Append (Stmts, "}");
+            Append (Stmts, LF);
+
+            Prim_Index := Prim_Index + 1;
+         end loop;
+
+         Append (Stmts, "}");
+         Append (Stmts, LF);
+      end Emit_Unified_Loop;
    begin
       Append (Stmts, Partitioning_Index
         (Partitioning, "return closest_primitive (x);"));
       Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
-      Append (Stmts, Variable_Declaration ("int", "i", "0"));
-      Append (Stmts, Variable_Declaration ("int", "size", "0"));
 
-      for Prim of Prims.all loop
-         Append (Stmts, "size += ");
-         Append (Stmts, Partition_Info & "." & Prim_Count_Reference (Prim));
-         Append (Stmts, ";");
-         Append (Stmts, LF);
-
-         Append (Stmts, "for (; i < size; ++i) {");
-         Append (Stmts, LF);
-         Append (Stmts, "closest = min(closest, ");
-         Append (Stmts, Dist_Function_Reference (Prim));
-         Append (Stmts, "(");
-         Append (Stmts, Prim_Array_Reference (Prim));
-         Append (Stmts, "[");
-         Append (Stmts, Partition_Info);
-         Append (Stmts, ".indices[i]], x));");
-         Append (Stmts, LF);
-         Append (Stmts, "}");
-         Append (Stmts, LF);
-      end loop;
+      if Loop_Strategy = Split then
+         Emit_Split_Loop;
+      else
+         Emit_Unified_Loop;
+      end if;
 
       return Function_Declaration
         ("float", "partitioning_closest",
@@ -634,57 +714,157 @@ package body Madarch.Scenes is
    end Partitioning_Closest_Primitive;
 
    function Partitioning_Closest_Primitive_Info
-     (Partitioning : Partitioning_Settings;
-      Prims_Count  : Primitive_Count_Array) return Unbounded_String
+     (Partitioning  : Partitioning_Settings;
+      Prims_Count   : Primitive_Count_Array;
+      Loop_Strategy : Codegen_Loop_Strategy) return Unbounded_String
    is
       Stmts : Unbounded_String;
       Total : Natural := 0;
 
       Partition_Info : String := "partition_data[data_index]";
+      Ith_Index : String := Partition_Info & ".indices[i]";
+
+      procedure Emit_Split_Loop is
+      begin
+         Append (Stmts, Variable_Declaration ("int", "i", "0"));
+         Append (Stmts, Variable_Declaration ("int", "size", "0"));
+
+         for Prim_Count of Prims_Count loop
+            declare
+               Prim : Primitives.Primitive renames Prim_Count.Prim;
+
+               Variable_Expr : Unbounded_String;
+            begin
+               Append (Stmts, "size += ");
+               Append (Stmts, Partition_Info);
+               Append (Stmts, ".");
+               Append (Stmts, Prim_Count_Reference (Prim));
+               Append (Stmts, ";");
+               Append (Stmts, LF);
+
+               Append (Variable_Expr, Dist_Function_Reference (Prim));
+               Append (Variable_Expr, "(");
+               Append (Variable_Expr, Prim_Array_Reference (Prim));
+               Append (Variable_Expr, "[prim_index], x)");
+
+               Append (Stmts, "for (; i < size; ++i) {");
+               Append (Stmts, LF);
+               Append (Stmts, Variable_Declaration
+                 ("int", "prim_index", Ith_Index));
+               Append (Stmts, Variable_Declaration
+                 ("float", "dist", To_String (Variable_Expr)));
+               Append (Stmts, "if (dist < closest) {");
+               Append (Stmts, LF);
+               Append (Stmts, "closest = dist;");
+               Append (Stmts, LF);
+               Append (Stmts, "index = ");
+               Append (Stmts, Total'Image);
+               Append (Stmts, " + prim_index;");
+               Append (Stmts, LF);
+               Append (Stmts, "}");
+               Append (Stmts, LF);
+               Append (Stmts, "}");
+               Append (Stmts, LF);
+            end;
+            Total := Total + Prim_Count.Count;
+         end loop;
+      end Emit_Split_Loop;
+
+      procedure Emit_Unified_Loop is
+         Prim_Index : Positive := 1;
+
+         function Subtotal (I : Natural) return String is
+            N : String := I'Image;
+         begin
+            if I = 0 then
+               return "0";
+            else
+               return "subtotal_" & N (N'First + 1 .. N'Last);
+            end if;
+         end Subtotal;
+
+         function Prim_Count (Prim : Primitives.Primitive) return String is
+           (Primitives.Get_Name (Prim) & "_count");
+      begin
+         for P_C of Prims_Count loop
+            Append (Stmts, Variable_Declaration
+              ("int",
+               Prim_Count (P_C.Prim),
+               Partition_Info & "." & Prim_Count_Reference (P_C.Prim)));
+
+            Append (Stmts, Variable_Declaration
+              ("int",
+               Subtotal (Prim_Index),
+               Subtotal (Prim_Index - 1) & " + " & Prim_Count (P_C.Prim)));
+
+            Prim_Index := Prim_Index + 1;
+         end loop;
+
+         Append (Stmts, "for (int i = 0; i < ");
+         Append (Stmts, Subtotal (Prims_Count'Length));
+         Append (Stmts, "; ++i) {");
+         Append (Stmts, LF);
+
+         Append (Stmts, Variable_Declaration
+           ("int", "prim_index", Ith_Index));
+
+         Prim_Index := 1;
+
+         for Prim_Count of Prims_Count loop
+            declare
+               Prim : Primitives.Primitive renames Prim_Count.Prim;
+
+               Variable_Expr : Unbounded_String;
+            begin
+               Append (Variable_Expr, Dist_Function_Reference (Prim));
+               Append (Variable_Expr, "(");
+               Append (Variable_Expr, Prim_Array_Reference (Prim));
+               Append (Variable_Expr, "[prim_index], x)");
+
+               if Prim_Index > 1 then
+                  Append (Stmts, "else ");
+               end if;
+
+               if Prim_Index < Prims_Count'Length then
+                  Append (Stmts, "if (i < ");
+                  Append (Stmts, Subtotal (Prim_Index));
+                  Append (Stmts, ") ");
+               end if;
+
+               Append (Stmts, "{");
+               Append (Stmts, LF);
+               Append (Stmts, Variable_Declaration
+                 ("float", "dist", To_String (Variable_Expr)));
+               Append (Stmts, "if (dist < closest) {");
+               Append (Stmts, LF);
+               Append (Stmts, "closest = dist;");
+               Append (Stmts, LF);
+               Append (Stmts, "index = ");
+               Append (Stmts, Total'Image);
+               Append (Stmts, " + prim_index;");
+               Append (Stmts, LF);
+               Append (Stmts, "}");
+               Append (Stmts, LF);
+               Append (Stmts, "}");
+               Append (Stmts, LF);
+            end;
+            Total := Total + Prim_Count.Count;
+            Prim_Index := Prim_Index + 1;
+         end loop;
+
+         Append (Stmts, "}");
+         Append (Stmts, LF);
+      end Emit_Unified_Loop;
    begin
       Append (Stmts, Partitioning_Index
         (Partitioning, "return closest_primitive_info (x, index);"));
       Append (Stmts, Variable_Declaration ("float", "closest", "max_dist"));
-      Append (Stmts, Variable_Declaration ("int", "i", "0"));
-      Append (Stmts, Variable_Declaration ("int", "size", "0"));
 
-      for Prim_Count of Prims_Count loop
-         declare
-            Prim : Primitives.Primitive renames Prim_Count.Prim;
-
-            Variable_Expr : Unbounded_String;
-         begin
-            Append (Stmts, "size += ");
-            Append (Stmts, Partition_Info & "." & Prim_Count_Reference (Prim));
-            Append (Stmts, ";");
-            Append (Stmts, LF);
-
-            Append (Variable_Expr, Dist_Function_Reference (Prim));
-            Append (Variable_Expr, "(");
-            Append (Variable_Expr, Prim_Array_Reference (Prim));
-            Append (Variable_Expr, "[prim_index], x)");
-
-            Append (Stmts, "for (; i < size; ++i) {");
-            Append (Stmts, LF);
-            Append (Stmts, Variable_Declaration
-              ("int", "prim_index", Partition_Info & ".indices[i]"));
-            Append (Stmts, Variable_Declaration
-              ("float", "dist", To_String (Variable_Expr)));
-            Append (Stmts, "if (dist < closest) {");
-            Append (Stmts, LF);
-            Append (Stmts, "closest = dist;");
-            Append (Stmts, LF);
-            Append (Stmts, "index = ");
-            Append (Stmts, Total'Image);
-            Append (Stmts, " + prim_index;");
-            Append (Stmts, LF);
-            Append (Stmts, "}");
-            Append (Stmts, LF);
-            Append (Stmts, "}");
-            Append (Stmts, LF);
-         end;
-         Total := Total + Prim_Count.Count;
-      end loop;
+      if Loop_Strategy = Split then
+         Emit_Split_Loop;
+      else
+         Emit_Unified_Loop;
+      end if;
 
       return Function_Declaration
         ("float", "partitioning_closest_info",
@@ -694,12 +874,13 @@ package body Madarch.Scenes is
    end Partitioning_Closest_Primitive_Info;
 
    function Generate_Code
-     (Prims_Count  : Primitive_Count_Array;
-      Lights_Count : Light_Count_Array;
-      Prims        : Primitives.Primitive_Array_Access;
-      Lits         : Lights.Light_Array_Access;
-      Max_Dist     : GL.Types.Single;
-      Partitioning : Partitioning_Settings) return Unbounded_String
+     (Prims_Count   : Primitive_Count_Array;
+      Lights_Count  : Light_Count_Array;
+      Prims         : Primitives.Primitive_Array_Access;
+      Lits          : Lights.Light_Array_Access;
+      Max_Dist      : GL.Types.Single;
+      Partitioning  : Partitioning_Settings;
+      Loop_Strategy : Codegen_Loop_Strategy) return Unbounded_String
    is
       Res : Unbounded_String;
    begin
@@ -745,11 +926,12 @@ package body Madarch.Scenes is
          Append (Res, Partitioning_Data_Buffer);
          Append (Res, DLF);
 
-         Append (Res, Partitioning_Closest_Primitive (Partitioning, Prims));
+         Append (Res, Partitioning_Closest_Primitive
+           (Partitioning, Prims, Loop_Strategy));
          Append (Res, DLF);
 
          Append (Res, Partitioning_Closest_Primitive_Info
-           (Partitioning, Prims_Count));
+           (Partitioning, Prims_Count, Loop_Strategy));
          Append (Res, DLF);
       else
          Append (Res, "#define partitioning_closest closest_primitive");
@@ -875,7 +1057,8 @@ package body Madarch.Scenes is
      (All_Primitives : Primitive_Count_Array;
       All_Lights     : Light_Count_Array;
       Partitioning   : Partitioning_Settings := Default_Partitioning_Settings;
-      Max_Dist       : GL.Types.Single := 20.0) return Scene
+      Max_Dist       : GL.Types.Single := 20.0;
+      Loop_Strategy  : Codegen_Loop_Strategy := Unify) return Scene
    is
       Prims : Primitives.Primitive_Array_Access :=
          new Primitives.Primitive_Array'(1 .. All_Primitives'Length => <>);
@@ -895,7 +1078,11 @@ package body Madarch.Scenes is
         (Prims    => Prims,
          Lits     => Lits,
          GLSL     => Generate_Code
-           (All_Primitives, All_Lights, Prims, Lits, Max_Dist, Partitioning),
+           (All_Primitives, All_Lights,
+            Prims, Lits,
+            Max_Dist,
+            Partitioning,
+            Loop_Strategy),
          GPU_Type => Compute_Scene_GPU_Type (All_Primitives, All_Lights),
 
          Partitioning_Config => Partitioning,

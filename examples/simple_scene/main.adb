@@ -28,7 +28,7 @@ procedure Main is
    Scene : Scenes.Scene := Scenes.Compile
      (All_Primitives => (1 => (Primitives.Spheres.Sphere, 20),
                          2 => (Primitives.Planes.Plane, 10),
-                         3 => (Primitives.Boxes.Box, 10)),
+                         3 => (Primitives.Boxes.Box, 20)),
       All_Lights     => (1 => (Lights.Point_Lights.Point_Light, 4)));
 
    Window : Windows.Window := Windows.Open (1000, 1000, "Simple_Scene");
@@ -76,7 +76,20 @@ procedure Main is
       Primitives.Spheres.Create ((1.5, 0.5, 5.0), 0.5, 3));
 
    Boxes : Entities.Entity_Array :=
-     (1 => Primitives.Boxes.Create ((3.0, 1.0, -2.0), (0.5, 0.5, 0.5), 2));
+     (Primitives.Boxes.Create ((3.0, 1.0, 2.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((0.0, 1.0, 2.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((3.0, 1.0, 4.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((4.0, 2.0, 2.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((2.0, 2.0, 2.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((1.0, 1.0, 6.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((3.0, 1.0, 6.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((3.0, 1.0, -2.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((1.0, 1.0, -2.0), (0.3, 0.3, 0.5), 2),
+      Primitives.Boxes.Create ((3.0, 1.0, -4.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((4.0, 2.0, -2.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((2.0, 2.0, -2.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((1.0, 1.0, -6.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((3.0, 1.0, -6.0), (0.5, 0.5, 0.5), 2));
 begin
    for Plane of Planes loop
       Renderers.Add_Primitive (Renderer, Primitives.Planes.Plane, Plane);
