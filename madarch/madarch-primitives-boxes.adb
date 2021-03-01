@@ -25,7 +25,7 @@ package body Madarch.Primitives.Boxes is
          To_Float (RY > RX - E) * To_Float (RY > RZ - E) * D.Get (GL.Y).Sign,
          To_Float (RZ > RX - E) * To_Float (RZ > RY - E) * D.Get (GL.Z).Sign);
    begin
-      return P."-" (S.Get (Center)).Let_In
+      return P."-" (S.Get (Center))."/" (S.Get (Side)).Let_In
         (Vector3_Kind,
          "d",
          D.Get (GL.X).Abs_Value.Let_In

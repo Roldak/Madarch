@@ -77,7 +77,7 @@ procedure Main is
 
    Boxes : Entities.Entity_Array :=
      (Primitives.Boxes.Create ((3.0, 1.0, 2.0), (0.5, 0.5, 0.5), 2),
-      Primitives.Boxes.Create ((0.0, 1.0, 2.0), (0.5, 0.5, 0.5), 2),
+      Primitives.Boxes.Create ((0.0, 1.0, 2.0), (0.3, 0.3, 0.5), 2),
       Primitives.Boxes.Create ((3.0, 1.0, 4.0), (0.5, 0.5, 0.5), 2),
       Primitives.Boxes.Create ((4.0, 2.0, 2.0), (0.5, 0.5, 0.5), 2),
       Primitives.Boxes.Create ((2.0, 2.0, 2.0), (0.5, 0.5, 0.5), 2),
