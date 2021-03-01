@@ -60,6 +60,10 @@ package body Madarch.Exprs is
    function Struct_Identifier (N : String) return Struct_Expr is
      (Struct_Expr'(Name => To_unbounded_String (N)));
 
+   function Construct_Vector3 (X, Y, Z : Expr) return Expr is
+     (Value => new Builtin_Call'
+        (Builtin_Vec3, new Expr_Array'(X, Y, Z)));
+
    function Eval (E : Expr; Ctx : Eval_Context) return Value is
      (E.Value.Eval (Ctx));
 
@@ -293,6 +297,11 @@ package body Madarch.Exprs is
             return Min (Arg_Values (1), Arg_Values (2));
          when Builtin_Max =>
             return Max (Arg_Values (1), Arg_Values (2));
+         when Builtin_Vec3 =>
+            return Values.Vector3
+              ((Arg_Values (1).Float_Value,
+                Arg_Values (2).Float_Value,
+                Arg_Values (3).Float_Value));
       end case;
    end Eval;
 
@@ -310,9 +319,10 @@ package body Madarch.Exprs is
 
       Builtin_Name : String :=
         (case B.Builtin is
-           when Builtin_Dot => "dot",
-           when Builtin_Min => "min",
-           when Builtin_Max => "max");
+           when Builtin_Dot  => "dot",
+           when Builtin_Min  => "min",
+           when Builtin_Max  => "max",
+           when Builtin_Vec3 => "vec3");
    begin
       Append (Result, Builtin_Name);
       Append (Result, "(");

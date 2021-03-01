@@ -34,6 +34,8 @@ package Madarch.Exprs is
    function Value_Identifier (N : String) return Expr;
    function Struct_Identifier (N : String) return Struct_Expr;
 
+   function Construct_Vector3 (X, Y, Z : Expr) return Expr;
+
    function "+" (L, R : Expr) return Expr;
    function "-" (L, R : Expr) return Expr;
    function "*" (L, R : Expr) return Expr;
@@ -136,7 +138,8 @@ private
    function Pre_GLSL (U : Un_Op) return String;
    function To_GLSL  (U : Un_Op) return String;
 
-   type Builtin_Kind is (Builtin_Dot, Builtin_Min, Builtin_Max);
+   type Builtin_Kind is (Builtin_Dot, Builtin_Min, Builtin_Max,
+                         Builtin_Vec3);
 
    type Builtin_Call is new Expr_Node with record
       Builtin : Builtin_Kind;
