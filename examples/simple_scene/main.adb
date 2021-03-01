@@ -8,6 +8,7 @@ with Madarch.Lights;
 with Madarch.Lights.Point_Lights;
 with Madarch.Materials;
 with Madarch.Primitives;
+with Madarch.Primitives.Boxes;
 with Madarch.Primitives.Planes;
 with Madarch.Primitives.Spheres;
 with Madarch.Renderers;
@@ -26,7 +27,8 @@ procedure Main is
 
    Scene : Scenes.Scene := Scenes.Compile
      (All_Primitives => (1 => (Primitives.Spheres.Sphere, 20),
-                         2 => (Primitives.Planes.Plane, 20)),
+                         2 => (Primitives.Planes.Plane, 10),
+                         3 => (Primitives.Boxes.Box, 10)),
       All_Lights     => (1 => (Lights.Point_Lights.Point_Light, 4)));
 
    Window : Windows.Window := Windows.Open (1000, 1000, "Simple_Scene");
@@ -72,6 +74,9 @@ procedure Main is
       Primitives.Spheres.Create ((5.5, 3.5, 5.0), 0.5, 3),
       Primitives.Spheres.Create ((0.5, 0.5, 5.0), 0.5, 3),
       Primitives.Spheres.Create ((1.5, 0.5, 5.0), 0.5, 3));
+
+   Boxes : Entities.Entity_Array :=
+     (1 => Primitives.Boxes.Create ((3.0, 1.0, -2.0), (0.5, 0.5, 0.5), 2));
 begin
    for Plane of Planes loop
       Renderers.Add_Primitive (Renderer, Primitives.Planes.Plane, Plane);
@@ -79,6 +84,10 @@ begin
 
    for Sphere of Spheres loop
       Renderers.Add_Primitive (Renderer, Primitives.Spheres.Sphere, Sphere);
+   end loop;
+
+   for Box of Boxes loop
+      Renderers.Add_Primitive (Renderer, Primitives.Boxes.Box, Box);
    end loop;
 
    Renderers.Set_Material
