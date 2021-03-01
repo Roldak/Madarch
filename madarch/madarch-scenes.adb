@@ -738,18 +738,25 @@ package body Madarch.Scenes is
       Append (Res, Sample_Light (Lits));
       Append (Res, DLF);
 
-      Append (Res, Partitioning_Info_Struct_Declaration (Partitioning, Prims));
-      Append (Res, DLF);
+      if Partitioning.Enable then
+         Append (Res, Partitioning_Info_Struct_Declaration (Partitioning, Prims));
+         Append (Res, DLF);
 
-      Append (Res, Partitioning_Data_Buffer);
-      Append (Res, DLF);
+         Append (Res, Partitioning_Data_Buffer);
+         Append (Res, DLF);
 
-      Append (Res, Partitioning_Closest_Primitive (Partitioning, Prims));
-      Append (Res, DLF);
+         Append (Res, Partitioning_Closest_Primitive (Partitioning, Prims));
+         Append (Res, DLF);
 
-      Append (Res, Partitioning_Closest_Primitive_Info
-        (Partitioning, Prims_Count));
-      Append (Res, DLF);
+         Append (Res, Partitioning_Closest_Primitive_Info
+           (Partitioning, Prims_Count));
+         Append (Res, DLF);
+      else
+         Append (Res, "#define partitioning_closest closest_primitive");
+         Append (Res, LF);
+         Append (Res, "#define partitioning_closest_info closest_primitive_info");
+         Append (Res, DLF);
+      end if;
 
       return Res;
    end Generate_Code;
@@ -893,7 +900,9 @@ package body Madarch.Scenes is
 
          Partitioning_Config => Partitioning,
          Partitioning_GPU_Type =>
-            Compute_Partitioning_GPU_Type (Partitioning, Prims));
+           (if Partitioning.Enable
+            then Compute_Partitioning_GPU_Type (Partitioning, Prims)
+            else GPU_Types.Base.Int));
    end Compile;
 
    function Get_GLSL (S : Scene) return String is

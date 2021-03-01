@@ -27,12 +27,17 @@ package Madarch.Scenes is
 
    type Partitioning_Border_Behavior is (Clamp, Fallback);
 
-   type Partitioning_Settings is record
-      Index_Count     : Natural := 10;
-      Border_Behavior : Partitioning_Border_Behavior := Clamp;
-      Grid_Dimensions : Ints.Vector3    := (10, 10, 20);
-      Grid_Spacing    : Singles.Vector3 := (1.0, 1.0, 1.0);
-      Grid_Offset     : Singles.Vector3 := (-1.5, -1.5, -10.0);
+   type Partitioning_Settings (Enable : Boolean := True) is record
+      case Enable is
+         when True =>
+            Index_Count     : Natural := 10;
+            Border_Behavior : Partitioning_Border_Behavior := Clamp;
+            Grid_Dimensions : Ints.Vector3    := (10, 10, 20);
+            Grid_Spacing    : Singles.Vector3 := (1.0, 1.0, 1.0);
+            Grid_Offset     : Singles.Vector3 := (-1.5, -1.5, -10.0);
+         when others =>
+            null;
+      end case;
    end record;
 
    Default_Partitioning_Settings : constant Partitioning_Settings;
@@ -79,5 +84,5 @@ private
    type Scene is access Scene_Internal;
 
    Default_Partitioning_Settings : constant Partitioning_Settings :=
-     (others => <>);
+     (Enable => True, others => <>);
 end Madarch.Scenes;

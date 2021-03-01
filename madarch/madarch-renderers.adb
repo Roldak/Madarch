@@ -532,6 +532,9 @@ package body Madarch.Renderers is
          end loop;
       end Process_Point;
    begin
+      if not Settings.Enable then
+         return;
+      end if;
       for X in 0 .. Settings.Grid_Dimensions (GL.X) - 1 loop
          for Y in 0 .. Settings.Grid_Dimensions (GL.Y) - 1 loop
             for Z in 0 .. Settings.Grid_Dimensions (GL.Z) - 1 loop
