@@ -257,7 +257,9 @@ package body Madarch.Exprs is
             return (case E_Value.Kind is
                when Float_Kind =>
                   Values.Float
-                    (if E_Value.Float_Value < 0.0 then -1.0 else 1.0),
+                    (if E_Value.Float_Value < 0.0 then -1.0
+                     elsif E_Value.Float_Value = 0.0 then 0.0
+                     else 1.0),
                when others =>
                   raise Program_Error with "sign not applicable.");
       end case;
