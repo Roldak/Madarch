@@ -106,13 +106,6 @@ package body Madarch.Renderers is
          Create_Macro_Definition
            ("M_IRRADIANCE_RESOLUTION", Probes.Irradiance_Resolution'Image));
 
-      Scene_Macros : Macro_Definition_Array :=
-        (Create_Macro_Definition ("M_MAX_SPHERE_COUNT", "20"),
-         Create_Macro_Definition ("M_MAX_PLANE_COUNT", "20"),
-         Create_Macro_Definition ("M_MAX_CUBE_COUNT", "20"),
-         Create_Macro_Definition ("M_MAX_POINT_LIGHT_COUNT", "4"),
-         Create_Macro_Definition ("M_MAX_SPOT_LIGHT_COUNT", "4"));
-
       Probe_Render_Macros : Macro_Definition_Array :=
         (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "0"),
          Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "0"));
@@ -151,14 +144,14 @@ package body Madarch.Renderers is
       Load_Shader
         (Screen_Shader,
          "madarch/glsl/draw_screen.glsl",
-         Probe_Layout_Macros & Scene_Macros & Render_Macros,
+         Probe_Layout_Macros & Render_Macros,
          File_Substs,
          "430");
 
       Load_Shader
         (Radiance_Shader,
          "madarch/glsl/compute_probe_radiance.glsl",
-         Probe_Layout_Macros & Scene_Macros & Probe_Render_Macros,
+         Probe_Layout_Macros & Probe_Render_Macros,
          File_Substs,
          "430");
 
