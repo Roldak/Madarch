@@ -2,7 +2,6 @@ with Ada.Text_IO;
 
 with GL.Buffers;
 with GL.Immediate;
-with GL.Pixels;
 with GL.Types.Colors;
 with GL.Window;
 
@@ -91,7 +90,8 @@ package body Render_Passes is
       Fragment_Shader : Objects.Shaders.Shader;
       Frame_Width     : Types.Size;
       Frame_Height    : Types.Size;
-      Target          : Objects.Textures.Texture_Unit)
+      Target          : Objects.Textures.Texture_Unit;
+      Texture_Format  : Pixels.Internal_Format := Pixels.RGB8)
       return Framebuffer_Render_Pass
    is
       use GL.Objects.Textures.Targets;
@@ -113,7 +113,7 @@ package body Render_Passes is
       Texture_2D.Set_Minifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Set_Magnifying_Filter (GL.Objects.Textures.Linear);
       Texture_2D.Load_Empty_Texture
-        (0, GL.Pixels.RGB8, Frame_Width, Frame_Height);
+        (0, Texture_Format, Frame_Width, Frame_Height);
 
       GL.Objects.Framebuffers.Read_And_Draw_Target.Bind (Framebuffer);
       GL.Objects.Framebuffers.Read_And_Draw_Target.Attach_Texture

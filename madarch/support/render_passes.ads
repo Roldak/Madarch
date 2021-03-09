@@ -3,6 +3,7 @@ with GL.Objects.Shaders;
 with GL.Objects.Programs;
 with GL.Objects.Textures;
 with GL.Objects.Textures.Targets;
+with GL.Pixels;
 with GL.Uniforms;
 
 with GL.Types;
@@ -34,7 +35,8 @@ package Render_Passes is
       Fragment_Shader : Objects.Shaders.Shader;
       Frame_Width     : Types.Size;
       Frame_Height    : Types.Size;
-      Target          : Objects.Textures.Texture_Unit)
+      Target          : Objects.Textures.Texture_Unit;
+      Texture_Format  : Pixels.Internal_Format := Pixels.RGB8)
       return Framebuffer_Render_Pass;
 
    overriding procedure Render (Pass : Framebuffer_Render_Pass);
