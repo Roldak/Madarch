@@ -2,7 +2,7 @@ with Madarch.Components;
 with Madarch.Values;
 
 package Madarch.Entities is
-   type Entity is private;
+   type Entity is tagged private;
    type Entity_Array is array (Positive range <>) of Entity;
 
    function Create
@@ -23,7 +23,7 @@ private
    type Component_Value_Array_Access is
       access Components.Component_Value_Array;
 
-   type Entity is record
+   type Entity is tagged record
       Values : Component_Value_Array_Access;
    end record;
 end Madarch.Entities;
