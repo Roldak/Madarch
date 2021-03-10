@@ -11,6 +11,9 @@ package Madarch.Entities is
    function Get
      (Self : Entity; Comp : Components.Component) return Values.Value;
 
+   procedure Set
+     (Self : Entity; Comp : Components.Component; Value : Values.Value);
+
    type Component_Value_Procedure is access
       procedure (C : Components.Component; V : Values.Value);
 

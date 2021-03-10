@@ -19,6 +19,20 @@ package body Madarch.Entities is
       raise Program_Error with "Entity does not have given component.";
    end Get;
 
+   procedure Set
+     (Self : Entity; Comp : Components.Component; Value : Values.Value)
+   is
+      use type Components.Component;
+   begin
+      for C of Self.Values.all loop
+         if C.Comp = Comp then
+            C.Val := Value;
+            return;
+         end if;
+      end loop;
+      raise Program_Error with "Entity does not have given component.";
+   end Set;
+
    procedure Foreach
      (Self : Entity; Proc : Component_Value_Procedure)
    is
