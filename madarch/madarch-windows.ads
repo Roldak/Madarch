@@ -1,3 +1,5 @@
+with Glfw.Input;
+with Glfw.Input.Keys;
 with Glfw.Windows;
 
 package Madarch.Windows is
@@ -13,6 +15,9 @@ package Madarch.Windows is
    function Is_Opened (Self : in out Window_Internal) return Boolean;
 
    procedure Poll_Events (Self : Window_Internal);
+
+   function Key_Pressed
+     (Self : in out Window_Internal; K : Glfw.Input.Keys.Key) return Boolean;
 
    function Width  (Self : in out Window_Internal) return Glfw.Size;
    function Height (Self : in out Window_Internal) return Glfw.Size;

@@ -1,6 +1,5 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
-with Glfw.Input;
 with Glfw.Windows.Hints;
 with Glfw.Windows.Context;
 
@@ -37,6 +36,14 @@ package body Madarch.Windows is
    begin
       Glfw.Input.Poll_Events;
    end Poll_Events;
+
+   function Key_Pressed
+     (Self : in out Window_Internal; K : Glfw.Input.Keys.Key) return Boolean
+   is
+      use type Glfw.Input.Button_State;
+   begin
+      return Self.Key_State (K) = Glfw.Input.Pressed;
+   end Key_Pressed;
 
    function Width  (Self : in out Window_Internal) return Glfw.Size is
       W, H : Glfw.Size;
