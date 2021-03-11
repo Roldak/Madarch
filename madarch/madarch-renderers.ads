@@ -52,6 +52,12 @@ package Madarch.Renderers is
       Lit    : Lights.Light;
       Entity : Entities.Entity);
 
+   procedure Set_Camera_Position
+     (Self : in out Renderer; Position : Singles.Vector3);
+
+   procedure Set_Camera_Orientation
+     (Self : in out Renderer; Orientation : Singles.Matrix3);
+
    procedure Update_Partionning (Self : in out Renderer);
 private
    package Entity_Vectors is new Ada.Containers.Vectors
@@ -67,6 +73,9 @@ private
    type Renderer_Internal is record
       Window : Windows.Window;
       Scene  : Scenes.Scene;
+
+      Camera_Position    : Singles.Vector3;
+      Camera_Orientation : Singles.Matrix3;
 
       Probes_Buffer    : GPU_Buffers.GPU_Buffer;
       Scene_Buffer     : GPU_Buffers.GPU_Buffer;

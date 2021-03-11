@@ -114,6 +114,8 @@ begin
 
    Renderers.Set_Light (Renderer, 1, Lights.Point_Lights.Point_Light, Point_Light_Instance);
 
+   Renderers.Set_Camera_Position (Renderer, (2.0, 2.0, 0.0));
+
    Renderers.Update_Partionning (Renderer);
 
    while Window.Is_Opened loop

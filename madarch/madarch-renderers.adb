@@ -18,17 +18,20 @@ with Glfw.Windows.Context;
 with Madarch.Components;
 
 package body Madarch.Renderers is
-   procedure Setup_Camera (R : Renderer) is
+   procedure Setup_Camera
+     (Self : Renderer;
+      Pass : Render_Passes.Render_Pass'Class)
+   is
       use GL;
 
       Camera_Position : Uniforms.Uniform :=
-         R.Screen_Pass.Uniform ("camera_position");
+         Pass.Uniform ("camera_position");
 
       Camera_Orientation : Uniforms.Uniform :=
-         R.Screen_Pass.Uniform ("camera_orientation");
+         Pass.Uniform ("camera_orientation");
    begin
-      Uniforms.Set_Single (Camera_Position, Singles.Vector3'(2.0, 2.0, 0.0));
-      Uniforms.Set_Single (Camera_Orientation, Singles.Identity3);
+      Uniforms.Set_Single (Camera_Position, Self.Camera_Position);
+      Uniforms.Set_Single (Camera_Orientation, Self.Camera_Orientation);
    end Setup_Camera;
 
    Probes_Layout_Type : GPU_Types.GPU_Type := GPU_Types.Structs.Create
@@ -166,6 +169,9 @@ package body Madarch.Renderers is
         (Window       => Window,
          Scene        => Scene,
 
+         Camera_Position => (0.0, 0.0, 0.0),
+         Camera_Orientation => Singles.Identity3,
+
          Probes_Buffer => Probes_Layout_Type.Allocate
            (Kind => GPU_Buffers.Uniform_Buffer, Binding => 0),
 
@@ -206,16 +212,19 @@ package body Madarch.Renderers is
            (Kind => GPU_Buffers.Shader_Storage_Buffer, Binding => 0))
       do
          Setup_Probe_Layout (R, Probes);
-         Setup_Camera (R);
       end return;
    end Create;
 
    procedure Render (Self : Renderer) is
    begin
       Glfw.Windows.Context.Make_Current (Self.Window);
+
+      Setup_Camera (Self, Self.Screen_Pass);
+
       Self.Radiance_Pass.Render;
       Self.Irradiance_Pass.Render;
       Self.Screen_Pass.Render;
+
       Glfw.Windows.Context.Swap_Buffers (Self.Window);
    end Render;
 
@@ -344,6 +353,20 @@ package body Madarch.Renderers is
       Total_Loc.Adjust (W);
       W.Write_Int (Int (Index));
    end Set_Light;
+
+   procedure Set_Camera_Position
+     (Self : in out Renderer; Position : Singles.Vector3)
+   is
+   begin
+      Self.Camera_Position := Position;
+   end Set_Camera_Position;
+
+   procedure Set_Camera_Orientation
+     (Self : in out Renderer; Orientation : Singles.Matrix3)
+   is
+   begin
+      Self.Camera_Orientation := Orientation;
+   end Set_Camera_Orientation;
 
    package Natural_Vectors is new Ada.Containers.Vectors (Positive, Natural);
    package Primitive_Natural_Maps is new Ada.Containers.Hashed_Maps
