@@ -1,4 +1,5 @@
 with Ada.Text_IO; use Ada.Text_IO;
+with Interfaces.C;
 
 with Glfw.Windows.Hints;
 with Glfw.Windows.Context;
@@ -44,6 +45,26 @@ package body Madarch.Windows is
    begin
       return Self.Key_State (K) = Glfw.Input.Pressed;
    end Key_Pressed;
+
+   procedure Center_Cursor
+     (Self : in out Window_Internal; DX, DY : out GL.Types.Single)
+   is
+      use Interfaces.C;
+
+      SX, SY : Int;
+      MX, MY : Double;
+   begin
+      Self.Get_Size (SX, SY);
+      Self.Get_Cursor_Pos (MX, MY);
+      declare
+         CX : Double := Double (SX) / 2.0;
+         CY : Double := Double (SY) / 2.0;
+      begin
+         Self.Set_Cursor_Pos (CX, CY);
+         DX := GL.Types.Single (MX - CX);
+         DY := GL.Types.Single (MY - CY);
+      end;
+   end Center_Cursor;
 
    function Width  (Self : in out Window_Internal) return Glfw.Size is
       W, H : Glfw.Size;
