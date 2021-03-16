@@ -1,5 +1,9 @@
 const float tau_scattering = 0.1;
-const float light_shafts_step_length = 0.1f;
+const float light_shafts_step_length = M_SCATTERING_STEP_SIZE;
+const vec2 scattering_data_step = vec2(1) / vec2(
+   M_SCATTERING_RESOLUTION_X,
+   M_SCATTERING_RESOLUTION_Y
+);
 
 float rayleigh_phase(vec3 in_dir, vec3 out_dir) {
    float cos_angle = dot(in_dir, out_dir);
@@ -24,13 +28,12 @@ layout(binding = 3) uniform sampler2D scattering_data;
 vec3 compute_light_shafts(vec3 L, vec3 from, vec3 to, vec2 frag_pos) {
 #if M_RENDER_LIGHT_SHAFTS
    vec2 tex_coord = (frag_pos + vec2(1)) * 0.5;
-   const vec2 step = vec2(1) / vec2(250, 250);
    float len = length(to - from);
    float closest = max_dist;
    vec3 fog_L;
    for (int x = -1; x <= 1; ++x) {
       for (int y = -1; y <= 1; ++y) {
-         vec2 offset = vec2(x, y) * step;
+         vec2 offset = vec2(x, y) * scattering_data_step;
          vec4 data = texture2D(scattering_data, tex_coord + offset);
          float dist = abs(data.a - len);
          if (dist < closest) {

@@ -29,10 +29,22 @@ package Madarch.Renderers is
 
    Default_Probe_Settings : constant Probe_Settings;
 
+   type Volumetrics_Settings is record
+      Enabled               : Boolean := True;
+      Visibility_Resolution : Ints.Vector2 := (100, 100);
+      Scattering_Resolution : Ints.Vector2 := (250, 250);
+      Scattering_Step_Size  : Single := 0.1;
+   end record;
+
+   Default_Volumetrics_Settings : constant Volumetrics_Settings;
+   No_Volumetrics               : constant Volumetrics_Settings;
+
    function Create
-     (Window : Windows.Window;
-      Scene  : Scenes.Scene;
-      Probes : Probe_Settings := Default_Probe_Settings) return Renderer;
+     (Window      : Windows.Window;
+      Scene       : Scenes.Scene;
+      Probes      : Probe_Settings := Default_Probe_Settings;
+      Volumetrics : Volumetrics_Settings := Default_Volumetrics_Settings)
+      return Renderer;
 
    procedure Render (Self : Renderer);
 
@@ -77,6 +89,8 @@ private
       Camera_Position    : Singles.Vector3;
       Camera_Orientation : Singles.Matrix3;
 
+      Volumetrics : Volumetrics_Settings;
+
       Probes_Buffer    : GPU_Buffers.GPU_Buffer;
       Scene_Buffer     : GPU_Buffers.GPU_Buffer;
       Materials_Buffer : GPU_Buffers.GPU_Buffer;
@@ -93,6 +107,12 @@ private
    end record;
 
    Default_Probe_Settings : constant Probe_Settings := (others => <>);
+
+   Default_Volumetrics_Settings : constant Volumetrics_Settings :=
+     (others => <>);
+
+   No_Volumetrics : constant Volumetrics_Settings :=
+     (Enabled => False, others => <>);
 
    type Renderer is access Renderer_Internal;
 end Madarch.Renderers;

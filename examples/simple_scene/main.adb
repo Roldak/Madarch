@@ -33,7 +33,10 @@ procedure Main is
 
    Window : Windows.Window := Windows.Open (1000, 1000, "Simple_Scene");
 
-   Renderer : Renderers.Renderer := Renderers.Create (Window, Scene);
+   Renderer : Renderers.Renderer := Renderers.Create
+     (Window      => Window,
+      Scene       => Scene,
+      Volumetrics => Renderers.No_Volumetrics);
 
    Sphere_Instance : Entities.Entity :=
       Primitives.Spheres.Create ((3.5, 3.0, 3.0), 1.0, 3);

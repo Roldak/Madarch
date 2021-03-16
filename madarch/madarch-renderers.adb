@@ -89,9 +89,11 @@ package body Madarch.Renderers is
           Material_Array_Type.Named ("materials")));
 
    function Create
-     (Window : Windows.Window;
-      Scene  : Scenes.Scene;
-      Probes : Probe_Settings := Default_Probe_Settings) return Renderer
+     (Window      : Windows.Window;
+      Scene       : Scenes.Scene;
+      Probes      : Probe_Settings := Default_Probe_Settings;
+      Volumetrics : Volumetrics_Settings := Default_Volumetrics_Settings)
+      return Renderer
    is
       use Shader_Loader;
 
@@ -114,12 +116,25 @@ package body Madarch.Renderers is
         (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "0"),
          Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "0"));
 
+      Volumetrics_Macros : Macro_Definition_Array :=
+        (Create_Macro_Definition
+           ("M_SCATTERING_RESOLUTION_X",
+            Volumetrics.Scattering_Resolution (GL.X)'Image),
+         Create_Macro_Definition
+           ("M_SCATTERING_RESOLUTION_Y",
+            Volumetrics.Scattering_Resolution (GL.Y)'Image),
+         Create_Macro_Definition
+           ("M_SCATTERING_STEP_SIZE",
+            Volumetrics.Scattering_Step_Size'Image));
+
       Render_Macros : Macro_Definition_Array :=
         (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "1"),
          Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "2"),
          Create_Macro_Definition ("M_ADD_INDIRECT_SPECULAR", "1"),
          Create_Macro_Definition ("M_AMBIENT_OCCLUSION_STEPS", "3"),
-         Create_Macro_Definition ("M_RENDER_LIGHT_SHAFTS", "1"));
+         Create_Macro_Definition
+           ("M_RENDER_LIGHT_SHAFTS",
+            (if Volumetrics.Enabled then "1" else "0")));
 
       File_Substs : File_Substitution_Array :=
         (1 => Create_File_Substitution
@@ -155,28 +170,28 @@ package body Madarch.Renderers is
       Load_Shader
         (Screen_Shader,
          "madarch/glsl/draw_screen.glsl",
-         Probe_Layout_Macros & Render_Macros,
+         Probe_Layout_Macros & Render_Macros & Volumetrics_Macros,
          File_Substs,
          "430");
 
       Load_Shader
         (Radiance_Shader,
          "madarch/glsl/compute_probe_radiance.glsl",
-         Probe_Layout_Macros & Probe_Render_Macros,
+         Probe_Layout_Macros & Probe_Render_Macros & Volumetrics_Macros,
          File_Substs,
          "430");
 
       Load_Shader
         (Visibility_Shader,
          "madarch/glsl/compute_frustrum_visibility.glsl",
-         Probe_Layout_Macros,
+         Probe_Layout_Macros & Volumetrics_Macros,
          File_Substs,
          "430");
 
       Load_Shader
         (Scattering_Shader,
          "madarch/glsl/accumulate_scattering.glsl",
-         No_Macro_Definition_Array,
+         Volumetrics_Macros,
          File_Substs,
          "430");
 
@@ -193,6 +208,8 @@ package body Madarch.Renderers is
 
          Camera_Position => (0.0, 0.0, 0.0),
          Camera_Orientation => Singles.Identity3,
+
+         Volumetrics => Volumetrics,
 
          Probes_Buffer => Probes_Layout_Type.Allocate
            (Kind => GPU_Buffers.Uniform_Buffer, Binding => 0),
@@ -225,8 +242,8 @@ package body Madarch.Renderers is
            (Vertex_Shader   => Vertex_Shader,
             Fragment_Shader => Visibility_Shader,
 
-            Frame_Width  => 100,
-            Frame_Height => 100 * 60,
+            Frame_Width  => Volumetrics.Visibility_Resolution (GL.X),
+            Frame_Height => Volumetrics.Visibility_Resolution (GL.Y) * 60,
 
             Target => 2,
 
@@ -236,8 +253,8 @@ package body Madarch.Renderers is
            (Vertex_Shader   => Vertex_Shader,
             Fragment_Shader => Scattering_Shader,
 
-            Frame_Width  => 250,
-            Frame_Height => 250,
+            Frame_Width  => Volumetrics.Scattering_Resolution (GL.X),
+            Frame_Height => Volumetrics.Scattering_Resolution (GL.Y),
 
             Target => 3,
 
@@ -269,8 +286,12 @@ package body Madarch.Renderers is
 
       Self.Radiance_Pass.Render;
       Self.Irradiance_Pass.Render;
-      Self.Visibility_Pass.Render;
-      Self.Scattering_Pass.Render;
+
+      if Self.Volumetrics.Enabled then
+         Self.Visibility_Pass.Render;
+         Self.Scattering_Pass.Render;
+      end if;
+
       Self.Screen_Pass.Render;
 
       Glfw.Windows.Context.Swap_Buffers (Self.Window);
