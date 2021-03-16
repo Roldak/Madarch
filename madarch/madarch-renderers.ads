@@ -83,6 +83,8 @@ private
 
       Radiance_Pass   : Render_Passes.Framebuffer_Render_Pass;
       Irradiance_Pass : Render_Passes.Framebuffer_Render_Pass;
+      Visibility_Pass : Render_Passes.Framebuffer_Render_Pass;
+      Scattering_Pass : Render_Passes.Framebuffer_Render_Pass;
       Screen_Pass     : Render_Passes.Screen_Render_Pass;
 
       All_Primitives  : Primitive_Entity_Maps.Map;

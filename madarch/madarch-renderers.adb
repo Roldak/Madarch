@@ -4,6 +4,7 @@ with Ada.Text_IO;
 with GL;
 with GL.Objects.Programs;
 with GL.Objects.Shaders;
+with GL.Pixels;
 with GL.Uniforms;
 
 with Math_Utils;
@@ -117,7 +118,8 @@ package body Madarch.Renderers is
         (Create_Macro_Definition ("M_COMPUTE_DIRECT_SPECULAR", "1"),
          Create_Macro_Definition ("M_COMPUTE_INDIRECT_SPECULAR", "2"),
          Create_Macro_Definition ("M_ADD_INDIRECT_SPECULAR", "1"),
-         Create_Macro_Definition ("M_AMBIENT_OCCLUSION_STEPS", "3"));
+         Create_Macro_Definition ("M_AMBIENT_OCCLUSION_STEPS", "3"),
+         Create_Macro_Definition ("M_RENDER_LIGHT_SHAFTS", "1"));
 
       File_Substs : File_Substitution_Array :=
         (1 => Create_File_Substitution
@@ -130,6 +132,12 @@ package body Madarch.Renderers is
         (Kind => GL.Objects.Shaders.Fragment_Shader);
 
       Radiance_Shader : GL.Objects.Shaders.Shader
+        (Kind => GL.Objects.Shaders.Fragment_Shader);
+
+      Visibility_Shader : GL.Objects.Shaders.Shader
+        (Kind => GL.Objects.Shaders.Fragment_Shader);
+
+      Scattering_Shader : GL.Objects.Shaders.Shader
         (Kind => GL.Objects.Shaders.Fragment_Shader);
 
       Irradiance_Shader : GL.Objects.Shaders.Shader
@@ -155,6 +163,20 @@ package body Madarch.Renderers is
         (Radiance_Shader,
          "madarch/glsl/compute_probe_radiance.glsl",
          Probe_Layout_Macros & Probe_Render_Macros,
+         File_Substs,
+         "430");
+
+      Load_Shader
+        (Visibility_Shader,
+         "madarch/glsl/compute_frustrum_visibility.glsl",
+         Probe_Layout_Macros,
+         File_Substs,
+         "430");
+
+      Load_Shader
+        (Scattering_Shader,
+         "madarch/glsl/accumulate_scattering.glsl",
+         No_Macro_Definition_Array,
          File_Substs,
          "430");
 
@@ -199,6 +221,28 @@ package body Madarch.Renderers is
 
             Target => 1),
 
+         Visibility_Pass => Render_Passes.Create
+           (Vertex_Shader   => Vertex_Shader,
+            Fragment_Shader => Visibility_Shader,
+
+            Frame_Width  => 100,
+            Frame_Height => 100 * 60,
+
+            Target => 2,
+
+            Texture_Format => GL.Pixels.RGB32F),
+
+         Scattering_Pass => Render_Passes.Create
+           (Vertex_Shader   => Vertex_Shader,
+            Fragment_Shader => Scattering_Shader,
+
+            Frame_Width  => 250,
+            Frame_Height => 250,
+
+            Target => 3,
+
+            Texture_Format => GL.Pixels.RGBA32F),
+
          Screen_Pass => Render_Passes.Create
            (Vertex_Shader   => Vertex_Shader,
             Fragment_Shader => Screen_Shader,
@@ -220,9 +264,13 @@ package body Madarch.Renderers is
       Glfw.Windows.Context.Make_Current (Self.Window);
 
       Setup_Camera (Self, Self.Screen_Pass);
+      Setup_Camera (Self, Self.Visibility_Pass);
+      Setup_Camera (Self, Self.Scattering_Pass);
 
       Self.Radiance_Pass.Render;
       Self.Irradiance_Pass.Render;
+      Self.Visibility_Pass.Render;
+      Self.Scattering_Pass.Render;
       Self.Screen_Pass.Render;
 
       Glfw.Windows.Context.Swap_Buffers (Self.Window);

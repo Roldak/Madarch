@@ -243,9 +243,11 @@ vec3 compute_indirect_specular(vec3 pos, vec3 normal, vec3 dir, float roughness)
    return indirect + direct;
 }
 
-vec3 pixel_color_probes(vec3 from, vec3 dir) {
+vec3 pixel_color_probes(vec3 from, vec3 dir, vec2 frag_pos) {
    int prim_index;
    vec3 pos;
+   vec3 result;
+
    if (raycast(from, dir, prim_index, pos)) {
       int material_id;
       vec3 normal;
@@ -280,9 +282,11 @@ vec3 pixel_color_probes(vec3 from, vec3 dir) {
 
       float ao = compute_ambient_occlusion(pos, normal);
 
-      return ao * (direct + indirect);
+      result = ao * (direct + indirect);
+   } else {
+      result = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
    }
 
-   return vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
+   return compute_light_shafts(result, from, pos, frag_pos);
 }
 
