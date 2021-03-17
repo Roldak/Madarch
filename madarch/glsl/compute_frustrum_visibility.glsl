@@ -26,7 +26,7 @@ uniform mat3 camera_orientation;
 
 void main(void) {
    float norm_height = (pos.y + 1.0) * 0.5;
-   float tex_height = norm_height * 60;
+   float tex_height = norm_height * visibility_resolution_z;
    float depth = floor(tex_height);
    float fract_height = tex_height - depth;
    float frag_height = fract_height * 2.0 - 1.0;
@@ -35,5 +35,8 @@ void main(void) {
    dir = camera_orientation * dir;
    frag_pos = camera_orientation * frag_pos;
    vec3 initial_pos = frag_pos + camera_position;
-   color = sample_lights(initial_pos + dir * depth * 0.1, dir);
+   color = sample_lights(
+      initial_pos + dir * depth * visibility_step_size,
+      dir
+   );
 }

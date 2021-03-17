@@ -1,9 +1,15 @@
-const float tau_scattering = 0.1;
-const float light_shafts_step_length = M_SCATTERING_STEP_SIZE;
+const int visibility_resolution_z = M_VISIBILITY_RESOLUTION_Z;
+const float visibility_step_size = M_VISIBILITY_STEP_SIZE;
+const float visibility_max_depth =
+   visibility_step_size * visibility_resolution_z;
+
+const float scattering_step_size = M_SCATTERING_STEP_SIZE;
 const vec2 scattering_data_step = vec2(1) / vec2(
    M_SCATTERING_RESOLUTION_X,
    M_SCATTERING_RESOLUTION_Y
 );
+
+const float tau_scattering = 0.1;
 
 float rayleigh_phase(vec3 in_dir, vec3 out_dir) {
    float cos_angle = dot(in_dir, out_dir);

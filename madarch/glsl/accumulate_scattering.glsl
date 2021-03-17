@@ -7,24 +7,24 @@
 layout(binding = 2) uniform sampler2D visibility_data;
 
 vec3 sample_visibility(float len, vec2 norm_pos) {
-   float rel_pos_depth = floor(len * 10.0);
+   float rel_pos_depth = floor(len / visibility_step_size);
    float coord_x = norm_pos.x;
-   float coord_y = (norm_pos.y + rel_pos_depth) / 60.0;
+   float coord_y = (norm_pos.y + rel_pos_depth) / visibility_resolution_z;
    vec2 tex_coord = vec2(coord_x, coord_y);
    return texture2D(visibility_data, tex_coord).rgb;
 }
 
 vec4 accumulate_scattering(vec3 from, vec3 dir, vec2 norm_pos) {
-   vec3 to = from + 6.0 * dir;
+   vec3 to = from + visibility_max_depth * dir;
    int prim_index;
    raycast(from, dir, prim_index, to);
-   float len = min(length(to - from), 6.0);
+   float len = min(length(to - from), visibility_max_depth);
    vec3 L = vec3(0);
-   for (float f = 0.0; f < len; f += light_shafts_step_length) {
+   for (float f = 0.0; f < len; f += scattering_step_size) {
       vec3 r = sample_visibility(f, norm_pos);
       L += r * exp(-f * tau_scattering);
    }
-   L *= light_shafts_step_length;
+   L *= scattering_step_size;
    return vec4(L, len);
 }
 

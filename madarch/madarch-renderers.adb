@@ -118,6 +118,12 @@ package body Madarch.Renderers is
 
       Volumetrics_Macros : Macro_Definition_Array :=
         (Create_Macro_Definition
+           ("M_VISIBILITY_RESOLUTION_Z",
+            Volumetrics.Visibility_Resolution (GL.Z)'Image),
+         Create_Macro_Definition
+           ("M_VISIBILITY_STEP_SIZE",
+            Volumetrics.Visibility_Step_Size'Image),
+         Create_Macro_Definition
            ("M_SCATTERING_RESOLUTION_X",
             Volumetrics.Scattering_Resolution (GL.X)'Image),
          Create_Macro_Definition
@@ -243,7 +249,9 @@ package body Madarch.Renderers is
             Fragment_Shader => Visibility_Shader,
 
             Frame_Width  => Volumetrics.Visibility_Resolution (GL.X),
-            Frame_Height => Volumetrics.Visibility_Resolution (GL.Y) * 60,
+            Frame_Height =>
+               Volumetrics.Visibility_Resolution (GL.Y)
+               * Volumetrics.Visibility_Resolution (GL.Z),
 
             Target => 2,
 
