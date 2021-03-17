@@ -18,6 +18,6 @@ vec3 pixel_color_direct(vec3 from, vec3 dir, vec2 frag_pos) {
       result = vec3(0.30, 0.36, 0.60) - (dir.y * 0.7);
    }
 
-   return compute_light_shafts(result, from, pos, frag_pos);
+   return render_volumetrics(result, from, pos, frag_pos);
 }
 

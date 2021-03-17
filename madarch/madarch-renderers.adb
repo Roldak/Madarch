@@ -139,7 +139,7 @@ package body Madarch.Renderers is
          Create_Macro_Definition ("M_ADD_INDIRECT_SPECULAR", "1"),
          Create_Macro_Definition ("M_AMBIENT_OCCLUSION_STEPS", "3"),
          Create_Macro_Definition
-           ("M_RENDER_LIGHT_SHAFTS",
+           ("M_RENDER_VOLUMETRICS",
             (if Volumetrics.Enabled then "1" else "0")));
 
       File_Substs : File_Substitution_Array :=

@@ -31,8 +31,8 @@ float henvey_greenstein_phase(vec3 in_dir, vec3 out_dir) {
 
 layout(binding = 3) uniform sampler2D scattering_data;
 
-vec3 compute_light_shafts(vec3 L, vec3 from, vec3 to, vec2 frag_pos) {
-#if M_RENDER_LIGHT_SHAFTS
+vec3 render_volumetrics(vec3 L, vec3 from, vec3 to, vec2 frag_pos) {
+#if M_RENDER_VOLUMETRICS
    vec2 tex_coord = (frag_pos + vec2(1)) * 0.5;
    float len = length(to - from);
    float closest = max_dist;
