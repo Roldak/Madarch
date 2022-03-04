@@ -3,12 +3,14 @@ all:
 	gprbuild examples/support_test/test.gpr -XWindowing_System=x11 -Xmode=debug -p
 	gprbuild examples/simple_scene/simple.gpr -XWindowing_System=x11 -Xmode=debug -p
 	gprbuild examples/light_shafts/shafts.gpr -XWindowing_System=x11 -Xmode=debug -p
+	gprbuild examples/global_illumination/gi.gpr -XWindowing_System=x11 -Xmode=debug -p
 
 clean:
 	gprclean madarch.gpr -XWindowing_System=x11 -Xmode=debug -p
 	gprclean examples/support_test/test.gpr -XWindowing_System=x11 -Xmode=debug -p
 	gprclean examples/simple_scene/simple.gpr -XWindowing_System=x11 -Xmode=debug -p
 	gprclean examples/light_shafts/shafts.gpr -XWindowing_System=x11 -Xmode=debug -p
+	gprclean examples/global_illumination/gi.gpr -XWindowing_System=x11 -Xmode=debug -p
 
 support_test: all
 	./examples/support_test/bin/main
@@ -24,3 +26,6 @@ simple_scene_gdb: all
 
 light_shafts: all
 	./examples/light_shafts/bin/main
+
+global_illumination: all
+	./examples/global_illumination/bin/main
