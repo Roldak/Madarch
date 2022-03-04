@@ -13,6 +13,20 @@ Ray marching engine in Ada and GLSL.
 - Space partitioning (3D grid).
 - Volumetric lighting (light shafts).
 
+## Build library
+
+The project uses [Alire](https://alire.ada.dev/) to manage its dependencies, but is not published there yet. So, simply clone this repository and run `alr build` to build the Madarch library.
+
+## Try the examples
+
+In order to build and run the examples:
+
+- First, you should first run `eval $(alr printenv)` to make the Madarch library available (make sure you built in first).
+- To build the `global_illumination` example, simply run `gprbuild examples/global_illumination/gi.gpr`.
+- You can then run it with `./examples/global_illumination/bin/main`. *Note that for now you **must** run it from Madarch's root directory*
+
+The other examples follow a similar structure.
+
 ## Illustrations
 
 <p align="center">
