@@ -7,8 +7,9 @@ with GL.Types;
 package Madarch.Materials is
    use Components;
    use Values;
-
    use GL.Types;
+
+   subtype Id is GL.Types.Int;
 
    Albedo    : constant Component := Create ("albedo", Vector3_Kind);
    Metallic  : constant Component := Create ("metallic", Float_Kind);

@@ -48,19 +48,30 @@ procedure Main is
 
    FPS_Clock : Ada.Calendar.Time;
 
+   Wall_Mat_1 : Materials.Id := Renderers.Add_Material
+     (Renderer, Materials.Create ((0.0, 0.0, 0.0), 0.0, 0.6));
+   Wall_Mat_2 : Materials.Id := Renderers.Add_Material
+     (Renderer, Materials.Create ((1.0, 0.0, 0.0), 0.0, 0.6));
+   Wall_Mat_3 : Materials.Id := Renderers.Add_Material
+     (Renderer, Materials.Create ((0.0, 0.0, 1.0), 0.0, 0.6));
+   Sphere_Mat : Materials.Id := Renderers.Add_Material
+     (Renderer, Materials.Create ((0.1, 0.1, 0.1), 0.9, 0.1));
+   Box_Mat    : Materials.Id := Renderers.Add_Material
+     (Renderer, Materials.Create ((0.0, 1.0, 0.0), 0.8, 0.3));
+
    Planes : Entities.Entity_Array :=
-     (Primitives.Planes.Create ((0.0,  1.0, 0.0), 1.0, 0),
-      Primitives.Planes.Create ((0.0, -1.0, 0.0), 7.0, 0),
-      Primitives.Planes.Create (( 1.0, 0.0, 0.0), 1.0, 1),
-      Primitives.Planes.Create ((-1.0, 0.0, 0.0), 7.0, 2),
-      Primitives.Planes.Create ((0.0, 0.0,  1.0), 6.0, 0),
-      Primitives.Planes.Create ((0.0, 0.0, -1.0), 7.0, 0));
+     (Primitives.Planes.Create ((0.0,  1.0, 0.0), 1.0, Wall_Mat_1),
+      Primitives.Planes.Create ((0.0, -1.0, 0.0), 7.0, Wall_Mat_1),
+      Primitives.Planes.Create (( 1.0, 0.0, 0.0), 1.0, Wall_Mat_2),
+      Primitives.Planes.Create ((-1.0, 0.0, 0.0), 7.0, Wall_Mat_3),
+      Primitives.Planes.Create ((0.0, 0.0,  1.0), 6.0, Wall_Mat_1),
+      Primitives.Planes.Create ((0.0, 0.0, -1.0), 7.0, Wall_Mat_1));
 
    Spheres : Entities.Entity_Array :=
-     (1 => Primitives.Spheres.Create ((3.0, 4.0, 3.0), 1.0, 3));
+     (1 => Primitives.Spheres.Create ((3.0, 4.0, 3.0), 1.0, Sphere_Mat));
 
    Boxes : Entities.Entity_Array :=
-     (1 => Primitives.Boxes.Create ((3.0, 0.0, 4.0), (1.5, 1.5, 1.5), 4));
+     (1 => Primitives.Boxes.Create ((3.0, 0.0, 4.0), (1.5, 1.5, 1.5), Box_Mat));
 
    Camera_Position    : Singles.Vector3 := (2.0, 2.0, 0.0);
    Camera_Orientation : Singles.Matrix3 := Singles.Identity3;
@@ -146,17 +157,6 @@ begin
    for Box of Boxes loop
       Renderers.Add_Primitive (Renderer, Primitives.Boxes.Box, Box);
    end loop;
-
-   Renderers.Set_Material
-     (Renderer, 0, Materials.Create ((0.0, 0.0, 0.0), 0.0, 0.6));
-   Renderers.Set_Material
-     (Renderer, 1, Materials.Create ((1.0, 0.0, 0.0), 0.0, 0.6));
-   Renderers.Set_Material
-     (Renderer, 2, Materials.Create ((0.0, 0.0, 1.0), 0.0, 0.6));
-   Renderers.Set_Material
-     (Renderer, 3, Materials.Create ((0.1, 0.1, 0.1), 0.9, 0.1));
-   Renderers.Set_Material
-     (Renderer, 4, Materials.Create ((0.0, 1.0, 0.0), 0.8, 0.3));
 
    Renderers.Set_Light (Renderer, 1, Lights.Spot_Lights.Spot_Light, Spot_Light_Instance);
 

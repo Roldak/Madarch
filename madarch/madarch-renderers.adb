@@ -277,6 +277,8 @@ package body Madarch.Renderers is
 
          All_Primitives => <>,
 
+         Last_Material_Index => 0,
+
          Partitioning_Buffer => Scene_Partitioning_Type.Allocate
            (Kind => GPU_Buffers.Shader_Storage_Buffer, Binding => 0))
       do
@@ -333,7 +335,7 @@ package body Madarch.Renderers is
 
    procedure Set_Material
      (Self   : in out Renderer;
-      Index  : Natural;
+      Index  : Materials.Id;
       Entity : Entities.Entity)
    is
       use GPU_Types;
@@ -343,8 +345,23 @@ package body Madarch.Renderers is
       L : Locations.Location := Materials_Description_Type.Address;
    begin
       Write_Entity
-        (W, L.Component ("materials").Component (Index + 1), Entity);
+        (W,
+         L.Component ("materials").Component (Positive (Index + 1)), Entity);
+
+      if Index >= Self.Last_Material_Index then
+         Self.Last_Material_Index := Index + 1;
+      end if;
    end Set_Material;
+
+   function Add_Material
+     (Self   : in out Renderer;
+      Entity : Entities.Entity) return Materials.Id
+   is
+      Index : Materials.Id := Self.Last_Material_Index;
+   begin
+      Set_Material (Self, Index, Entity);
+      return Index;
+   end Add_Material;
 
    generic
       with package Vectors is new Ada.Containers.Vectors (<>);

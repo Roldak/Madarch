@@ -53,8 +53,12 @@ package Madarch.Renderers is
 
    procedure Set_Material
      (Self   : in out Renderer;
-      Index  : Natural;
+      Index  : Materials.Id;
       Entity : Entities.Entity);
+
+   function Add_Material
+     (Self   : in out Renderer;
+      Entity : Entities.Entity) return Materials.Id;
 
    procedure Add_Primitive
      (Self   : in out Renderer;
@@ -105,6 +109,8 @@ private
       Screen_Pass     : Render_Passes.Screen_Render_Pass;
 
       All_Primitives  : Primitive_Entity_Maps.Map;
+
+      Last_Material_Index : Materials.Id;
 
       Partitioning_Buffer : GPU_Buffers.GPU_Buffer;
    end record;
