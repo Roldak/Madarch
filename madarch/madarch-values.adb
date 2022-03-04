@@ -180,6 +180,14 @@ package body Madarch.Values is
       end case;
    end Max;
 
+   function Clamp (V, LB, UB : Value) return Value is
+      use GL.Types;
+   begin
+      Check_Kinds (V, LB);
+      Check_Kinds (LB, UB);
+      return Min (Max (V, LB), UB);
+   end Clamp;
+
    function "-" (V : Value) return Value is
    begin
       case V.Kind is

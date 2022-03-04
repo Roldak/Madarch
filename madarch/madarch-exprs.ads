@@ -54,6 +54,7 @@ package Madarch.Exprs is
    function Dot (L, R : Expr) return Expr;
    function Min (L, R : Expr) return Expr;
    function Max (L, R : Expr) return Expr;
+   function Clamp (E, LB, UB : Expr) return Expr;
 
    function "-" (E : Expr) return Expr;
    function Length (E : Expr) return Expr;
@@ -145,7 +146,7 @@ private
    function Pre_GLSL (U : Un_Op) return String;
    function To_GLSL  (U : Un_Op) return String;
 
-   type Builtin_Kind is (Builtin_Dot, Builtin_Min, Builtin_Max,
+   type Builtin_Kind is (Builtin_Dot, Builtin_Min, Builtin_Max, Builtin_Clamp,
                          Builtin_Sin, Builtin_Cos, Builtin_Tan,
                          Builtin_Asin, Builtin_Acos, Builtin_Atan,
                          Builtin_Vec3);

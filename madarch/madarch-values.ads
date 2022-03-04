@@ -39,6 +39,7 @@ package Madarch.Values is
    function Dot (L, R : Value) return Value;
    function Min (L, R : Value) return Value;
    function Max (L, R : Value) return Value;
+   function Clamp (V, LB, UB : Value) return Value;
 
    function "-" (V : Value) return Value;
    function Length (V : Value) return Value;
