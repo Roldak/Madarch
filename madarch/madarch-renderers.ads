@@ -53,7 +53,7 @@ package Madarch.Renderers is
 
    procedure Set_Material
      (Self   : in out Renderer;
-      Index  : Positive;
+      Index  : Natural;
       Entity : Entities.Entity);
 
    procedure Add_Primitive

@@ -333,7 +333,7 @@ package body Madarch.Renderers is
 
    procedure Set_Material
      (Self   : in out Renderer;
-      Index  : Positive;
+      Index  : Natural;
       Entity : Entities.Entity)
    is
       use GPU_Types;
@@ -343,7 +343,7 @@ package body Madarch.Renderers is
       L : Locations.Location := Materials_Description_Type.Address;
    begin
       Write_Entity
-        (W, L.Component ("materials").Component (Index), Entity);
+        (W, L.Component ("materials").Component (Index + 1), Entity);
    end Set_Material;
 
    generic

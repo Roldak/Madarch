@@ -148,15 +148,15 @@ begin
    end loop;
 
    Renderers.Set_Material
-     (Renderer, 1, Materials.Create ((0.0, 0.0, 0.0), 0.0, 0.6));
+     (Renderer, 0, Materials.Create ((0.0, 0.0, 0.0), 0.0, 0.6));
    Renderers.Set_Material
-     (Renderer, 2, Materials.Create ((1.0, 0.0, 0.0), 0.0, 0.6));
+     (Renderer, 1, Materials.Create ((1.0, 0.0, 0.0), 0.0, 0.6));
    Renderers.Set_Material
-     (Renderer, 3, Materials.Create ((0.0, 0.0, 1.0), 0.0, 0.6));
+     (Renderer, 2, Materials.Create ((0.0, 0.0, 1.0), 0.0, 0.6));
    Renderers.Set_Material
-     (Renderer, 4, Materials.Create ((0.1, 0.1, 0.1), 0.9, 0.1));
+     (Renderer, 3, Materials.Create ((0.1, 0.1, 0.1), 0.9, 0.1));
    Renderers.Set_Material
-     (Renderer, 5, Materials.Create ((0.0, 1.0, 0.0), 0.8, 0.3));
+     (Renderer, 4, Materials.Create ((0.0, 1.0, 0.0), 0.8, 0.3));
 
    Renderers.Set_Light (Renderer, 1, Lights.Spot_Lights.Spot_Light, Spot_Light_Instance);
 
