@@ -21,9 +21,10 @@ The project uses [Alire](https://alire.ada.dev/) to manage its dependencies, but
 
 In order to build and run the examples:
 
-- First, you should first run `eval $(alr printenv)` to make the Madarch library available (make sure you built in first).
-- To build the `global_illumination` example, simply run `gprbuild examples/global_illumination/gi.gpr`.
-- You can then run it with `./examples/global_illumination/bin/main`. *Note that for now you **must** run it from Madarch's root directory*
+- Build the Madarch library as described above.
+- Run `eval $(alr printenv)` to make it available in the current shell.
+- To build the `global_illumination` example, run `gprbuild -P examples/global_illumination/gi.gpr`.
+- Run it with `./examples/global_illumination/bin/main`. *Note that for now you **must** run it from Madarch's root directory*
 
 The other examples follow a similar structure.
 
