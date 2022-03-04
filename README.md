@@ -11,6 +11,7 @@ Ray marching engine in Ada and GLSL.
 - World-space ambient occlusion.
 - Arbitrary meshes (voxelization, *WIP*).
 - Space partitioning (3D grid).
+- Volumetric lighting (light shafts).
 
 ## Illustrations
 
