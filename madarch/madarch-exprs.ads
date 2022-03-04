@@ -62,6 +62,13 @@ package Madarch.Exprs is
    function To_Float (E : Expr) return Expr;
    function Sign (E : Expr) return Expr;
 
+   function Sin (E : Expr) return Expr;
+   function Cos (E : Expr) return Expr;
+   function Tan (E : Expr) return Expr;
+   function Asin (E : Expr) return Expr;
+   function Acos (E : Expr) return Expr;
+   function Atan (E : Expr) return Expr;
+
    function Get (E : Struct_Expr; C : Component) return Expr'Class;
    function Get (E : Expr; C : GL.Index_3D) return Expr;
 
@@ -139,6 +146,8 @@ private
    function To_GLSL  (U : Un_Op) return String;
 
    type Builtin_Kind is (Builtin_Dot, Builtin_Min, Builtin_Max,
+                         Builtin_Sin, Builtin_Cos, Builtin_Tan,
+                         Builtin_Asin, Builtin_Acos, Builtin_Atan,
                          Builtin_Vec3);
 
    type Builtin_Call is new Expr_Node with record

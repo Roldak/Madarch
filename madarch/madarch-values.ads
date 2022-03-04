@@ -45,5 +45,12 @@ package Madarch.Values is
    function Normalize (V : Value) return Value;
    function Abs_Value (V : Value) return Value;
 
+   function Sin (V : Value) return Value;
+   function Cos (V : Value) return Value;
+   function Tan (V : Value) return Value;
+   function Asin (V : Value) return Value;
+   function Acos (V : Value) return Value;
+   function Atan (V : Value) return Value;
+
    function GPU_Type (K : Value_Kind) return GPU_Types.GPU_Type;
 end Madarch.Values;

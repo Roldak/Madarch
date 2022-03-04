@@ -228,6 +228,37 @@ package body Madarch.Values is
       end case;
    end Abs_Value;
 
+   generic
+      Name : String;
+      with function Trig (X : GLT.Single) return GLT.Single;
+   function Eval_Trig (V : Value) return Value;
+
+   function Eval_Trig (V : Value) return Value is
+   begin
+      case V.Kind is
+         when Float_Kind =>
+            return (Float_Kind, Trig (V.Float_Value));
+         when Int_Kind =>
+            return (Float_Kind, Trig (GLT.Single (V.Int_Value)));
+         when Vector3_Kind =>
+            raise Program_Error with "Cannot apply " & Name & " to vector3.";
+      end case;
+   end Eval_Trig;
+
+   function Eval_Sin  is new Eval_Trig ("Sin", Sin);
+   function Eval_Cos  is new Eval_Trig ("Cos", Cos);
+   function Eval_Tan  is new Eval_Trig ("Tan", Tan);
+   function Eval_Asin is new Eval_Trig ("Asin", ASin);
+   function Eval_Acos is new Eval_Trig ("Acos", Acos);
+   function Eval_Atan is new Eval_Trig ("Atan", Atan);
+
+   function Sin (V : Value) return Value renames Eval_Sin;
+   function Cos (V : Value) return Value renames Eval_Cos;
+   function Tan (V : Value) return Value renames Eval_Tan;
+   function Asin (V : Value) return Value renames Eval_Asin;
+   function Acos (V : Value) return Value renames Eval_Acos;
+   function Atan (V : Value) return Value renames Eval_Atan;
+
    function GPU_Type (K : Value_Kind) return GPU_Types.GPU_Type is
    begin
       case K is

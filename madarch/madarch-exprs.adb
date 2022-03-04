@@ -127,6 +127,29 @@ package body Madarch.Exprs is
    function Sign (E : Expr) return Expr is
      (Value => new Un_Op'(Un_Sign, E));
 
+   function Builtin_Call_Single_Arg
+     (Kind : Builtin_Kind; E : Expr) return Expr
+   is (Value => new Builtin_Call'(Kind,
+                                  new Expr_Array'(1 => E)));
+
+   function Sin (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Sin, E));
+
+   function Cos (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Cos, E));
+
+   function Tan (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Tan, E));
+
+   function Asin (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Asin, E));
+
+   function Acos (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Acos, E));
+
+   function Atan (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Atan, E));
+
    function Get (E : Struct_Expr; C : Component) return Expr'Class is
       R : Expr := (Value => new Get_Component'(E, C));
    begin
@@ -299,6 +322,18 @@ package body Madarch.Exprs is
             return Min (Arg_Values (1), Arg_Values (2));
          when Builtin_Max =>
             return Max (Arg_Values (1), Arg_Values (2));
+         when Builtin_Sin =>
+            return Sin (Arg_Values (1));
+         when Builtin_Cos =>
+            return Cos (Arg_Values (1));
+         when Builtin_Tan =>
+            return Tan (Arg_Values (1));
+         when Builtin_Asin =>
+            return Asin (Arg_Values (1));
+         when Builtin_Acos =>
+            return Acos (Arg_Values (1));
+         when Builtin_Atan =>
+            return Atan (Arg_Values (1));
          when Builtin_Vec3 =>
             return Values.Vector3
               ((Arg_Values (1).Float_Value,
@@ -324,6 +359,12 @@ package body Madarch.Exprs is
            when Builtin_Dot  => "dot",
            when Builtin_Min  => "min",
            when Builtin_Max  => "max",
+           when Builtin_Sin  => "sin",
+           when Builtin_Cos  => "cos",
+           when Builtin_Tan  => "tan",
+           when Builtin_Asin => "asin",
+           when Builtin_Acos => "acos",
+           when Builtin_Atan => "atan",
            when Builtin_Vec3 => "vec3");
    begin
       Append (Result, Builtin_Name);
