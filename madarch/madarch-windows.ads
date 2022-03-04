@@ -24,6 +24,9 @@ package Madarch.Windows is
    procedure Center_Cursor
      (Self : in out Window_Internal; DX, DY : out GL.Types.Single);
 
+   procedure Show_Cursor
+     (Self : in out Window_Internal; Show : Boolean);
+
    function Width  (Self : in out Window_Internal) return Glfw.Size;
    function Height (Self : in out Window_Internal) return Glfw.Size;
 

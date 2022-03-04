@@ -1,6 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Interfaces.C;
 
+with Glfw.Input.Mouse;
 with Glfw.Windows.Hints;
 with Glfw.Windows.Context;
 
@@ -65,6 +66,17 @@ package body Madarch.Windows is
          DY := GL.Types.Single (MY - CY);
       end;
    end Center_Cursor;
+
+   procedure Show_Cursor
+     (Self : in out Window_Internal; Show : Boolean)
+   is
+   begin
+      if Show then
+         Self.Set_Cursor_Mode (Glfw.Input.Mouse.Normal);
+      else
+         Self.Set_Cursor_Mode (Glfw.Input.Mouse.Hidden);
+      end if;
+   end Show_Cursor;
 
    function Width  (Self : in out Window_Internal) return Glfw.Size is
       W, H : Glfw.Size;

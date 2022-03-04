@@ -154,6 +154,7 @@ begin
 
    Renderers.Set_Light (Renderer, 1, Lights.Point_Lights.Point_Light, Point_Light_Instance);
 
+   Window.Show_Cursor (False);
    while Window.Is_Opened loop
       Window.Poll_Events;
       exit when Handle_Events;

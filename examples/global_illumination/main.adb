@@ -160,6 +160,7 @@ begin
 
    Renderers.Set_Light (Renderer, 1, Lights.Spot_Lights.Spot_Light, Spot_Light_Instance);
 
+   Window.Show_Cursor (False);
    while Window.Is_Opened loop
       Window.Poll_Events;
       exit when Handle_Events;
