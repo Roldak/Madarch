@@ -85,6 +85,10 @@ package body Madarch.Exprs is
    function "/" (L, R : Expr) return Expr is
      (Value => new Bin_Op'(Bin_Div, L, R));
 
+   function "**" (L, R : Expr) return Expr is
+     (Value => new Builtin_Call'(Builtin_Pow,
+                                 new Expr_Array'(L, R)));
+
    function "<"  (L, R : Expr) return Expr is
      (Value => new Bin_Op'(Bin_Lt, L, R));
 
@@ -328,6 +332,8 @@ package body Madarch.Exprs is
             return Max (Arg_Values (1), Arg_Values (2));
          when Builtin_Clamp =>
             return Clamp (Arg_Values (1), Arg_Values (2), Arg_Values (3));
+         when Builtin_Pow =>
+            return Arg_Values (1) ** Arg_Values (2);
          when Builtin_Sin =>
             return Sin (Arg_Values (1));
          when Builtin_Cos =>
@@ -366,6 +372,7 @@ package body Madarch.Exprs is
            when Builtin_Min   => "min",
            when Builtin_Max   => "max",
            when Builtin_Clamp => "clamp",
+           when Builtin_Pow   => "pow",
            when Builtin_Sin   => "sin",
            when Builtin_Cos   => "cos",
            when Builtin_Tan   => "tan",

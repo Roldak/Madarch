@@ -40,6 +40,7 @@ package Madarch.Exprs is
    function "-" (L, R : Expr) return Expr;
    function "*" (L, R : Expr) return Expr;
    function "/" (L, R : Expr) return Expr;
+   function "**" (L, R : Expr) return Expr;
 
    function "<"  (L, R : Expr) return Expr;
    function ">"  (L, R : Expr) return Expr;
@@ -50,6 +51,7 @@ package Madarch.Exprs is
    function "-" (L : Expr; R : Value) return Expr is (L - Literal (R));
    function "*" (L : Expr; R : Value) return Expr is (L * Literal (R));
    function "/" (L : Expr; R : Value) return Expr is (L / Literal (R));
+   function "**" (L : Expr; R : Value) return Expr is (L ** Literal (R));
 
    function Dot (L, R : Expr) return Expr;
    function Min (L, R : Expr) return Expr;
@@ -147,6 +149,7 @@ private
    function To_GLSL  (U : Un_Op) return String;
 
    type Builtin_Kind is (Builtin_Dot, Builtin_Min, Builtin_Max, Builtin_Clamp,
+                         Builtin_Pow,
                          Builtin_Sin, Builtin_Cos, Builtin_Tan,
                          Builtin_Asin, Builtin_Acos, Builtin_Atan,
                          Builtin_Vec3);

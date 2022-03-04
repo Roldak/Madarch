@@ -86,6 +86,19 @@ package body Madarch.Values is
       end case;
    end "/";
 
+   function "**" (L, R : Value) return Value is
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Vector3_Kind =>
+            raise Program_Error with "'**' not applicable to vector3.";
+         when Float_Kind =>
+            return (Float_Kind, L.Float_Value ** R.Float_Value);
+         when Int_Kind =>
+            return (Int_Kind, L.Int_Value ** Natural (R.Int_Value));
+      end case;
+   end "**";
+
    function To_Int (B : Boolean) return GL.Types.Int is
      (if B then 1 else 0);
 
