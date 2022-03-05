@@ -84,6 +84,12 @@ package Madarch.Renderers is
      (Self : in out Renderer; Orientation : Singles.Matrix3);
 
    procedure Update_Partionning (Self : in out Renderer);
+
+   function Eval_Distance_To
+     (Self     : Renderer;
+      Position : Singles.Vector3;
+      Prims    : Primitives.Primitive_Array;
+      Normal   : out Singles.Vector3) return Single;
 private
    package Entity_Vectors is new Ada.Containers.Vectors
      (Positive, Entities.Entity, Entities."=");

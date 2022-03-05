@@ -674,4 +674,33 @@ package body Madarch.Renderers is
          end loop;
       end loop;
    end Update_Partionning;
+
+   function Eval_Distance_To
+     (Self     : Renderer;
+      Position : Singles.Vector3;
+      Prims    : Primitives.Primitive_Array;
+      Normal   : out Singles.Vector3) return Single
+   is
+      Closest : Single := 1.0e10;
+
+      procedure Find_Closest
+        (Prim : Primitives.Primitive;
+         V    : aliased Entity_Vectors.Vector)
+      is
+         Dist : Single;
+      begin
+         for Ent of V loop
+            Dist := Primitives.Eval_Dist (Prim, Ent, Position);
+            if Dist < Closest then
+               Closest := Dist;
+               Normal  := Primitives.Eval_Normal (Prim, Ent, Position);
+            end if;
+         end loop;
+      end Find_Closest;
+   begin
+      for Prim of Prims loop
+         Find_Closest (Prim, Self.All_Primitives (Prim));
+      end loop;
+      return Closest;
+   end Eval_Distance_To;
 end Madarch.Renderers;
