@@ -29,4 +29,10 @@ package body Math_Utils is
       end loop;
       return R;
    end Div;
+
+   function Reflect (Dir, Normal : Singles.Vector3) return Singles.Vector3 is
+      use GL.Types.Singles;
+   begin
+      return Dir - 2.0 * (Dot (Dir, Normal)) * Normal;
+   end Reflect;
 end Math_Utils;

@@ -79,4 +79,6 @@ package Math_Utils is
    function Vec_Abs (V : Singles.Vector3) return Singles.Vector3 is
      ((abs V (GL.X), abs V (GL.Y), abs V (GL.Z)))
      with Inline;
+
+   function Reflect (Dir, Normal : Singles.Vector3) return Singles.Vector3;
 end Math_Utils;
