@@ -60,6 +60,12 @@ package Madarch.Renderers is
      (Self   : in out Renderer;
       Entity : Entities.Entity) return Materials.Id;
 
+   procedure Set_Primitive
+     (Self   : in out Renderer;
+      Prim   : Primitives.Primitive;
+      Index  : Positive;
+      Entity : Entities.Entity);
+
    procedure Add_Primitive
      (Self   : in out Renderer;
       Prim   : Primitives.Primitive;

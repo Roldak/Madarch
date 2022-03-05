@@ -363,6 +363,27 @@ package body Madarch.Renderers is
       return Index;
    end Add_Material;
 
+   procedure Set_Primitive
+     (Self   : in out Renderer;
+      Prim   : Primitives.Primitive;
+      Index  : Positive;
+      Entity : Entities.Entity)
+   is
+      use GPU_Types;
+
+      W : GPU_Buffers.Writer := GPU_Buffers.Start (Self.Scene_Buffer);
+
+      Array_Loc : Locations.Location;
+      Count_Loc : Locations.Location;
+   begin
+      Self.All_Primitives (Prim) (Index) := Entity;
+
+      Scenes.Get_Primitives_Location (Self.Scene, Prim, Array_Loc, Count_Loc);
+
+      Write_Entity
+        (W, Array_Loc.Component (Index), Entity);
+   end Set_Primitive;
+
    generic
       with package Vectors is new Ada.Containers.Vectors (<>);
       with package Maps is new Ada.Containers.Hashed_Maps
