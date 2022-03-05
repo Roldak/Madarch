@@ -1,35 +1,61 @@
+with Ada.Unchecked_Deallocation;
+
 with GL;
 with GL.Types;
 
 package body Madarch.Exprs is
-   function Create return Eval_Context is
-     (others => <>);
+   procedure Free is new Ada.Unchecked_Deallocation
+     (Eval_Context_Node, Eval_Context_Node_Access);
 
    function Append
      (Self : Eval_Context;
-      Key  : String;
+      Key  : Unbounded_String;
       Val  : Entity) return Eval_Context
    is
-      R : Eval_Context := Self;
    begin
-      R.Ents.Insert (To_Unbounded_String (Key), Val);
-      return R;
+      return (Ref => new Eval_Context_Node'
+        (K      => True,
+         Parent => Self,
+         Name   => Key,
+         Ent    => Val));
    end Append;
+
+   function Append
+     (Self : Eval_Context;
+      Key  : Unbounded_String;
+      Val  : Value) return Eval_Context
+   is
+   begin
+      return (Ref => new Eval_Context_Node'
+        (K      => False,
+         Parent => Self,
+         Name   => Key,
+         Val    => Val));
+   end Append;
+
+   procedure Free (Ctx : in out Eval_Context) is
+   begin
+      if Ctx.Ref /= null then
+         Free (Ctx.Ref.Parent);
+         Free (Ctx.Ref);
+      end if;
+   end Free;
 
    function Get
      (Ctx : Eval_Context;
       Exp : Struct_Expr) return Entity
    is
       use Ada.Strings.Unbounded;
-
-      Cursor : Entity_Maps.Cursor := Ctx.Ents.Find (Exp.Name);
    begin
-      if Entity_Maps.Has_Element (Cursor) then
-         return Entity_Maps.Element (Cursor);
+      if Ctx.Ref = null then
+         raise Program_Error
+            with "Key '" & To_String (Exp.Name)
+                 & "' not in eval context entities";
+      elsif Ctx.Ref.Name = Exp.Name then
+         return Ctx.Ref.Ent;
+      else
+         return Get (Ctx.Ref.Parent, Exp);
       end if;
-      raise Program_Error
-         with "Key '" & To_String (Exp.Name)
-              & "' not in eval context entities";
    end Get;
 
    function Get
@@ -37,26 +63,17 @@ package body Madarch.Exprs is
       Exp : Ident) return Value
    is
       use Ada.Strings.Unbounded;
-
-      Cursor : Value_Maps.Cursor := Ctx.Vals.Find (Exp.Name);
    begin
-      if Value_Maps.Has_Element (Cursor) then
-         return Value_Maps.Element (Cursor);
+      if Ctx.Ref = null then
+         raise Program_Error
+            with "Key '" & To_String (Exp.Name)
+                 & "' not in eval context values";
+      elsif Ctx.Ref.Name = Exp.Name then
+         return Ctx.Ref.Val;
+      else
+         return Get (Ctx.Ref.Parent, Exp);
       end if;
-      raise Program_Error
-         with "Key '" & To_String (Exp.Name) & "' not in eval context values";
    end Get;
-
-   function Append
-     (Self : Eval_Context;
-      Key  : String;
-      Val  : Value) return Eval_Context
-   is
-      R : Eval_Context := Self;
-   begin
-      R.Vals.Insert (To_Unbounded_String (Key), Val);
-      return R;
-   end Append;
 
    function Literal (V : Value) return Expr is
      (Value => new Lit'(V => V));
@@ -444,11 +461,12 @@ package body Madarch.Exprs is
    -- Var_Body
 
    function Eval (V : Var_Body; Ctx : Eval_Context) return Value is
-      Name    : String := To_String (V.Name);
       Var_Val : Value := V.Value.Eval (Ctx);
-      New_Ctx : Eval_Context := Append (Ctx, Name, Var_Val);
+      New_Ctx : Eval_Context := Append (Ctx, V.Name, Var_Val);
    begin
-      return V.In_Body.Eval (New_Ctx);
+      return R : Value := V.In_Body.Eval (New_Ctx) do
+         Free (New_Ctx.Ref);
+      end return;
    end Eval;
 
    function Pre_GLSL (V : Var_Body) return String is

@@ -65,6 +65,9 @@ private
       Distance : Primitive_Point_Function;
       Normal   : Primitive_Point_Function;
       Material : Primitive_Function;
+
+      Cached_Dist_Expr : access Exprs.Expr'Class;
+      Cached_Norm_Expr : access Exprs.Expr'Class;
    end record;
 
    type Primitive is access Primitive_Internal;

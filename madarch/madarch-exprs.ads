@@ -14,17 +14,19 @@ package Madarch.Exprs is
 
    type Eval_Context is private;
 
-   function Create return Eval_Context;
+   Empty_Context : constant Eval_Context;
 
    function Append
      (Self : Eval_Context;
-      Key  : String;
+      Key  : Unbounded_String;
       Val  : Entity) return Eval_Context;
 
    function Append
      (Self : Eval_Context;
-      Key  : String;
+      Key  : Unbounded_String;
       Val  : Value) return Eval_Context;
+
+   procedure Free (Ctx : in out Eval_Context);
 
    function Eval (E : Expr; Ctx : Eval_Context) return Value;
    function Pre_GLSL (E : Expr) return String;
@@ -85,19 +87,25 @@ private
    type Expr_Node is abstract tagged null record;
    type Expr_Access is access all Expr_Node'Class;
 
-   function Unbounded_Eq (L, R : Unbounded_String) return Boolean is
-     (L = R);
-
-   package Entity_Maps is new Ada.Containers.Hashed_Maps
-     (Unbounded_String, Entity, Hash, Unbounded_Eq);
-
-   package Value_Maps is new Ada.Containers.Hashed_Maps
-     (Unbounded_String, Value, Hash, Unbounded_Eq);
+   type Eval_Context_Node;
+   type Eval_Context_Node_Access is access Eval_Context_Node;
 
    type Eval_Context is record
-      Ents : Entity_Maps.Map;
-      Vals : Value_Maps.Map;
+      Ref : Eval_Context_Node_Access := null;
    end record;
+
+   type Eval_Context_Node (K : Boolean) is record
+      Parent : Eval_Context;
+      Name   : Unbounded_String;
+      case K is
+         when True =>
+            Ent : Entity;
+         when False =>
+            Val : Value;
+      end case;
+   end record;
+
+   Empty_Context : constant Eval_Context := (Ref => null);
 
    function Eval (E : Expr_Node; Ctx : Eval_Context) return Value is abstract;
    function Pre_GLSL (E : Expr_Node) return String is ("");

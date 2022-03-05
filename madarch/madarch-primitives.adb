@@ -5,6 +5,18 @@ with System;
 with Madarch.Values;
 
 package body Madarch.Primitives is
+   Entity_Var_Name : constant Unbounded_String :=
+      To_Unbounded_String ("prim");
+
+   Point_Var_Name : constant Unbounded_String :=
+      To_Unbounded_String ("x");
+
+   Entity_Expr : constant Exprs.Struct_Expr :=
+      Exprs.Struct_Identifier (To_String (Entity_Var_Name));
+
+   Point_Expr  : constant Exprs.Expr :=
+      Exprs.Value_Identifier (To_String (Point_Var_Name));
+
    function Create
      (Name     : String;
       Comps    : Components.Component_Array;
@@ -18,7 +30,9 @@ package body Madarch.Primitives is
          Comps    => new Components.Component_Array'(Comps),
          Distance => Distance,
          Normal   => Normal,
-         Material => Material);
+         Material => Material,
+         Cached_Dist_Expr => null,
+         Cached_Norm_Expr => null);
    end Create;
 
    function Get_Name (Prim : Primitive) return String is
@@ -51,28 +65,39 @@ package body Madarch.Primitives is
       Point : Exprs.Expr) return Exprs.Expr'Class;
 
    function Eval_Expr_From_Point
-     (Func   : Point_Expr_Fun;
-      Prim   : Primitive;
+     (Exp    : Exprs.Expr'Class;
       Entity : Entities.Entity;
       Point  : Singles.Vector3) return Values.Value
    is
-      Entity_Expr  : Exprs.Struct_Expr := Exprs.Struct_Identifier ("prim");
-      Point_Expr   : Exprs.Expr        := Exprs.Value_Identifier ("x");
-      Compute_Expr : Exprs.Expr'Class  := Func (Prim, Entity_Expr, Point_Expr);
-      Ctx : Exprs.Eval_Context := Exprs.Create;
+      Ctx : Exprs.Eval_Context := Exprs.Empty_Context;
    begin
-      Ctx := Exprs.Append (Ctx, "prim", Entity);
-      Ctx := Exprs.Append (Ctx, "x",    Values.Vector3 (Point));
-      return Compute_Expr.Eval (Ctx);
+      Ctx := Exprs.Append (Ctx, Entity_Var_Name, Entity);
+      Ctx := Exprs.Append (Ctx, Point_Var_Name, Values.Vector3 (Point));
+      return V : Values.Value := Exp.Eval (Ctx) do
+         Exprs.Free (Ctx);
+      end return;
    end Eval_Expr_From_Point;
+
+   function Cache_Distance
+     (Prim : Primitive;
+      Expr : Exprs.Expr'Class) return Exprs.Expr'Class
+   is
+   begin
+      Prim.Cached_Dist_Expr := new Exprs.Expr'Class'(Expr);
+      return Expr;
+   end Cache_Distance;
 
    function Eval_Dist
      (Prim   : Primitive;
       Entity : Entities.Entity;
       Point  : Singles.Vector3) return Single
    is
-      Res : Values.Value := Eval_Expr_From_Point
-        (Get_Dist_Expr'Access, Prim, Entity, Point);
+      Expr : Exprs.Expr'Class :=
+        (if Prim.Cached_Dist_Expr /= null
+         then Prim.Cached_Dist_Expr.all
+         else Cache_Distance (Prim, Prim.Distance (Entity_Expr, Point_Expr)));
+
+      Res : Values.Value := Eval_Expr_From_Point (Expr, Entity, Point);
    begin
       case Res.Kind is
          when Values.Float_Kind =>
@@ -82,13 +107,26 @@ package body Madarch.Primitives is
       end case;
    end Eval_Dist;
 
+   function Cache_Normal
+     (Prim : Primitive;
+      Expr : Exprs.Expr'Class) return Exprs.Expr'Class
+   is
+   begin
+      Prim.Cached_Norm_Expr := new Exprs.Expr'Class'(Expr);
+      return Expr;
+   end Cache_Normal;
+
    function Eval_Normal
      (Prim   : Primitive;
       Entity : Entities.Entity;
       Point  : Singles.Vector3) return Singles.Vector3
    is
-      Res : Values.Value := Eval_Expr_From_Point
-        (Get_Normal_Expr'Access, Prim, Entity, Point);
+      Expr : Exprs.Expr'Class :=
+        (if Prim.Cached_Norm_Expr /= null
+         then Prim.Cached_Norm_Expr.all
+         else Cache_Normal (Prim, Prim.Normal (Entity_Expr, Point_Expr)));
+
+      Res : Values.Value := Eval_Expr_From_Point (Expr, Entity, Point);
    begin
       case Res.Kind is
          when Values.Vector3_Kind =>
