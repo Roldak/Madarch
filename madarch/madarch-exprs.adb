@@ -20,24 +20,31 @@ package body Madarch.Exprs is
      (Ctx : Eval_Context;
       Exp : Struct_Expr) return Entity
    is
+      use Ada.Strings.Unbounded;
+
       Cursor : Entity_Maps.Cursor := Ctx.Ents.Find (Exp.Name);
    begin
       if Entity_Maps.Has_Element (Cursor) then
          return Entity_Maps.Element (Cursor);
       end if;
-      raise Program_Error with "Key not in eval context entities";
+      raise Program_Error
+         with "Key '" & To_String (Exp.Name)
+              & "' not in eval context entities";
    end Get;
 
    function Get
      (Ctx : Eval_Context;
       Exp : Ident) return Value
    is
+      use Ada.Strings.Unbounded;
+
       Cursor : Value_Maps.Cursor := Ctx.Vals.Find (Exp.Name);
    begin
       if Value_Maps.Has_Element (Cursor) then
          return Value_Maps.Element (Cursor);
       end if;
-      raise Program_Error with "Key not in eval context values";
+      raise Program_Error
+         with "Key '" & To_String (Exp.Name) & "' not in eval context values";
    end Get;
 
    function Append
