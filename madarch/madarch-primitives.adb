@@ -45,33 +45,58 @@ package body Madarch.Primitives is
       Inst : Exprs.Struct_Expr) return Exprs.Expr'Class
    is (Prim.Material (Inst));
 
+   type Point_Expr_Fun is access function
+     (Prim  : Primitive;
+      Inst  : Exprs.Struct_Expr;
+      Point : Exprs.Expr) return Exprs.Expr'Class;
+
+   function Eval_Expr_From_Point
+     (Func   : Point_Expr_Fun;
+      Prim   : Primitive;
+      Entity : Entities.Entity;
+      Point  : Singles.Vector3) return Values.Value
+   is
+      Entity_Expr  : Exprs.Struct_Expr := Exprs.Struct_Identifier ("prim");
+      Point_Expr   : Exprs.Expr        := Exprs.Value_Identifier ("x");
+      Compute_Expr : Exprs.Expr'Class  := Func (Prim, Entity_Expr, Point_Expr);
+      Ctx : Exprs.Eval_Context := Exprs.Create;
+   begin
+      Ctx := Exprs.Append (Ctx, "prim", Entity);
+      Ctx := Exprs.Append (Ctx, "x",    Values.Vector3 (Point));
+      return Compute_Expr.Eval (Ctx);
+   end Eval_Expr_From_Point;
+
    function Eval_Dist
      (Prim   : Primitive;
       Entity : Entities.Entity;
       Point  : Singles.Vector3) return Single
    is
-      Entity_Expr  : Exprs.Struct_Expr := Exprs.Struct_Identifier ("prim");
-      Point_Expr   : Exprs.Expr        := Exprs.Value_Identifier ("x");
-
-      Dist_Expr : Exprs.Expr'Class :=
-         Get_Dist_Expr (Prim, Entity_Expr, Point_Expr);
-
-      Ctx : Exprs.Eval_Context := Exprs.Create;
+      Res : Values.Value := Eval_Expr_From_Point
+        (Get_Dist_Expr'Access, Prim, Entity, Point);
    begin
-      Ctx := Exprs.Append (Ctx, "prim", Entity);
-      Ctx := Exprs.Append (Ctx, "x",    Values.Vector3 (Point));
-
-      declare
-         Res : Values.Value := Dist_Expr.Eval (Ctx);
-      begin
-         case Res.Kind is
-            when Values.Float_Kind =>
-               return Res.Float_Value;
-            when others =>
-               raise Program_Error with "Unexpected value kind.";
-         end case;
-      end;
+      case Res.Kind is
+         when Values.Float_Kind =>
+            return Res.Float_Value;
+         when others =>
+            raise Program_Error with "Unexpected value kind.";
+      end case;
    end Eval_Dist;
+
+   function Eval_Normal
+     (Prim   : Primitive;
+      Entity : Entities.Entity;
+      Point  : Singles.Vector3) return Singles.Vector3
+   is
+      Res : Values.Value := Eval_Expr_From_Point
+        (Get_Normal_Expr'Access, Prim, Entity, Point);
+   begin
+      case Res.Kind is
+         when Values.Vector3_Kind =>
+            return Res.Vector3_Value;
+         when others =>
+            raise Program_Error with "Unexpected value kind.";
+      end case;
+   end Eval_Normal;
 
    function Convert is new Ada.Unchecked_Conversion
      (System.Address, Long_Integer) with Inline;

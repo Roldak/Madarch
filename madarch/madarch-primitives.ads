@@ -52,6 +52,11 @@ package Madarch.Primitives is
       Entity : Entities.Entity;
       Point  : Singles.Vector3) return Single;
 
+   function Eval_Normal
+     (Prim   : Primitive;
+      Entity : Entities.Entity;
+      Point  : Singles.Vector3) return Singles.Vector3;
+
    function Hash (Prim : Primitive) return Ada.Containers.Hash_Type;
 private
    type Primitive_Internal is record
