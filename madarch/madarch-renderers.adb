@@ -494,7 +494,9 @@ package body Madarch.Renderers is
    function Append_Natural is new Append_Element_G
      (Natural_Vectors, Primitive_Natural_Maps);
 
-   procedure Update_Partitioning (Self : in out Renderer) is
+   procedure Update_Partitioning
+     (Self : in out Renderer; Optimized : Boolean := True)
+   is
       function To_Vec (X, Y, Z : Integer) return Singles.Vector3 is
         ((Single (X), Single (Y), Single (Z)));
 
@@ -654,10 +656,25 @@ package body Madarch.Renderers is
                end loop;
             end loop;
          end Find_Candidates;
+
+         procedure Assume_Candidates is
+            Dummy_Count : Natural;
+         begin
+            for Pre of Precandidates loop
+               Dummy_Count := Append_Natural
+                 (Candidates, Pre.Prim, Pre.Index);
+            end loop;
+         end Assume_Candidates;
       begin
          Self.All_Primitives.Iterate (Find_Closest'Access);
          Self.All_Primitives.Iterate (Find_Precandidates'Access);
-         Find_Candidates;
+
+         if Optimized then
+            Find_Candidates;
+         else
+            Assume_Candidates;
+         end if;
+
          for Prim of Scenes.Get_Primitives (Self.Scene) loop
             Write_Partitioning_Info (Prim);
          end loop;

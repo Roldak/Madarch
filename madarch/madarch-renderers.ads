@@ -83,7 +83,8 @@ package Madarch.Renderers is
    procedure Set_Camera_Orientation
      (Self : in out Renderer; Orientation : Singles.Matrix3);
 
-   procedure Update_Partitioning (Self : in out Renderer);
+   procedure Update_Partitioning
+     (Self : in out Renderer; Optimized : Boolean := True);
 
    function Eval_Distance_To
      (Self     : Renderer;
