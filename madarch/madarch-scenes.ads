@@ -49,7 +49,8 @@ package Madarch.Scenes is
       All_Lights     : Light_Count_Array;
       Partitioning   : Partitioning_Settings := Default_Partitioning_Settings;
       Max_Dist       : Single := 20.0;
-      Loop_Strategy  : Codegen_Loop_Strategy := Unify) return Scene;
+      Loop_Strategy  : Codegen_Loop_Strategy := Unify;
+      Print_GLSL     : Boolean := False) return Scene;
 
    function Get_GLSL (S : Scene) return String;
 

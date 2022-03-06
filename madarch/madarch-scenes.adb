@@ -1058,7 +1058,8 @@ package body Madarch.Scenes is
       All_Lights     : Light_Count_Array;
       Partitioning   : Partitioning_Settings := Default_Partitioning_Settings;
       Max_Dist       : GL.Types.Single := 20.0;
-      Loop_Strategy  : Codegen_Loop_Strategy := Unify) return Scene
+      Loop_Strategy  : Codegen_Loop_Strategy := Unify;
+      Print_GLSL     : Boolean := False) return Scene
    is
       Prims : Primitives.Primitive_Array_Access :=
          new Primitives.Primitive_Array'(1 .. All_Primitives'Length => <>);
@@ -1074,7 +1075,7 @@ package body Madarch.Scenes is
          Lits (I) := All_Lights (I).Light;
       end loop;
 
-      return new Scene_Internal'
+      return S : Scene := new Scene_Internal'
         (Prims    => Prims,
          Lits     => Lits,
          GLSL     => Generate_Code
@@ -1089,7 +1090,12 @@ package body Madarch.Scenes is
          Partitioning_GPU_Type =>
            (if Partitioning.Enable
             then Compute_Partitioning_GPU_Type (Partitioning, Prims)
-            else GPU_Types.Base.Int));
+            else GPU_Types.Base.Int))
+      do
+         if Print_GLSL then
+            Ada.Text_IO.Put_Line (To_String (S.GLSL));
+         end if;
+      end return;
    end Compile;
 
    function Get_GLSL (S : Scene) return String is
