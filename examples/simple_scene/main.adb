@@ -119,7 +119,7 @@ begin
 
    Renderers.Set_Camera_Position (Renderer, (2.0, 2.0, 0.0));
 
-   Renderers.Update_Partionning (Renderer);
+   Renderers.Update_Partitioning (Renderer);
 
    while Window.Is_Opened loop
       FPS_Clock := Ada.Calendar.Clock;

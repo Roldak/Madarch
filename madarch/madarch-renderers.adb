@@ -494,7 +494,7 @@ package body Madarch.Renderers is
    function Append_Natural is new Append_Element_G
      (Natural_Vectors, Primitive_Natural_Maps);
 
-   procedure Update_Partionning (Self : in out Renderer) is
+   procedure Update_Partitioning (Self : in out Renderer) is
       function To_Vec (X, Y, Z : Integer) return Singles.Vector3 is
         ((Single (X), Single (Y), Single (Z)));
 
@@ -673,7 +673,7 @@ package body Madarch.Renderers is
             end loop;
          end loop;
       end loop;
-   end Update_Partionning;
+   end Update_Partitioning;
 
    function Eval_Distance_To
      (Self     : Renderer;
