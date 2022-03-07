@@ -143,6 +143,9 @@ package body Madarch.Exprs is
      (Value => new Builtin_Call'(Builtin_Min,
                                  new Expr_Array'((L, R))));
 
+   function Min (A, B, C : Expr) return Expr is
+     (A.Min (B).Min (C));
+
    function Max (L, R : Expr) return Expr is
      (Value => new Builtin_Call'(Builtin_Max,
                                  new Expr_Array'((L, R))));

@@ -62,6 +62,7 @@ package Madarch.Exprs is
    function Dot (L, R : Expr) return Expr;
    function Cross (L, R : Expr) return Expr;
    function Min (L, R : Expr) return Expr;
+   function Min (A, B, C : Expr) return Expr;
    function Max (L, R : Expr) return Expr;
    function Clamp (E, LB, UB : Expr) return Expr;
 
