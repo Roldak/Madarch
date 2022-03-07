@@ -11,6 +11,7 @@ with Madarch.Scenes;
 with Madarch.Values;
 with Madarch.Windows;
 
+with Compute_Shaders;
 with GPU_Buffers;
 with Render_Passes;
 
@@ -83,14 +84,17 @@ package Madarch.Renderers is
    procedure Set_Camera_Orientation
      (Self : in out Renderer; Orientation : Singles.Matrix3);
 
-   procedure Update_Partitioning
-     (Self : in out Renderer; Optimized : Boolean := True);
-
    function Eval_Distance_To
      (Self     : Renderer;
       Position : Singles.Vector3;
       Prims    : Primitives.Primitive_Array;
       Normal   : out Singles.Vector3) return Single;
+
+   type Partitioning_Update_Method is (CPU_Best, CPU_Fast, GPU_Fast);
+
+   procedure Update_Partitioning
+     (Self : in out Renderer;
+      Method : Partitioning_Update_Method := GPU_Fast);
 private
    package Entity_Vectors is new Ada.Containers.Vectors
      (Positive, Entities.Entity, Entities."=");
@@ -126,6 +130,8 @@ private
       Last_Material_Index : Materials.Id;
 
       Partitioning_Buffer : GPU_Buffers.GPU_Buffer;
+
+      Partitioning_Compute_Shader : Compute_Shaders.Compute_Shader;
    end record;
 
    Default_Probe_Settings : constant Probe_Settings := (others => <>);

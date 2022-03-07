@@ -30,7 +30,7 @@ package Madarch.Scenes is
    type Partitioning_Settings (Enable : Boolean := True) is record
       case Enable is
          when True =>
-            Index_Count     : Natural := 10;
+            Index_Count     : Natural := 20;
             Border_Behavior : Partitioning_Border_Behavior := Clamp;
             Grid_Dimensions : Ints.Vector3    := (10, 10, 20);
             Grid_Spacing    : Singles.Vector3 := (1.0, 1.0, 1.0);

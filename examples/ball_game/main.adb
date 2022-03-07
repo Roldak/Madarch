@@ -32,7 +32,7 @@ procedure Main is
                          2 => (Primitives.Planes.Plane, 10),
                          3 => (Primitives.Boxes.Box, 10)),
       All_Lights     => (1 => (Lights.Spot_Lights.Spot_Light, 4)),
-      Partitioning   => (Enable => False));
+      Print_GLSL     => True);
 
    Window : Windows.Window := Windows.Open (1000, 1000, "Ball_Game");
 
@@ -242,6 +242,7 @@ begin
       Step_Physics (0.01);
 
       FPS_Clock := Ada.Calendar.Clock;
+      Renderers.Update_Partitioning (Renderer);
       Renderers.Render (Renderer);
       Ada.Text_IO.Put_Line
         (Ada.Calendar."-"(Ada.Calendar.Clock, FPS_Clock)'Image);

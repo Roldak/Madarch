@@ -8,6 +8,7 @@ with Madarch.Values;
 with GPU_Types.Base;
 with GPU_Types.Fixed_Arrays;
 with GPU_Types.Structs;
+with Math_Utils;
 
 package body Madarch.Scenes is
    LF  : Character renames Ada.Characters.Latin_1.LF;
@@ -873,6 +874,75 @@ package body Madarch.Scenes is
          To_String (Stmts));
    end Partitioning_Closest_Primitive_Info;
 
+   function Partitioning_Compute_Grid_Cell
+     (Partitioning  : Partitioning_Settings;
+      Prims_Count   : Primitive_Count_Array) return Unbounded_String
+   is
+      Stmts : Unbounded_String;
+   begin
+
+      Append (Stmts, "vec3 virtual_center = vec3(cell_id) + vec3(0.5);");
+      Append (Stmts, LF);
+
+      Append (Stmts, "vec3 center = virtual_center * ");
+      Append (Stmts, Vector3_String (Partitioning.Grid_Spacing));
+      Append (Stmts, " + ");
+      Append (Stmts, Vector3_String (Partitioning.Grid_Offset));
+      Append (Stmts, ";");
+      Append (Stmts, LF);
+
+      Append
+        (Stmts, "float closest_from_center = closest_primitive (center);");
+      Append (Stmts, LF);
+      Append (Stmts, "float max_dist = closest_from_center + ");
+      Append
+        (Stmts,
+         Single'Image (Math_Utils.Length (Partitioning.Grid_Spacing)));
+      Append (Stmts, ";");
+      Append (Stmts, LF);
+
+      for Prim_Count of Prims_Count loop
+         Append (Stmts, "info.");
+         Append (Stmts, Prim_Count_Reference (Prim_Count.Prim));
+         Append (Stmts, " = 0;");
+         Append (Stmts, LF);
+      end loop;
+
+      Append (Stmts, "int prim_index = 0;");
+      Append (Stmts, LF);
+
+      for Prim_Count of Prims_Count loop
+         Append (Stmts, "for (int i = 0; i < ");
+         Append (Stmts, Prim_Count_Reference (Prim_Count.Prim));
+         Append (Stmts, "; ++i) {");
+         Append (Stmts, LF);
+         Append (Stmts, "float dist = ");
+         Append (Stmts, Dist_Function_Reference (Prim_Count.Prim));
+         Append (Stmts, "(");
+         Append (Stmts, Prim_Array_Reference (Prim_Count.Prim));
+         Append (Stmts, "[i], center);");
+         Append (Stmts, LF);
+         Append (Stmts, "if (dist < max_dist) {");
+         Append (Stmts, LF);
+         Append (Stmts, "info.");
+         Append (Stmts, Prim_Count_Reference (Prim_Count.Prim));
+         Append (Stmts, " += 1;");
+         Append (Stmts, LF);
+         Append (Stmts, "info.indices[prim_index++] = i;");
+         Append (Stmts, LF);
+         Append (Stmts, "}");
+         Append (Stmts, LF);
+         Append (Stmts, "}");
+         Append (Stmts, LF);
+      end loop;
+
+      return Procedure_Declaration
+        ("partitioning_compute_grid_cell",
+         (1 => Create ("uvec3", "cell_id"),
+          2 => Create ("partition_info", "info", "out")),
+         To_String (Stmts));
+   end Partitioning_Compute_Grid_Cell;
+
    function Generate_Code
      (Prims_Count   : Primitive_Count_Array;
       Lights_Count  : Light_Count_Array;
@@ -920,6 +990,9 @@ package body Madarch.Scenes is
       Append (Res, DLF);
 
       if Partitioning.Enable then
+         Append (Res, "#define PARTITIONING_ENABLED 1");
+         Append (Res, LF);
+
          Append (Res, Partitioning_Info_Struct_Declaration (Partitioning, Prims));
          Append (Res, DLF);
 
@@ -933,7 +1006,13 @@ package body Madarch.Scenes is
          Append (Res, Partitioning_Closest_Primitive_Info
            (Partitioning, Prims_Count, Loop_Strategy));
          Append (Res, DLF);
+
+         Append (Res, Partitioning_Compute_Grid_Cell
+           (Partitioning, Prims_Count));
+         Append (Res, DLF);
       else
+         Append (Res, "#define PARTITIONING_ENABLED 0");
+         Append (Res, LF);
          Append (Res, "#define partitioning_closest closest_primitive");
          Append (Res, LF);
          Append (Res, "#define partitioning_closest_info closest_primitive_info");

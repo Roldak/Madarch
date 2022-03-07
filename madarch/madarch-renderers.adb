@@ -163,6 +163,9 @@ package body Madarch.Renderers is
 
       Irradiance_Shader : GL.Objects.Shaders.Shader
         (Kind => GL.Objects.Shaders.Fragment_Shader);
+
+      Partitioning_Shader : GL.Objects.Shaders.Shader
+        (Kind => GL.Objects.Shaders.Compute_Shader);
    begin
       Glfw.Windows.Context.Make_Current (Window);
 
@@ -206,6 +209,13 @@ package body Madarch.Renderers is
          "madarch/glsl/update_probe_irradiance.glsl",
          Probe_Layout_Macros,
          No_File_Substitution_Array,
+         "430");
+
+      Load_Shader
+        (Partitioning_Shader,
+         "madarch/glsl/compute_scene_partitioning.glsl",
+         No_Macro_Definition_Array,
+         File_Substs,
          "430");
 
       return R : Renderer := new Renderer_Internal'
@@ -280,7 +290,10 @@ package body Madarch.Renderers is
          Last_Material_Index => 0,
 
          Partitioning_Buffer => Scene_Partitioning_Type.Allocate
-           (Kind => GPU_Buffers.Shader_Storage_Buffer, Binding => 0))
+           (Kind => GPU_Buffers.Shader_Storage_Buffer, Binding => 0),
+
+         Partitioning_Compute_Shader => Compute_Shaders.Create
+           (Partitioning_Shader))
       do
          Setup_Probe_Layout (R, Probes);
       end return;
@@ -483,6 +496,35 @@ package body Madarch.Renderers is
       Self.Camera_Orientation := Orientation;
    end Set_Camera_Orientation;
 
+   function Eval_Distance_To
+     (Self     : Renderer;
+      Position : Singles.Vector3;
+      Prims    : Primitives.Primitive_Array;
+      Normal   : out Singles.Vector3) return Single
+   is
+      Closest : Single := 1.0e10;
+
+      procedure Find_Closest
+        (Prim : Primitives.Primitive;
+         V    : aliased Entity_Vectors.Vector)
+      is
+         Dist : Single;
+      begin
+         for Ent of V loop
+            Dist := Primitives.Eval_Dist (Prim, Ent, Position);
+            if Dist < Closest then
+               Closest := Dist;
+               Normal  := Primitives.Eval_Normal (Prim, Ent, Position);
+            end if;
+         end loop;
+      end Find_Closest;
+   begin
+      for Prim of Prims loop
+         Find_Closest (Prim, Self.All_Primitives (Prim));
+      end loop;
+      return Closest;
+   end Eval_Distance_To;
+
    package Natural_Vectors is new Ada.Containers.Vectors (Positive, Natural);
    package Primitive_Natural_Maps is new Ada.Containers.Hashed_Maps
      (Primitives.Primitive,
@@ -494,7 +536,19 @@ package body Madarch.Renderers is
    function Append_Natural is new Append_Element_G
      (Natural_Vectors, Primitive_Natural_Maps);
 
-   procedure Update_Partitioning
+   procedure Update_Partitioning_GPU (Self : in out Renderer) is
+      use GL;
+
+      Settings : constant Scenes.Partitioning_Settings :=
+         Scenes.Get_Partitioning_Settings (Self.Scene);
+   begin
+      Self.Partitioning_Compute_Shader.Dispatch
+        (UInt (Settings.Grid_Dimensions (X) / 2),
+         UInt (Settings.Grid_Dimensions (Y) / 2),
+         UInt (Settings.Grid_Dimensions (Z) / 2));
+   end Update_Partitioning_GPU;
+
+   procedure Update_Partitioning_CPU
      (Self : in out Renderer; Optimized : Boolean := True)
    is
       function To_Vec (X, Y, Z : Integer) return Singles.Vector3 is
@@ -680,9 +734,6 @@ package body Madarch.Renderers is
          end loop;
       end Process_Point;
    begin
-      if not Settings.Enable then
-         return;
-      end if;
       for X in 0 .. Settings.Grid_Dimensions (GL.X) - 1 loop
          for Y in 0 .. Settings.Grid_Dimensions (GL.Y) - 1 loop
             for Z in 0 .. Settings.Grid_Dimensions (GL.Z) - 1 loop
@@ -690,34 +741,25 @@ package body Madarch.Renderers is
             end loop;
          end loop;
       end loop;
-   end Update_Partitioning;
+   end Update_Partitioning_CPU;
 
-   function Eval_Distance_To
-     (Self     : Renderer;
-      Position : Singles.Vector3;
-      Prims    : Primitives.Primitive_Array;
-      Normal   : out Singles.Vector3) return Single
+   procedure Update_Partitioning
+     (Self : in out Renderer;
+      Method : Partitioning_Update_Method := GPU_Fast)
    is
-      Closest : Single := 1.0e10;
-
-      procedure Find_Closest
-        (Prim : Primitives.Primitive;
-         V    : aliased Entity_Vectors.Vector)
-      is
-         Dist : Single;
-      begin
-         for Ent of V loop
-            Dist := Primitives.Eval_Dist (Prim, Ent, Position);
-            if Dist < Closest then
-               Closest := Dist;
-               Normal  := Primitives.Eval_Normal (Prim, Ent, Position);
-            end if;
-         end loop;
-      end Find_Closest;
+      Settings : constant Scenes.Partitioning_Settings :=
+         Scenes.Get_Partitioning_Settings (Self.Scene);
    begin
-      for Prim of Prims loop
-         Find_Closest (Prim, Self.All_Primitives (Prim));
-      end loop;
-      return Closest;
-   end Eval_Distance_To;
+      if not Settings.Enable then
+         return;
+      end if;
+      case Method is
+         when CPU_Best =>
+            Update_Partitioning_CPU (Self, Optimized => True);
+         when CPU_Fast =>
+            Update_Partitioning_CPU (Self, Optimized => False);
+         when GPU_Fast =>
+            Update_Partitioning_GPU (Self);
+      end case;
+   end Update_Partitioning;
 end Madarch.Renderers;
