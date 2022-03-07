@@ -88,6 +88,16 @@ package Madarch.Exprs is
       Name    : String;
       In_Body : Expr) return Expr;
 
+   type Var_Decl is record
+      Kind  : Value_Kind;
+      Name  : Unbounded_String;
+      Value : Expr;
+   end record;
+
+   type Var_Decl_Array is array (Positive range <>) of Var_Decl;
+
+   function Let_In (Vars : Var_Decl_Array; In_Body : Expr) return Expr;
+
 private
    type Expr_Node is abstract tagged null record;
    type Expr_Access is access all Expr_Node'Class;

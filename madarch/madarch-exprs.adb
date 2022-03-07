@@ -213,6 +213,22 @@ package body Madarch.Exprs is
            (Value, Kind, To_Unbounded_String (Name), In_Body));
    end Let_In;
 
+   function Let_In (Vars : Var_Decl_Array; In_Body : Expr) return Expr is
+   begin
+      if Vars'Length = 0 then
+         return In_Body;
+      else
+         declare
+            First : Var_Decl renames Vars (Vars'First);
+            Rest  : Expr :=
+               Let_In (Vars (Vars'First + 1 .. Vars'Last), In_Body);
+         begin
+            return (Value => new Var_Body'
+              (First.Value, First.Kind, First.Name, Rest));
+         end;
+      end if;
+   end Let_In;
+
    --  Ident
 
    function Eval (I : Ident; Ctx : Eval_Context) return Value is
