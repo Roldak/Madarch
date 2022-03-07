@@ -129,6 +129,10 @@ package body Madarch.Exprs is
      (Value => new Builtin_Call'(Builtin_Dot,
                                  new Expr_Array'((L, R))));
 
+   function Cross (L, R : Expr) return Expr is
+     (Value => new Builtin_Call'(Builtin_Cross,
+                                 new Expr_Array'((L, R))));
+
    function Min (L, R : Expr) return Expr is
      (Value => new Builtin_Call'(Builtin_Min,
                                  new Expr_Array'((L, R))));
@@ -350,6 +354,8 @@ package body Madarch.Exprs is
       case B.Builtin is
          when Builtin_Dot =>
             return Dot (Arg_Values (1), Arg_Values (2));
+         when Builtin_Cross =>
+            return Cross (Arg_Values (1), Arg_Values (2));
          when Builtin_Min =>
             return Min (Arg_Values (1), Arg_Values (2));
          when Builtin_Max =>
@@ -393,6 +399,7 @@ package body Madarch.Exprs is
       Builtin_Name : String :=
         (case B.Builtin is
            when Builtin_Dot   => "dot",
+           when Builtin_Cross => "cross",
            when Builtin_Min   => "min",
            when Builtin_Max   => "max",
            when Builtin_Clamp => "clamp",

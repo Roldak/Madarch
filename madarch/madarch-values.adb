@@ -165,6 +165,17 @@ package body Madarch.Values is
       end case;
    end Dot;
 
+   function Cross (L, R : Value) return Value is
+   begin
+      Check_Kinds (L, R);
+      case L.Kind is
+         when Vector3_Kind =>
+            return (Vector3_Kind, Cross (L.Vector3_Value, R.Vector3_Value));
+         when others =>
+            raise Program_Error with "Cross is only allowed on vectors";
+      end case;
+   end Cross;
+
    function Min (L, R : Value) return Value is
       use GL.Types;
    begin
