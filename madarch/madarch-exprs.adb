@@ -81,8 +81,14 @@ package body Madarch.Exprs is
    function Value_Identifier (N : String) return Expr is
      (Value => new Ident'(Name => To_unbounded_String (N)));
 
+   function Value_Identifier (N : Unbounded_String) return Expr is
+     (Value => new Ident'(Name => N));
+
    function Struct_Identifier (N : String) return Struct_Expr is
      (Struct_Expr'(Name => To_unbounded_String (N)));
+
+   function Struct_Identifier (N : Unbounded_String) return Struct_Expr is
+     (Struct_Expr'(Name => N));
 
    function Construct_Vector3 (X, Y, Z : Expr) return Expr is
      (Value => new Builtin_Call'
