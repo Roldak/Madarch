@@ -61,15 +61,44 @@ package body Madarch.Values is
    end "-";
 
    function "*" (L, R : Value) return Value is
+      use GL.Types;
    begin
-      Check_Kinds (L, R);
       case L.Kind is
          when Vector3_Kind =>
-            return (Vector3_Kind, Mul (L.Vector3_Value, R.Vector3_Value));
+            case R.Kind is
+               when Vector3_Kind =>
+                  return (Vector3_Kind,
+                          Mul (L.Vector3_Value, R.Vector3_Value));
+               when Float_Kind =>
+                  return (Vector3_Kind,
+                          L.Vector3_Value * R.Float_Value);
+               when Int_Kind =>
+                  return (Vector3_Kind,
+                          L.Vector3_Value * Single (R.Int_Value));
+            end case;
          when Float_Kind =>
-            return (Float_Kind, L.Float_Value * R.Float_Value);
+            case R.Kind is
+               when Vector3_Kind =>
+                  return (Vector3_Kind,
+                          L.Float_Value * R.Vector3_Value);
+               when Float_Kind =>
+                  return (Float_Kind,
+                          L.Float_Value * R.Float_Value);
+               when Int_Kind =>
+                  return (Float_Kind,
+                          L.Float_Value * Single (R.Int_Value));
+            end case;
          when Int_Kind =>
-            return (Int_Kind, L.Int_Value * R.Int_Value);
+            case R.Kind is
+               when Vector3_Kind =>
+                  return (Vector3_Kind,
+                          Single (L.Int_Value) * R.Vector3_Value);
+               when Float_Kind =>
+                  return (Float_Kind,
+                          Single (L.Int_Value) * R.Float_Value);
+               when Int_Kind =>
+                  return (Int_Kind, L.Int_Value * R.Int_Value);
+            end case;
       end case;
    end "*";
 
