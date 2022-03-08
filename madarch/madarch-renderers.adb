@@ -581,11 +581,22 @@ package body Madarch.Renderers is
             Cursor : Primitive_Natural_Maps.Cursor :=
                Candidates.Find (Prim);
 
-            Vec : Natural_Vectors.Vector;
+            Vec    : Natural_Vectors.Vector;
+            Length : Natural;
          begin
             if Primitive_Natural_Maps.Has_Element (Cursor) then
                Vec := Primitive_Natural_Maps.Element (Cursor);
             end if;
+
+            Length := Natural (Vec.Length);
+
+            if Length > Settings.Index_Count then
+               Ada.Text_IO.Put_Line
+                 ("Warning : partition size too small ("
+                  & Length'Image & ")");
+               Length := Settings.Index_Count;
+            end if;
+
             Count_Loc.Adjust (W);
             W.Write_Int (Int (Vec.Length));
             for E of Vec loop
