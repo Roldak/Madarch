@@ -1,4 +1,7 @@
+with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
+
+with System;
 
 with GL;
 with GL.Types;
@@ -240,6 +243,12 @@ package body Madarch.Exprs is
          end;
       end if;
    end Let_In;
+
+   function Convert is new Ada.Unchecked_Conversion
+     (System.Address, Long_Integer) with Inline;
+
+   function Hash (E : Expr) return Ada.Containers.Hash_Type is
+     (Ada.Containers.Hash_Type (Convert (E.Value.all'Address)));
 
    --  Ident
 

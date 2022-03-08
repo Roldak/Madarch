@@ -1,4 +1,4 @@
-with Ada.Containers.Hashed_Maps;
+with Ada.Containers;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Ada.Strings.Unbounded.Hash;
 
@@ -102,6 +102,8 @@ package Madarch.Exprs is
    type Var_Decl_Array is array (Positive range <>) of Var_Decl;
 
    function Let_In (Vars : Var_Decl_Array; In_Body : Expr) return Expr;
+
+   function Hash (E : Expr) return Ada.Containers.Hash_Type;
 
 private
    type Expr_Node is abstract tagged null record;
