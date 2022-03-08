@@ -33,7 +33,7 @@ package Madarch.Renderers is
    type Volumetrics_Settings is record
       Enabled               : Boolean := True;
 
-      Visibility_Resolution : Ints.Vector3 := (100, 100, 60);
+      Visibility_Resolution : Ints.Vector3 := (100, 100, 100);
       Visibility_Step_Size  : Single := 0.1;
 
       Scattering_Resolution : Ints.Vector2 := (250, 250);
