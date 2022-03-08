@@ -29,6 +29,22 @@ package Madarch.Exprs is
    procedure Free (Ctx : in out Eval_Context);
 
    function Eval (E : Expr; Ctx : Eval_Context) return Value;
+
+   package Transformers is
+      type Transformer is abstract tagged null record;
+
+      function Transform_Let
+        (Self    : in out Transformer;
+         Orig    : Expr;
+         Kind    : Value_Kind;
+         Name    : Unbounded_String;
+         Value   : in out Expr;
+         In_Body : in out Expr) return Expr is (Orig);
+   end Transformers;
+
+   procedure Transform
+     (E : in out Expr; T : in out Transformers.Transformer'Class);
+
    function Pre_GLSL (E : Expr) return String;
    function To_GLSL  (E : Expr) return String;
 
@@ -130,6 +146,8 @@ private
    Empty_Context : constant Eval_Context := (Ref => null);
 
    function Eval (E : Expr_Node; Ctx : Eval_Context) return Value is abstract;
+   procedure Transform
+     (E : in out Expr_Node; T : in out Transformers.Transformer'Class) is null;
    function Pre_GLSL (E : Expr_Node) return String is ("");
    function To_GLSL  (E : Expr_Node) return String is abstract;
 
@@ -163,6 +181,8 @@ private
    end record;
 
    function Eval (B : Bin_Op; Ctx : Eval_Context) return Value;
+   procedure Transform
+     (B : in out Bin_Op; T : in out Transformers.Transformer'Class);
    function Pre_GLSL (B : Bin_Op) return String;
    function To_GLSL  (B : Bin_Op) return String;
 
@@ -175,6 +195,8 @@ private
    end record;
 
    function Eval (U : Un_Op; Ctx : Eval_Context) return Value;
+   procedure Transform
+     (U : in out Un_Op; T : in out Transformers.Transformer'Class);
    function Pre_GLSL (U : Un_Op) return String;
    function To_GLSL  (U : Un_Op) return String;
 
@@ -192,6 +214,8 @@ private
    end record;
 
    function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value;
+   procedure Transform
+     (B : in out Builtin_Call; T : in out Transformers.Transformer'Class);
    function Pre_GLSL (B : Builtin_Call) return String;
    function To_GLSL  (B : Builtin_Call) return String;
 
@@ -201,6 +225,8 @@ private
    end record;
 
    function Eval (P : Project_Axis; Ctx : Eval_Context) return Value;
+   procedure Transform
+     (P : in out Project_Axis; T : in out Transformers.Transformer'Class);
    function Pre_GLSL (P : Project_Axis) return String;
    function To_GLSL  (P : Project_Axis) return String;
 
@@ -224,6 +250,8 @@ private
    end record;
 
    function Eval (V : Var_Body; Ctx : Eval_Context) return Value;
+   procedure Transform
+     (V : in out Var_Body; T : in out Transformers.Transformer'Class);
    function Pre_GLSL (V : Var_Body) return String;
    function To_GLSL  (V : Var_Body) return String;
 
@@ -234,6 +262,8 @@ private
    end record;
 
    function Eval (V : Condition; Ctx : Eval_Context) return Value;
+   procedure Transform
+     (V : in out Condition; T : in out Transformers.Transformer'Class);
    function Pre_GLSL (V : Condition) return String;
    function To_GLSL  (V : Condition) return String;
 end Madarch.Exprs;

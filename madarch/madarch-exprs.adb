@@ -100,6 +100,21 @@ package body Madarch.Exprs is
    function Eval (E : Expr; Ctx : Eval_Context) return Value is
      (E.Value.Eval (Ctx));
 
+   procedure Transform
+     (E : in out Expr; T : in out Transformers.Transformer'Class)
+   is
+   begin
+      if E.Value.all in Var_Body then
+         declare
+            B : Var_Body renames Var_Body (E.Value.all);
+         begin
+            E := T.Transform_Let (E, B.Kind, B.Name, B.Value, B.In_Body);
+         end;
+      else
+         E.Value.Transform (T);
+      end if;
+   end Transform;
+
    function Pre_GLSL (E : Expr) return String is
      (E.Value.Pre_GLSL);
 
@@ -308,6 +323,14 @@ package body Madarch.Exprs is
       end case;
    end Eval;
 
+   procedure Transform
+     (B : in out Bin_Op; T : in out Transformers.Transformer'Class)
+   is
+   begin
+      B.Lhs.Transform (T);
+      B.Rhs.Transform (T);
+   end Transform;
+
    function Pre_GLSL (B : Bin_Op) return String is
       Pre_LHS : String := B.Lhs.Pre_GLSL;
       Pre_RHS : String := B.Rhs.Pre_GLSL;
@@ -366,6 +389,13 @@ package body Madarch.Exprs is
                   raise Program_Error with "sign not applicable.");
       end case;
    end Eval;
+
+   procedure Transform
+     (U : in out Un_Op; T : in out Transformers.Transformer'Class)
+   is
+   begin
+      U.E.Transform (T);
+   end Transform;
 
    function Pre_GLSL (U : Un_Op) return String is
    begin
@@ -431,6 +461,15 @@ package body Madarch.Exprs is
       end case;
    end Eval;
 
+   procedure Transform
+     (B : in out Builtin_Call; T : in out Transformers.Transformer'Class)
+   is
+   begin
+      for A of B.Args.all loop
+         A.Transform (T);
+      end loop;
+   end Transform;
+
    function Pre_GLSL (B : Builtin_Call) return String is
       Res : Unbounded_String;
    begin
@@ -486,6 +525,13 @@ package body Madarch.Exprs is
       end case;
    end Eval;
 
+   procedure Transform
+     (P : in out Project_Axis; T : in out Transformers.Transformer'Class)
+   is
+   begin
+      P.E.Transform (T);
+   end Transform;
+
    function Pre_GLSL (P : Project_Axis) return String is
      (P.E.Pre_GLSL);
 
@@ -525,6 +571,14 @@ package body Madarch.Exprs is
       end return;
    end Eval;
 
+   procedure Transform
+     (V : in out Var_Body; T : in out Transformers.Transformer'Class)
+   is
+   begin
+      V.Value.Transform (T);
+      V.In_Body.Transform (T);
+   end Transform;
+
    function Pre_GLSL (V : Var_Body) return String is
       Pre_Val  : String := V.Value.Pre_GLSL;
       Var_Typ  : String := To_GLSL (V.Kind);
@@ -557,6 +611,15 @@ package body Madarch.Exprs is
          return V.Thn.Eval (Ctx);
       end if;
    end Eval;
+
+   procedure Transform
+     (V : in out Condition; T : in out Transformers.Transformer'Class)
+   is
+   begin
+      V.Cond.Transform (T);
+      V.Thn.Transform (T);
+      V.Els.Transform (T);
+   end Transform;
 
    function Pre_GLSL (V : Condition) return String is
    begin
