@@ -40,6 +40,13 @@ The other examples follow a similar structure.
   <i>Figure 2</i>
 </p>
 
-- *Figure 1* showcases real-time global illumination: when the spot light targets the blue wall, only blue light bounces off it and propagate in the room, meaning everything appears blue. Similarly, in turns red as soon as the spot hits the red wall.
+<p align="center">
+  <img width=800 height=800 src="media/light_shafts.png"><br>
+  <i>Figure 3</i>
+</p>
+
+- *Figure 1* showcases real-time global illumination: when the spot light targets the blue wall, only blue light bounces off it and propagates in the room, meaning everything appears blue. Similarly, in turns red as soon as the spot hits the red wall.
 
 - *Figure 2* showcases world-space reflections (on the sphere), ambient occlusion, soft shadows and physically-based materials.
+
+- *Figure 3* showcases volumetric lighting: the point light is on the right of the sphere, so air particles on the left of lie in it its shadow, which creates a shadow volume.
