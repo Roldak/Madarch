@@ -195,6 +195,12 @@ package body Madarch.Exprs is
    function Atan (E : Expr) return Expr is
      (Builtin_Call_Single_Arg (Builtin_Atan, E));
 
+   function Sqrt (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Sqrt, E));
+
+   function Dot2 (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Dot2, E));
+
    function Get (E : Struct_Expr; C : Component) return Expr'Class is
       R : Expr := (Value => new Get_Component'(E, C));
    begin
@@ -401,6 +407,10 @@ package body Madarch.Exprs is
             return Acos (Arg_Values (1));
          when Builtin_Atan =>
             return Atan (Arg_Values (1));
+         when Builtin_Sqrt =>
+            return Sqrt (Arg_Values (1));
+         when Builtin_Dot2 =>
+            return Dot2 (Arg_Values (1));
          when Builtin_Vec3 =>
             return Values.Vector3
               ((Arg_Values (1).Float_Value,
@@ -435,6 +445,8 @@ package body Madarch.Exprs is
            when Builtin_Asin  => "asin",
            when Builtin_Acos  => "acos",
            when Builtin_Atan  => "atan",
+           when Builtin_Sqrt  => "sqrt",
+           when Builtin_Dot2  => "dot2",
            when Builtin_Vec3  => "vec3");
    begin
       Append (Result, Builtin_Name);

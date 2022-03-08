@@ -54,6 +54,8 @@ package Madarch.Values is
    function Asin (V : Value) return Value;
    function Acos (V : Value) return Value;
    function Atan (V : Value) return Value;
+   function Sqrt (V : Value) return Value;
+   function Dot2 (V : Value) return Value;
 
    function GPU_Type (K : Value_Kind) return GPU_Types.GPU_Type;
 end Madarch.Values;

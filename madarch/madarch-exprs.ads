@@ -79,6 +79,8 @@ package Madarch.Exprs is
    function Asin (E : Expr) return Expr;
    function Acos (E : Expr) return Expr;
    function Atan (E : Expr) return Expr;
+   function Sqrt (E : Expr) return Expr;
+   function Dot2 (E : Expr) return Expr;
 
    function Get (E : Struct_Expr; C : Component) return Expr'Class;
    function Get (E : Expr; C : GL.Index_3D) return Expr;
@@ -177,6 +179,7 @@ private
                          Builtin_Pow,
                          Builtin_Sin, Builtin_Cos, Builtin_Tan,
                          Builtin_Asin, Builtin_Acos, Builtin_Atan,
+                         Builtin_Sqrt, Builtin_Dot2,
                          Builtin_Vec3);
 
    type Builtin_Call is new Expr_Node with record

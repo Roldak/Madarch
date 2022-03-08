@@ -263,9 +263,9 @@ package body Madarch.Values is
    generic
       Name : String;
       with function Trig (X : GLT.Single) return GLT.Single;
-   function Eval_Trig (V : Value) return Value;
+   function Eval_Elementary (V : Value) return Value;
 
-   function Eval_Trig (V : Value) return Value is
+   function Eval_Elementary (V : Value) return Value is
    begin
       case V.Kind is
          when Float_Kind =>
@@ -275,14 +275,15 @@ package body Madarch.Values is
          when Vector3_Kind =>
             raise Program_Error with "Cannot apply " & Name & " to vector3.";
       end case;
-   end Eval_Trig;
+   end Eval_Elementary;
 
-   function Eval_Sin  is new Eval_Trig ("Sin", Sin);
-   function Eval_Cos  is new Eval_Trig ("Cos", Cos);
-   function Eval_Tan  is new Eval_Trig ("Tan", Tan);
-   function Eval_Asin is new Eval_Trig ("Asin", ASin);
-   function Eval_Acos is new Eval_Trig ("Acos", Acos);
-   function Eval_Atan is new Eval_Trig ("Atan", Atan);
+   function Eval_Sin  is new Eval_Elementary ("Sin", Sin);
+   function Eval_Cos  is new Eval_Elementary ("Cos", Cos);
+   function Eval_Tan  is new Eval_Elementary ("Tan", Tan);
+   function Eval_Asin is new Eval_Elementary ("Asin", ASin);
+   function Eval_Acos is new Eval_Elementary ("Acos", Acos);
+   function Eval_Atan is new Eval_Elementary ("Atan", Atan);
+   function Eval_Sqrt is new Eval_Elementary ("Sqrt", Sqrt);
 
    function Sin (V : Value) return Value renames Eval_Sin;
    function Cos (V : Value) return Value renames Eval_Cos;
@@ -290,6 +291,19 @@ package body Madarch.Values is
    function Asin (V : Value) return Value renames Eval_Asin;
    function Acos (V : Value) return Value renames Eval_Acos;
    function Atan (V : Value) return Value renames Eval_Atan;
+   function Sqrt (V : Value) return Value renames Eval_Sqrt;
+
+   function Dot2 (V : Value) return Value is
+   begin
+      case V.Kind is
+         when Vector3_Kind =>
+            return (Float_Kind, Dot2 (V.Vector3_Value));
+         when Float_Kind =>
+            raise Program_Error with "cannot apply dot2 to float.";
+         when Int_Kind =>
+            raise Program_Error with "Cannot apply dot2 to int.";
+      end case;
+   end Dot2;
 
    function GPU_Type (K : Value_Kind) return GPU_Types.GPU_Type is
    begin
