@@ -31,6 +31,7 @@ package Madarch.Exprs is
 
    procedure Free (Ctx : in out Eval_Context);
 
+   function Infer_Type (E : Expr) return Value_Kind;
    function Eval (E : Expr; Ctx : Eval_Context) return Value;
 
    package Transformers is
@@ -153,6 +154,11 @@ private
 
    Empty_Context : constant Eval_Context := (Ref => null);
 
+   --  TODO: implement stack of typing assignments
+   type Typing_Context is null record;
+
+   function Infer_Type (E : Expr_Node; Ctx : Typing_Context) return Value_Kind
+     is (raise Program_Error with "Could not infer type of expression.");
    function Eval (E : Expr_Node; Ctx : Eval_Context) return Value is abstract;
    procedure Transform
      (E : in out Expr_Node; T : in out Transformers.Transformer'Class) is null;
@@ -220,6 +226,8 @@ private
       Args    : Expr_Array_Access;
    end record;
 
+   function Infer_Type
+     (B : Builtin_Call; Ctx : Typing_Context) return Value_Kind;
    function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value;
    procedure Transform
      (B : in out Builtin_Call; T : in out Transformers.Transformer'Class);
@@ -256,6 +264,8 @@ private
       In_Body : Expr;
    end record;
 
+   function Infer_Type
+     (V : Var_Body; Ctx : Typing_Context) return Value_Kind;
    function Eval (V : Var_Body; Ctx : Eval_Context) return Value;
    procedure Transform
      (V : in out Var_Body; T : in out Transformers.Transformer'Class);

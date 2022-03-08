@@ -97,6 +97,12 @@ package body Madarch.Exprs is
      (Value => new Builtin_Call'
         (Builtin_Vec3, new Expr_Array'(X, Y, Z)));
 
+   function Infer_Type (E : Expr) return Value_Kind is
+      Ctx : Typing_Context;
+   begin
+      return E.Value.Infer_Type (Ctx);
+   end Infer_Type;
+
    function Eval (E : Expr; Ctx : Eval_Context) return Value is
      (E.Value.Eval (Ctx));
 
@@ -428,6 +434,20 @@ package body Madarch.Exprs is
 
    --  Builtin_Call
 
+   function Infer_Type
+     (B : Builtin_Call; Ctx : Typing_Context) return Value_Kind
+   is
+   begin
+      case B.Builtin is
+         when Builtin_Dot | Builtin_Pow .. Builtin_Dot2 =>
+            return Float_Kind;
+         when Builtin_Cross | Builtin_Vec3 =>
+            return Vector3_Kind;
+         when others =>
+            raise Program_Error with "Unimplemented";
+      end case;
+   end Infer_Type;
+
    function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value is
       Arg_Values : Value_Array (B.Args'Range);
    begin
@@ -572,6 +592,14 @@ package body Madarch.Exprs is
    end To_GLSL;
 
    -- Var_Body
+
+   function Infer_Type
+     (V : Var_Body; Ctx : Typing_Context) return Value_Kind
+   is
+   begin
+      --  TODO: actually use `Ctx`
+      return V.In_Body.Value.Infer_Type (Ctx);
+   end Infer_Type;
 
    function Eval (V : Var_Body; Ctx : Eval_Context) return Value is
       Var_Val : Value := V.Value.Eval (Ctx);
