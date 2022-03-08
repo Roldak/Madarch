@@ -85,6 +85,8 @@ package Madarch.Exprs is
    function Get (E : Struct_Expr; C : Component) return Expr'Class;
    function Get (E : Expr; C : GL.Index_3D) return Expr;
 
+   function If_Then_Else (C : Expr; Thn : Expr; Els : Expr) return Expr;
+
    function Let_In
      (Value   : Expr;
       Kind    : Value_Kind;
@@ -222,4 +224,14 @@ private
    function Eval (V : Var_Body; Ctx : Eval_Context) return Value;
    function Pre_GLSL (V : Var_Body) return String;
    function To_GLSL  (V : Var_Body) return String;
+
+   type Condition is new Expr_Node with record
+      Cond : Expr;
+      Thn  : Expr;
+      Els  : Expr;
+   end record;
+
+   function Eval (V : Condition; Ctx : Eval_Context) return Value;
+   function Pre_GLSL (V : Condition) return String;
+   function To_GLSL  (V : Condition) return String;
 end Madarch.Exprs;

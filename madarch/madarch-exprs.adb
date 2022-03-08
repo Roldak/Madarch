@@ -222,6 +222,9 @@ package body Madarch.Exprs is
            (Value, Kind, To_Unbounded_String (Name), In_Body));
    end Let_In;
 
+   function If_Then_Else (C : Expr; Thn : Expr; Els : Expr) return Expr is
+     (Value => new Condition'(C, Thn, Els));
+
    function Let_In (Vars : Var_Decl_Array; In_Body : Expr) return Expr is
    begin
       if Vars'Length = 0 then
@@ -527,5 +530,38 @@ package body Madarch.Exprs is
    function To_GLSL  (V : Var_Body) return String is
    begin
       return V.In_Body.To_GLSL;
+   end To_GLSL;
+
+   --  Condition
+
+   function Eval (V : Condition; Ctx : Eval_Context) return Value is
+      use GL.Types;
+
+      Cond : Value := V.Cond.Eval (Ctx);
+   begin
+      if Cond.Kind not in Int_Kind then
+         raise Program_Error with "Invalid value for ternary condition";
+      end if;
+      if Cond.Int_Value = 0 then
+         return V.Els.Eval (Ctx);
+      else
+         return V.Thn.Eval (Ctx);
+      end if;
+   end Eval;
+
+   function Pre_GLSL (V : Condition) return String is
+   begin
+      if V.Thn.Pre_GLSL /= "" or else V.Els.Pre_GLSL /= "" then
+         raise Program_Error with "Invalid branches for ternary operator";
+      end if;
+      return V.Cond.Pre_GLSL;
+   end Pre_GLSL;
+
+   function To_GLSL  (V : Condition) return String is
+      Cond : String := V.Cond.To_GLSL;
+      Thn  : String := V.Thn.To_GLSL;
+      Els  : String := V.Els.To_GLSL;
+   begin
+      return "(" & Cond & ") ? (" & Thn & ") : (" & Els & ")";
    end To_GLSL;
 end Madarch.Exprs;
