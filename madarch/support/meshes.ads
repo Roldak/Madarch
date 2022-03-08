@@ -13,6 +13,12 @@ package Meshes is
 
    function Compute_Bounding_Box (M : Mesh) return Bounding_Box;
 
+   procedure Iterate_Triangles
+     (Self    : Mesh;
+      Process : access procedure (A, B, C: Singles.Vector3));
+
+   procedure Dump_Info (M : Mesh);
+
 private
    package Vec3_Vectors is new Ada.Containers.Vectors
      (Positive, Singles.Vector3, Singles."=");
