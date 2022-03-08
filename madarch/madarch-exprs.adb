@@ -243,6 +243,17 @@ package body Madarch.Exprs is
    function If_Then_Else (C : Expr; Thn : Expr; Els : Expr) return Expr is
      (Value => new Condition'(C, Thn, Els));
 
+   function External_Call
+     (Callee      : Unbounded_String;
+      Struct_Args : Struct_Expr_Array;
+      Expr_Args   : Expr_Array) return Expr is
+     (Value => new Unchecked_Call'
+        (S_Args => Struct_Args'Length,
+         E_Args => Expr_Args'Length,
+         Callee => Callee,
+         Struct_Args => Struct_Args,
+         Expr_Args => Expr_Args));
+
    function Let_In (Vars : Var_Decl_Array; In_Body : Expr) return Expr is
    begin
       if Vars'Length = 0 then
@@ -635,5 +646,45 @@ package body Madarch.Exprs is
       Els  : String := V.Els.To_GLSL;
    begin
       return "(" & Cond & ") ? (" & Thn & ") : (" & Els & ")";
+   end To_GLSL;
+
+   --  Unchecked call
+
+   function Eval (C : Unchecked_Call; Ctx : Eval_Context) return Value is
+     (raise Program_Error with "Cannot evaluate unchecked call");
+
+   procedure Transform
+     (V : in out Unchecked_Call; T : in out Transformers.Transformer'Class)
+   is
+   begin
+      for A of V.Expr_Args loop
+         A.Transform (T);
+      end loop;
+   end Transform;
+
+   function Pre_GLSL (V : Unchecked_Call) return String is
+      Res : Unbounded_String;
+   begin
+      for A of V.Expr_Args loop
+         Append (Res, A.Pre_GLSL);
+      end loop;
+      return To_String (Res);
+   end Pre_GLSL;
+
+   function To_GLSL  (V : Unchecked_Call) return String is
+      Res : Unbounded_String;
+   begin
+      Append (Res, V.Callee);
+      Append (Res, "(");
+      for A of V.Struct_Args loop
+         Append (Res, A.Name);
+         Append (Res, ",");
+      end loop;
+      for A of V.Expr_Args loop
+         Append (Res, A.To_GLSL);
+         Append (Res, ",");
+      end loop;
+      Replace_Element (Res, Length (Res), ')');
+      return To_String (Res);
    end To_GLSL;
 end Madarch.Exprs;

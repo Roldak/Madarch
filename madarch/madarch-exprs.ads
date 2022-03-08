@@ -12,6 +12,9 @@ package Madarch.Exprs is
    type Expr is tagged private;
    type Struct_Expr is tagged private;
 
+   type Expr_Array is array (Positive range <>) of Expr;
+   type Struct_Expr_Array is array (Positive range <>) of Struct_Expr;
+
    type Eval_Context is private;
 
    Empty_Context : constant Eval_Context;
@@ -103,6 +106,11 @@ package Madarch.Exprs is
 
    function If_Then_Else (C : Expr; Thn : Expr; Els : Expr) return Expr;
 
+   function External_Call
+     (Callee      : Unbounded_String;
+      Struct_Args : Struct_Expr_Array;
+      Expr_Args   : Expr_Array) return Expr;
+
    function Let_In
      (Value   : Expr;
       Kind    : Value_Kind;
@@ -155,7 +163,6 @@ private
       Value : Expr_Access;
    end record;
 
-   type Expr_Array is array (Positive range <>) of Expr;
    type Expr_Array_Access is access Expr_Array;
 
    type Ident is new Expr_Node with record
@@ -266,4 +273,16 @@ private
      (V : in out Condition; T : in out Transformers.Transformer'Class);
    function Pre_GLSL (V : Condition) return String;
    function To_GLSL  (V : Condition) return String;
+
+   type Unchecked_Call (S_Args, E_Args : Natural) is new Expr_Node with record
+      Callee      : Unbounded_String;
+      Struct_Args : Struct_Expr_Array (1 .. S_Args);
+      Expr_Args   : Expr_Array (1 .. E_Args);
+   end record;
+
+   function Eval (C : Unchecked_Call; Ctx : Eval_Context) return Value;
+   procedure Transform
+     (V : in out Unchecked_Call; T : in out Transformers.Transformer'Class);
+   function Pre_GLSL (V : Unchecked_Call) return String;
+   function To_GLSL  (V : Unchecked_Call) return String;
 end Madarch.Exprs;
