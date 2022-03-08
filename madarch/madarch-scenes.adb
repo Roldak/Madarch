@@ -1,4 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Containers.Hashed_Sets;
+with Ada.Containers.Hashed_Maps;
+with Ada.Containers.Vectors;
 with Ada.Characters.Latin_1;
 
 with Madarch.Components;
@@ -23,6 +26,12 @@ package body Madarch.Scenes is
      ("vec3(" & V (GL.X)'Image &
       ", "    & V (GL.Y)'Image &
       ", "    & V (GL.Z)'Image & ")");
+
+   function Count_String (V : Ada.Containers.Count_Type) return String is
+      Res : String := V'Image;
+   begin
+      return Res (Res'First + 1 .. Res'Last);
+   end Count_String;
 
    function Dist_Function_Reference
      (Prim : Primitives.Primitive) return String
@@ -209,6 +218,173 @@ package body Madarch.Scenes is
       return Res;
    end For_Loop;
 
+   package Factoring is
+      package Expr_Sets is new Ada.Containers.Hashed_Sets
+        (Exprs.Expr, Exprs.Hash, Exprs."=", Exprs."=");
+
+      package Expr_Name_Maps is new Ada.Containers.Hashed_Maps
+        (Exprs.Expr, Unbounded_String, Exprs.Hash, Exprs."=");
+
+      package Unbounded_String_Vectors is new Ada.Containers.Vectors
+        (Positive, Unbounded_String);
+
+      type Extra_Arg (Struct_Arg : Boolean := False) is record
+         Param_Decl : Param;
+         case Struct_Arg is
+            when True =>
+               Struct_Actual : Exprs.Struct_Expr;
+            when False =>
+               Value_Actual  : Exprs.Expr;
+         end case;
+      end record;
+
+      type Extra_Arg_Array is array (Positive range <>) of Extra_Arg;
+
+      type T (Extra_Arg_Count : Natural) is
+         new Exprs.Transformers.Transformer
+      with record
+         Name_Prefix : Unbounded_String;
+         Extra_Args  : Extra_Arg_Array (1 .. Extra_Arg_Count);
+         Discovering : Boolean;
+         Seen        : Expr_Sets.Set;
+         To_Refactor : Expr_Name_Maps.Map;
+         Factorized  : Unbounded_String_Vectors.Vector;
+      end record;
+
+      overriding function Transform_Let
+        (Self    : in out T;
+         Orig    : Exprs.Expr;
+         Kind    : Values.Value_Kind;
+         Name    : Unbounded_String;
+         Value   : in out Exprs.Expr;
+         In_Body : in out Exprs.Expr) return Exprs.Expr;
+
+      procedure Factorize
+        (Name_Prefix : String;
+         E           : in out Exprs.Expr'Class;
+         Extra_Args  : Extra_Arg_Array;
+         Res         : in out Unbounded_String);
+   end Factoring;
+
+   package body Factoring is
+      function Extra_Struct_Args
+        (Args : Extra_Arg_Array) return Exprs.Struct_Expr_Array
+      is
+         use type Exprs.Struct_Expr_Array;
+      begin
+         if Args'Length = 0 then
+            return (1 .. 0 => <>);
+         elsif Args (Args'First).Struct_Arg then
+            return
+              (1 => Args (Args'First).Struct_Actual)
+              & Extra_Struct_Args (Args (Args'First + 1 .. Args'Last));
+         else
+            return Extra_Struct_Args (Args (Args'First + 1 .. Args'Last));
+         end if;
+      end Extra_Struct_Args;
+
+      function Generate_Factorized_Function
+        (Self       : in out T;
+         Fun_Name   : Unbounded_String;
+         Param_Type : Unbounded_String;
+         Param_Name : Unbounded_String;
+         Fun_Body   : Exprs.Expr) return Unbounded_String
+      is
+         Params : Param_Array
+           (Self.Extra_Args'First .. Self.Extra_Args'Last + 1);
+      begin
+         for I in Self.Extra_Args'Range loop
+            Params (I) := Self.Extra_Args (I).Param_Decl;
+         end loop;
+         Params (Self.Extra_Args'Last + 1) :=
+           (Param_Type, Param_Name, To_Unbounded_String (""));
+         return Function_Declaration
+           (Values.To_GLSL (Fun_Body.Infer_Type),
+            To_String (Fun_Name),
+            Params,
+            Fun_Body.To_GLSL,
+            Fun_Body.Pre_GLSL);
+      end Generate_Factorized_Function;
+
+      overriding function Transform_Let
+        (Self    : in out T;
+         Orig    : Exprs.Expr;
+         Kind    : Values.Value_Kind;
+         Name    : Unbounded_String;
+         Value   : in out Exprs.Expr;
+         In_Body : in out Exprs.Expr) return Exprs.Expr
+      is
+         use type Expr_Name_Maps.Cursor;
+
+         Known : Expr_Name_Maps.Cursor := Self.To_Refactor.Find (In_Body);
+      begin
+         if Self.Discovering then
+            if Self.Seen.Contains (In_Body) then
+               if Known = Expr_Name_Maps.No_Element then
+                  declare
+                     Fun_Name : Unbounded_String :=
+                       (Self.Name_Prefix & "_factored_"
+                        & Count_String (Self.To_Refactor.Length));
+                  begin
+                     Self.To_Refactor.Insert (In_Body, Fun_Name);
+                     Self.Factorized.Append
+                       (Generate_Factorized_Function
+                          (Self,
+                           Fun_Name,
+                           To_Unbounded_String (Values.To_GLSL (Kind)),
+                           Name,
+                           In_Body));
+                  end;
+               end if;
+               --  Do not recurse on childs otherwise this will factor out
+               --  inner expressions.
+               return Orig;
+            else
+               Self.Seen.Include (In_Body);
+            end if;
+         else
+            if Known /= Expr_Name_Maps.No_Element then
+               declare
+                  Name : Unbounded_String := Expr_Name_Maps.Element (Known);
+               begin
+                  return Exprs.External_Call
+                    (Name,
+                     Extra_Struct_Args (Self.Extra_Args),
+                     (1 => Value));
+               end;
+            end if;
+         end if;
+         Value.Transform (Self);
+         In_Body.Transform (Self);
+         return Orig;
+      end Transform_Let;
+
+      procedure Factorize
+        (Name_Prefix : String;
+         E           : in out Exprs.Expr'Class;
+         Extra_Args  : Extra_Arg_Array;
+         Res         : in out Unbounded_String)
+      is
+         Transformer : T :=
+           (Exprs.Transformers.Transformer with
+              Extra_Arg_Count => Extra_Args'Length,
+              Extra_Args      => Extra_Args,
+              Name_Prefix     => To_Unbounded_String (Name_Prefix),
+              Discovering     => True,
+              others          => <>);
+      begin
+         E.Transform (Transformer);
+         if not Transformer.Factorized.Is_Empty then
+            Transformer.Discovering := False;
+            E.Transform (Transformer);
+            for F of Transformer.Factorized loop
+               Append (Res, F);
+               Append (Res, DLF);
+            end loop;
+         end if;
+      end Factorize;
+   end Factoring;
+
    function Primitive_Dist_Function
      (Prim : Primitives.Primitive) return Unbounded_String
    is
@@ -223,14 +399,31 @@ package body Madarch.Scenes is
 
       Dist_Expr : Exprs.Expr'Class :=
          Primitives.Get_Dist_Expr (Prim, Prim_param_Expr, Point_Param_Expr);
+
+      Fun_Name : String := Dist_Function_Reference (Prim);
+
+      Prim_Param : Param :=
+         Create (Primitives.Get_Name (Prim), Prim_Param_Name);
+
+      Res : Unbounded_String;
    begin
-      return Function_Declaration
+      Factoring.Factorize
+        (Name_Prefix => Fun_Name,
+         E           => Dist_Expr,
+         Extra_Args  => (1 => (Struct_Arg    => True,
+                               Param_Decl    => Prim_Param,
+                               Struct_Actual => Prim_Param_Expr)),
+         Res         => Res);
+
+      Append (Res, Function_Declaration
         ("float",
-         Dist_Function_Reference (Prim),
-         (1 => Create (Primitives.Get_Name (Prim), Prim_Param_Name),
+         Fun_Name,
+         (1 => Prim_Param,
           2 => Create ("vec3", Point_Param_Name)),
          Dist_Expr.To_GLSL,
-         Dist_Expr.Pre_GLSL);
+         Dist_Expr.Pre_GLSL));
+
+      return Res;
    end Primitive_Dist_Function;
 
    function Primitive_Normal_Function
@@ -245,16 +438,33 @@ package body Madarch.Scenes is
       Point_Param_Expr : Exprs.Expr :=
          Exprs.Value_Identifier (Point_Param_Name);
 
-      Dist_Expr : Exprs.Expr'Class :=
+      Norm_Expr : Exprs.Expr'Class :=
          Primitives.Get_Normal_Expr (Prim, Prim_param_Expr, Point_Param_Expr);
+
+      Fun_Name : String := Normal_Function_Reference (Prim);
+
+      Prim_Param : Param :=
+         Create (Primitives.Get_Name (Prim), Prim_Param_Name);
+
+      Res : Unbounded_String;
    begin
-      return Function_Declaration
+      Factoring.Factorize
+        (Name_Prefix => Fun_Name,
+         E           => Norm_Expr,
+         Extra_Args  => (1 => (Struct_Arg    => True,
+                               Param_Decl    => Prim_Param,
+                               Struct_Actual => Prim_Param_Expr)),
+         Res         => Res);
+
+      Append (Res, Function_Declaration
         ("vec3",
-         Normal_Function_Reference (Prim),
-         (1 => Create (Primitives.Get_Name (Prim), Prim_Param_Name),
+         Fun_Name,
+         (1 => Prim_Param,
           2 => Create ("vec3", Point_Param_Name)),
-         Dist_Expr.To_GLSL,
-         Dist_Expr.Pre_GLSL);
+         Norm_Expr.To_GLSL,
+         Norm_Expr.Pre_GLSL));
+
+      return Res;
    end Primitive_Normal_Function;
 
    function Light_Sample_Function
