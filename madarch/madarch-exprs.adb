@@ -300,6 +300,9 @@ package body Madarch.Exprs is
       ", "    & GLSL_Single (V (GL.Y)) &
       ", "    & GLSL_Single (V (GL.Z)) & ")");
 
+   function Infer_Type (L : Lit; Ctx : Typing_Context) return Value_Kind is
+     (L.V.Kind);
+
    function Eval (L : Lit; Ctx : Eval_Context) return Value is (L.V);
 
    function To_GLSL (L : Lit) return String is
@@ -315,6 +318,16 @@ package body Madarch.Exprs is
    end To_GLSL;
 
    --  Bin_Op
+
+   function Infer_Type (B : Bin_Op; Ctx : Typing_Context) return Value_Kind is
+      L_Type : Value_Kind := B.Lhs.Value.Infer_Type (Ctx);
+      R_Type : Value_Kind := B.Rhs.Value.Infer_Type (Ctx);
+   begin
+      if L_Type /= R_Type then
+         raise Program_Error with "Could not infer type of binary operation";
+      end if;
+      return L_Type;
+   end Infer_Type;
 
    function Eval (B : Bin_Op; Ctx : Eval_Context) return Value is
       L_Value : Value := B.Lhs.Eval (Ctx);

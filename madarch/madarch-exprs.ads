@@ -182,6 +182,7 @@ private
       V : Value;
    end record;
 
+   function Infer_Type (L : Lit; Ctx : Typing_Context) return Value_Kind;
    function Eval (L : Lit; Ctx : Eval_Context) return Value;
    function To_GLSL (L : Lit) return String;
 
@@ -193,6 +194,7 @@ private
       Lhs, Rhs : Expr;
    end record;
 
+   function Infer_Type (B : Bin_Op; Ctx : Typing_Context) return Value_Kind;
    function Eval (B : Bin_Op; Ctx : Eval_Context) return Value;
    procedure Transform
      (B : in out Bin_Op; T : in out Transformers.Transformer'Class);
