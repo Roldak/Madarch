@@ -47,6 +47,7 @@ package Madarch.Values is
    function Length (V : Value) return Value;
    function Normalize (V : Value) return Value;
    function Abs_Value (V : Value) return Value;
+   function Sign (V : Value) return Value;
 
    function Sin (V : Value) return Value;
    function Cos (V : Value) return Value;

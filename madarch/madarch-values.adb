@@ -289,6 +289,19 @@ package body Madarch.Values is
       end case;
    end Abs_Value;
 
+   function Sign (V : Value) return Value is
+   begin
+      case V.Kind is
+         when Float_Kind =>
+            return Values.Float
+              (if V.Float_Value < 0.0 then -1.0
+               elsif V.Float_Value > 0.0 then 1.0
+               else 0.0);
+         when others =>
+            raise Program_Error with "sign not applicable.";
+      end case;
+   end Sign;
+
    generic
       Name : String;
       with function Trig (X : GLT.Single) return GLT.Single;

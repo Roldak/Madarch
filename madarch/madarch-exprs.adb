@@ -178,28 +178,29 @@ package body Madarch.Exprs is
      (Value => new Builtin_Call'(Builtin_Clamp,
                                  new Expr_Array'((E, LB, UB))));
 
-   function "-" (E : Expr) return Expr is
-     (Value => new Un_Op'(Un_Min, E));
-
-   function Length (E : Expr) return Expr is
-     (Value => new Un_Op'(Un_Length, E));
-
-   function Normalize (E : Expr) return Expr is
-     (Value => new Un_Op'(Un_Normalize, E));
-
-   function Abs_Value (E : Expr) return Expr is
-     (Value => new Un_Op'(Un_Abs, E));
-
-   function To_Float (E : Expr) return Expr is
-     (Value => new Un_Op'(Un_Float, E));
-
-   function Sign (E : Expr) return Expr is
-     (Value => new Un_Op'(Un_Sign, E));
 
    function Builtin_Call_Single_Arg
      (Kind : Builtin_Kind; E : Expr) return Expr
    is (Value => new Builtin_Call'(Kind,
                                   new Expr_Array'(1 => E)));
+
+   function "-" (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Neg, E));
+
+   function Length (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Len, E));
+
+   function Normalize (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Norm, E));
+
+   function Abs_Value (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Abs, E));
+
+   function To_Float (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Float, E));
+
+   function Sign (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Sign, E));
 
    function Sin (E : Expr) return Expr is
      (Builtin_Call_Single_Arg (Builtin_Sin, E));
@@ -384,67 +385,6 @@ package body Madarch.Exprs is
       return "(" & L_GLSL & ")" & O_GLSL & "(" & R_GLSL & ")";
    end To_GLSL;
 
-   --  Un_Op
-
-   function Eval (U : Un_Op; Ctx : Eval_Context) return Value is
-      use type GL.Types.Single;
-
-      E_Value : Value := U.E.Eval (Ctx);
-   begin
-      case U.Op is
-         when Un_Min =>
-            return -E_Value;
-         when Un_Length =>
-            return Length (E_Value);
-         when Un_Normalize =>
-            return Normalize (E_Value);
-         when Un_Abs =>
-            return Abs_Value (E_Value);
-         when Un_Float =>
-            return (case E_Value.Kind is
-               when Vector3_Kind =>
-                  raise Program_Error with "Invalid cast.",
-               when Float_Kind =>
-                  E_Value,
-               when Int_Kind =>
-                  Values.Float (GL.Types.Single (E_Value.Int_Value)));
-         when Un_Sign =>
-            return (case E_Value.Kind is
-               when Float_Kind =>
-                  Values.Float
-                    (if E_Value.Float_Value < 0.0 then -1.0
-                     elsif E_Value.Float_Value = 0.0 then 0.0
-                     else 1.0),
-               when others =>
-                  raise Program_Error with "sign not applicable.");
-      end case;
-   end Eval;
-
-   procedure Transform
-     (U : in out Un_Op; T : in out Transformers.Transformer'Class)
-   is
-   begin
-      U.E.Transform (T);
-   end Transform;
-
-   function Pre_GLSL (U : Un_Op) return String is
-   begin
-      return U.E.Pre_GLSL;
-   end Pre_GLSL;
-
-   function To_GLSL (U : Un_Op) return String is
-      E_GLSL : String := U.E.To_GLSL;
-      O_GLSL : String := (case U.Op is
-         when Un_Min => "-",
-         when Un_Length => "length",
-         when Un_Normalize => "normalize",
-         when Un_Abs => "abs",
-         when Un_Float => "float",
-         when Un_Sign => "sign");
-   begin
-      return O_GLSL & "(" & E_GLSL & ")";
-   end To_GLSL;
-
    --  Builtin_Call
 
    function Infer_Type
@@ -452,9 +392,10 @@ package body Madarch.Exprs is
    is
    begin
       case B.Builtin is
-         when Builtin_Dot | Builtin_Pow .. Builtin_Dot2 =>
+         when Builtin_Dot | Builtin_Len | Builtin_Sign
+            | Builtin_Pow .. Builtin_Dot2 =>
             return Float_Kind;
-         when Builtin_Cross | Builtin_Vec3 =>
+         when Builtin_Cross | Builtin_Norm | Builtin_Vec3 =>
             return Vector3_Kind;
          when others =>
             raise Program_Error with "Unimplemented";
@@ -463,12 +404,39 @@ package body Madarch.Exprs is
 
    function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value is
       Arg_Values : Value_Array (B.Args'Range);
+      First      : Value renames Arg_Values (1);
    begin
       for I in Arg_Values'Range loop
          Arg_Values (I) := B.Args.all (I).Eval (Ctx);
       end loop;
 
       case B.Builtin is
+         when Builtin_Neg =>
+            return -First;
+         when Builtin_Len =>
+            return Length (First);
+         when Builtin_Norm =>
+            return Normalize (First);
+         when Builtin_Abs =>
+            return Abs_Value (First);
+         when Builtin_Sign =>
+            return Sign (First);
+         when Builtin_Sin =>
+            return Sin (First);
+         when Builtin_Cos =>
+            return Cos (First);
+         when Builtin_Tan =>
+            return Tan (First);
+         when Builtin_Asin =>
+            return Asin (First);
+         when Builtin_Acos =>
+            return Acos (First);
+         when Builtin_Atan =>
+            return Atan (First);
+         when Builtin_Sqrt =>
+            return Sqrt (First);
+         when Builtin_Dot2 =>
+            return Dot2 (First);
          when Builtin_Dot =>
             return Dot (Arg_Values (1), Arg_Values (2));
          when Builtin_Cross =>
@@ -481,22 +449,14 @@ package body Madarch.Exprs is
             return Clamp (Arg_Values (1), Arg_Values (2), Arg_Values (3));
          when Builtin_Pow =>
             return Arg_Values (1) ** Arg_Values (2);
-         when Builtin_Sin =>
-            return Sin (Arg_Values (1));
-         when Builtin_Cos =>
-            return Cos (Arg_Values (1));
-         when Builtin_Tan =>
-            return Tan (Arg_Values (1));
-         when Builtin_Asin =>
-            return Asin (Arg_Values (1));
-         when Builtin_Acos =>
-            return Acos (Arg_Values (1));
-         when Builtin_Atan =>
-            return Atan (Arg_Values (1));
-         when Builtin_Sqrt =>
-            return Sqrt (Arg_Values (1));
-         when Builtin_Dot2 =>
-            return Dot2 (Arg_Values (1));
+         when Builtin_Float =>
+            return (case First.Kind is
+               when Vector3_Kind =>
+                  raise Program_Error with "Invalid cast.",
+               when Float_Kind =>
+                  First,
+               when Int_Kind =>
+                  Values.Float (GL.Types.Single (First.Int_Value)));
          when Builtin_Vec3 =>
             return Values.Vector3
               ((Arg_Values (1).Float_Value,
@@ -528,6 +488,12 @@ package body Madarch.Exprs is
 
       Builtin_Name : String :=
         (case B.Builtin is
+           when Builtin_Neg   => "-",
+           when Builtin_Len   => "length",
+           when Builtin_Norm  => "normalize",
+           when Builtin_Abs   => "abs",
+           when Builtin_Float => "float",
+           when Builtin_Sign  => "sign",
            when Builtin_Dot   => "dot",
            when Builtin_Cross => "cross",
            when Builtin_Min   => "min",

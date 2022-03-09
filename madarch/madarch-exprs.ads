@@ -201,27 +201,15 @@ private
    function Pre_GLSL (B : Bin_Op) return String;
    function To_GLSL  (B : Bin_Op) return String;
 
-   type Un_Op_Kind is (Un_Min, Un_Length, Un_Normalize, Un_Abs,
-                       Un_Float, Un_Sign);
-
-   type Un_Op is new Expr_Node with record
-      Op : Un_Op_Kind;
-      E  : Expr;
-   end record;
-
-   function Eval (U : Un_Op; Ctx : Eval_Context) return Value;
-   procedure Transform
-     (U : in out Un_Op; T : in out Transformers.Transformer'Class);
-   function Pre_GLSL (U : Un_Op) return String;
-   function To_GLSL  (U : Un_Op) return String;
-
    type Builtin_Kind is (Builtin_Dot, Builtin_Cross,
                          Builtin_Min, Builtin_Max, Builtin_Clamp,
                          Builtin_Pow,
+                         Builtin_Neg, Builtin_Abs,
                          Builtin_Sin, Builtin_Cos, Builtin_Tan,
                          Builtin_Asin, Builtin_Acos, Builtin_Atan,
-                         Builtin_Sqrt, Builtin_Dot2,
-                         Builtin_Vec3);
+                         Builtin_Sqrt, Builtin_Dot2, Builtin_Len,
+                         Builtin_Norm, Builtin_Sign,
+                         Builtin_Float, Builtin_Vec3);
 
    type Builtin_Call is new Expr_Node with record
       Builtin : Builtin_Kind;
