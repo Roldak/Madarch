@@ -7,5 +7,8 @@ package Bounding_Boxes is
       From, To : Singles.Vector3;
    end record;
 
+   procedure Extend
+     (BB : in out Bounding_Box; Point : Singles.Vector3);
+
    function Surface_Area (B : Bounding_Box) return Single;
 end Bounding_Boxes;
