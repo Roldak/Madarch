@@ -24,6 +24,7 @@ with Glfw.Input.Keys;
 with Glfw.Input.Mouse;
 
 with Materials;
+with Bounding_Boxes; use Bounding_Boxes;
 with Math_Utils; use Math_Utils;
 with Lights;
 with Primitives;
@@ -672,7 +673,7 @@ procedure Main is
 
       Suzanne_Mesh : Meshes.Mesh :=
          Meshes.Obj_Loader.Load_Obj_File ("media/suzanne.obj");
-      Suzanne_BB   : Meshes.Bounding_Box :=
+      Suzanne_BB   : Bounding_Box :=
          Meshes.Compute_Bounding_Box (Suzanne_Mesh);
 
       Res : Positive := 50;

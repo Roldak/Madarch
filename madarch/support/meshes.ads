@@ -1,15 +1,14 @@
 with Ada.Containers.Vectors;
 
+with Bounding_Boxes;
+
 with GL.Types;
 
 package Meshes is
    use GL.Types;
+   use Bounding_Boxes;
 
    type Mesh is private;
-
-   type Bounding_Box is record
-      From, To : Singles.Vector3;
-   end record;
 
    function Compute_Bounding_Box (M : Mesh) return Bounding_Box;
 

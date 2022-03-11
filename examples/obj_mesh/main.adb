@@ -16,6 +16,7 @@ with Madarch.Values;
 with Madarch.Windows;
 
 with Math_Utils; use Math_Utils;
+with Bounding_Boxes;
 with Meshes.Obj_Loader;
 
 with GL.Types;
@@ -159,7 +160,7 @@ procedure Main is
    Suzanne_Mesh : Meshes.Mesh :=
       Meshes.Obj_Loader.Load_Obj_File ("media/suzanne.obj");
 
-   Suzanne_BB : Meshes.Bounding_Box :=
+   Suzanne_BB : Bounding_Boxes.Bounding_Box :=
       Meshes.Compute_Bounding_Box (Suzanne_Mesh);
 begin
    Meshes.Dump_Info (Suzanne_Mesh);
