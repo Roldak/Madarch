@@ -152,11 +152,6 @@ procedure Main is
             Mesh_Mat));
    end Add_Triangle;
 
-   function Image (V : Singles.Vector3) return String is
-     ("("    & Single'Image (V (GL.X))
-      & ", " & Single'Image (V (GL.Y))
-      & ", " & Single'Image (V (GL.Z)) & ")");
-
    Suzanne_Mesh : Meshes.Mesh :=
       Meshes.Obj_Loader.Load_Obj_File ("media/suzanne.obj");
 

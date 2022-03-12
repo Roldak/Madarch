@@ -5,6 +5,8 @@ with GL.Types; use GL.Types;
 with Interfaces;
 
 package Math_Utils is
+   function Image (V : Singles.Vector3) return String;
+
    function Log_2 (X : Interfaces.Unsigned_64) return Natural;
 
    function Sign (X : Single) return Single is

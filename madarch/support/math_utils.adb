@@ -1,4 +1,9 @@
 package body Math_Utils is
+   function Image (V : Singles.Vector3) return String is
+     ("("    & Single'Image (V (GL.X))
+      & ", " & Single'Image (V (GL.Y))
+      & ", " & Single'Image (V (GL.Z)) & ")");
+
    function Log_2 (X : Interfaces.Unsigned_64) return Natural is
       use Interfaces;
 
