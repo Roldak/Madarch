@@ -23,7 +23,7 @@ package body Meshes is
 
    procedure Iterate_Triangles
      (Self    : Mesh;
-      Process : access procedure (A, B, C: Singles.Vector3))
+      Process : access procedure (A, B, C : Singles.Vector3))
    is
    begin
       for Triangle of Self.Triangles loop

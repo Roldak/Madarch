@@ -14,7 +14,7 @@ package Meshes is
 
    procedure Iterate_Triangles
      (Self    : Mesh;
-      Process : access procedure (A, B, C: Singles.Vector3));
+      Process : access procedure (A, B, C : Singles.Vector3));
 
    procedure Dump_Info (M : Mesh);
 
