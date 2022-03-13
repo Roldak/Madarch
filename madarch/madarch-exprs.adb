@@ -385,7 +385,7 @@ package body Madarch.Exprs is
    begin
       case B.Builtin is
          when Builtin_Dot | Builtin_Len | Builtin_Sign
-            | Builtin_Pow .. Builtin_Dot2 =>
+            | Builtin_Min .. Builtin_Dot2 =>
             return Float_Kind;
          when Builtin_Cross | Builtin_Norm | Builtin_Vec3 =>
             return Vector3_Kind;
