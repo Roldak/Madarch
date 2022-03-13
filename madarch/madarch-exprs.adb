@@ -635,9 +635,22 @@ package body Madarch.Exprs is
       Els_Val : String := V.Els.To_GLSL (Els_Pre);
    begin
       if Thn_Pre /= "" or else Els_Pre /= "" then
-         raise Program_Error with "Invalid branches for ternary operator";
+         declare
+            If_Type : String := To_GLSL (V.Thn.Infer_Type);
+         begin
+            Append (Pre, If_Type & " if_result;");
+            Append (Pre, "if (" & Cond & ") {");
+            Append (Pre, Thn_Pre);
+            Append (Pre, "if_result = " & Thn_Val & ";");
+            Append (Pre, "} else {");
+            Append (Pre, Els_Pre);
+            Append (Pre, "if_result = " & Els_Val & ";");
+            Append (Pre, "}");
+         end;
+         return "if_result";
+      else
+         return "(" & Cond & ") ? (" & Thn_Val & ") : (" & Els_Val & ")";
       end if;
-      return "(" & Cond & ") ? (" & Thn_Val & ") : (" & Els_Val & ")";
    end To_GLSL;
 
    --  Unchecked call
