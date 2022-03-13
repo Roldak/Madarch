@@ -118,6 +118,8 @@ package Madarch.Exprs is
 
    function Hash (E : Expr) return Ada.Containers.Hash_Type;
 
+   function Fresh_Name (Prefix : String) return String;
+
    Type_Inference_Error : exception;
 
 private

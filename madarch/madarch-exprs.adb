@@ -266,6 +266,16 @@ package body Madarch.Exprs is
    function Hash (E : Expr) return Ada.Containers.Hash_Type is
      (Ada.Containers.Hash_Type (Convert (E.Value.all'Address)));
 
+   Fresh_Name_Counter : Natural := 0;
+
+   function Fresh_Name (Prefix : String) return String is
+      Img : String := Fresh_Name_Counter'Image;
+      Res : String := Prefix & "_" & Img (Img'First + 1 .. Img'Last);
+   begin
+      Fresh_Name_Counter := Fresh_Name_Counter + 1;
+      return Res;
+   end Fresh_Name;
+
    function Infer_Type_One_Of
      (Exprs : Expr_Array;
       Ctx   : Typing_Context;
@@ -669,18 +679,19 @@ package body Madarch.Exprs is
    begin
       if Thn_Pre /= "" or else Els_Pre /= "" then
          declare
-            If_Type : String := To_GLSL (V.Thn.Infer_Type);
+            If_Type  : String := To_GLSL (V.Thn.Infer_Type);
+            Res_Name : String := Fresh_Name ("if_result");
          begin
-            Append (Pre, If_Type & " if_result;");
+            Append (Pre, If_Type & " " & Res_Name & ";");
             Append (Pre, "if (" & Cond & ") {");
             Append (Pre, Thn_Pre);
-            Append (Pre, "if_result = " & Thn_Val & ";");
+            Append (Pre, Res_Name & " = " & Thn_Val & ";");
             Append (Pre, "} else {");
             Append (Pre, Els_Pre);
-            Append (Pre, "if_result = " & Els_Val & ";");
+            Append (Pre, Res_Name & " = " & Els_Val & ";");
             Append (Pre, "}");
+            return Res_Name;
          end;
-         return "if_result";
       else
          return "(" & Cond & ") ? (" & Thn_Val & ") : (" & Els_Val & ")";
       end if;
