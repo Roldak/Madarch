@@ -6,6 +6,8 @@ with System;
 with GL;
 with GL.Types;
 
+with Madarch.Exprs.Transformers;
+
 package body Madarch.Exprs is
    procedure Free is new Ada.Unchecked_Deallocation
      (Eval_Context_Node, Eval_Context_Node_Access);
@@ -105,21 +107,6 @@ package body Madarch.Exprs is
 
    function Eval (E : Expr; Ctx : Eval_Context) return Value is
      (E.Value.Eval (Ctx));
-
-   procedure Transform
-     (E : in out Expr; T : in out Transformers.Transformer'Class)
-   is
-   begin
-      if E.Value.all in Var_Body then
-         declare
-            B : Var_Body renames Var_Body (E.Value.all);
-         begin
-            E := T.Transform_Let (E, B.Kind, B.Name, B.Value, B.In_Body);
-         end;
-      else
-         E.Value.Transform (T);
-      end if;
-   end Transform;
 
    function To_GLSL (E : Expr; Pre : in out Unbounded_String) return String is
      (E.Value.To_GLSL (Pre));
@@ -232,18 +219,6 @@ package body Madarch.Exprs is
    function Get (E : Expr; C : GL.Index_3D) return Expr is
      (Value => new Project_Axis'(E, C));
 
-   function Let_In
-     (Value   : Expr;
-      Kind    : Value_Kind;
-      Name    : String;
-      In_Body : Expr) return Expr
-   is
-   begin
-      return
-        (Value => new Var_Body'
-           (Value, Kind, To_Unbounded_String (Name), In_Body));
-   end Let_In;
-
    function If_Then_Else (C : Expr; Thn : Expr; Els : Expr) return Expr is
      (Value => new Condition'(C, Thn, Els));
 
@@ -258,20 +233,31 @@ package body Madarch.Exprs is
          Struct_Args => Struct_Args,
          Expr_Args => Expr_Args));
 
+   function Create
+     (Kind : Value_Kind; Name : String; Value : Expr) return Var_Decl
+   is
+     (Kind, To_Unbounded_String (Name), Value);
+
    function Let_In (Vars : Var_Decl_Array; In_Body : Expr) return Expr is
    begin
       if Vars'Length = 0 then
          return In_Body;
       else
-         declare
-            First : Var_Decl renames Vars (Vars'First);
-            Rest  : Expr :=
-               Let_In (Vars (Vars'First + 1 .. Vars'Last), In_Body);
-         begin
-            return (Value => new Var_Body'
-              (First.Value, First.Kind, First.Name, Rest));
-         end;
+         return (Value => new Var_Body'(Vars'Length, Vars, In_Body));
       end if;
+   end Let_In;
+
+   function Let_In
+     (Value   : Expr;
+      Kind    : Value_Kind;
+      Name    : String;
+      In_Body : Expr) return Expr
+   is
+   begin
+      return (Value => new Var_Body'
+        (Count   => 1,
+         Decls   => (1 => (Kind, To_Unbounded_String (Name), Value)),
+         In_Body => In_Body));
    end Let_In;
 
    function Convert is new Ada.Unchecked_Conversion
@@ -386,8 +372,8 @@ package body Madarch.Exprs is
      (B : in out Bin_Op; T : in out Transformers.Transformer'Class)
    is
    begin
-      B.Lhs.Transform (T);
-      B.Rhs.Transform (T);
+      T.Transform (B.Lhs);
+      T.Transform (B.Rhs);
    end Transform;
 
    function To_GLSL
@@ -493,7 +479,7 @@ package body Madarch.Exprs is
    is
    begin
       for A of B.Args.all loop
-         A.Transform (T);
+         T.Transform (A);
       end loop;
    end Transform;
 
@@ -555,7 +541,7 @@ package body Madarch.Exprs is
      (P : in out Project_Axis; T : in out Transformers.Transformer'Class)
    is
    begin
-      P.E.Transform (T);
+      T.Transform (P.E);
    end Transform;
 
    function To_GLSL
@@ -598,11 +584,20 @@ package body Madarch.Exprs is
    end Infer_Type;
 
    function Eval (V : Var_Body; Ctx : Eval_Context) return Value is
-      Var_Val : Value := V.Value.Eval (Ctx);
-      New_Ctx : Eval_Context := Append (Ctx, V.Name, Var_Val);
+      New_Ctx : Eval_Context := Ctx;
    begin
+      for Decl of V.Decls loop
+         New_Ctx := Append (New_Ctx, Decl.Name, Decl.Value.Eval (New_Ctx));
+      end loop;
       return R : Value := V.In_Body.Eval (New_Ctx) do
-         Free (New_Ctx.Ref);
+         while New_Ctx /= Ctx loop
+            declare
+               Parent : constant Eval_Context := New_Ctx.Ref.Parent;
+            begin
+               Free (New_Ctx.Ref);
+               New_Ctx := Parent;
+            end;
+         end loop;
       end return;
    end Eval;
 
@@ -610,21 +605,28 @@ package body Madarch.Exprs is
      (V : in out Var_Body; T : in out Transformers.Transformer'Class)
    is
    begin
-      V.Value.Transform (T);
-      V.In_Body.Transform (T);
+      for Decl of V.Decls loop
+         T.Transform (Decl.Value);
+      end loop;
+      T.Transform (V.In_Body);
    end Transform;
 
    function To_GLSL
      (V : Var_Body; Pre : in out Unbounded_String) return String
    is
-      Val : String := V.Value.To_GLSL (Pre);
    begin
-      Append (Pre, To_GLSL (V.Kind));
-      Append (Pre, " ");
-      Append (Pre, To_String (V.Name));
-      Append (Pre, " = ");
-      Append (Pre, Val);
-      Append (Pre, ";");
+      for Decl of V.Decls loop
+         declare
+            Val : String := Decl.Value.To_GLSL (Pre);
+         begin
+            Append (Pre, To_GLSL (Decl.Kind));
+            Append (Pre, " ");
+            Append (Pre, To_String (Decl.Name));
+            Append (Pre, " = ");
+            Append (Pre, Val);
+            Append (Pre, ";");
+         end;
+      end loop;
       return V.In_Body.To_GLSL (Pre);
    end To_GLSL;
 
@@ -649,9 +651,9 @@ package body Madarch.Exprs is
      (V : in out Condition; T : in out Transformers.Transformer'Class)
    is
    begin
-      V.Cond.Transform (T);
-      V.Thn.Transform (T);
-      V.Els.Transform (T);
+      T.Transform (V.Cond);
+      T.Transform (V.Thn);
+      T.Transform (V.Els);
    end Transform;
 
    function To_GLSL
@@ -694,7 +696,7 @@ package body Madarch.Exprs is
    is
    begin
       for A of V.Expr_Args loop
-         A.Transform (T);
+         T.Transform (A);
       end loop;
    end Transform;
 

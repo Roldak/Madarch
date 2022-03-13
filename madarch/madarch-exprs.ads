@@ -7,6 +7,7 @@ with GL;
 with Madarch.Components; use Madarch.Components;
 with Madarch.Values; use Madarch.Values;
 with Madarch.Entities; use Madarch.Entities;
+limited with Madarch.Exprs.Transformers;
 
 package Madarch.Exprs is
    type Expr is tagged private;
@@ -33,21 +34,6 @@ package Madarch.Exprs is
 
    function Infer_Type (E : Expr) return Value_Kind;
    function Eval (E : Expr; Ctx : Eval_Context) return Value;
-
-   package Transformers is
-      type Transformer is abstract tagged null record;
-
-      function Transform_Let
-        (Self    : in out Transformer;
-         Orig    : Expr;
-         Kind    : Value_Kind;
-         Name    : Unbounded_String;
-         Value   : in out Expr;
-         In_Body : in out Expr) return Expr is (Orig);
-   end Transformers;
-
-   procedure Transform
-     (E : in out Expr; T : in out Transformers.Transformer'Class);
 
    function To_GLSL  (E : Expr; Pre : in out Unbounded_String) return String;
 
@@ -111,12 +97,6 @@ package Madarch.Exprs is
       Struct_Args : Struct_Expr_Array;
       Expr_Args   : Expr_Array) return Expr;
 
-   function Let_In
-     (Value   : Expr;
-      Kind    : Value_Kind;
-      Name    : String;
-      In_Body : Expr) return Expr;
-
    type Var_Decl is record
       Kind  : Value_Kind;
       Name  : Unbounded_String;
@@ -125,7 +105,16 @@ package Madarch.Exprs is
 
    type Var_Decl_Array is array (Positive range <>) of Var_Decl;
 
+   function Create
+     (Kind : Value_Kind; Name : String; Value : Expr) return Var_Decl;
+
    function Let_In (Vars : Var_Decl_Array; In_Body : Expr) return Expr;
+
+   function Let_In
+     (Value   : Expr;
+      Kind    : Value_Kind;
+      Name    : String;
+      In_Body : Expr) return Expr;
 
    function Hash (E : Expr) return Ada.Containers.Hash_Type;
 
@@ -248,10 +237,8 @@ private
    function To_GLSL
      (G : Get_Component; Pre : in out Unbounded_String) return String;
 
-   type Var_Body is new Expr_Node with record
-      Value   : Expr;
-      Kind    : Value_Kind;
-      Name    : Unbounded_String;
+   type Var_Body (Count : Natural) is new Expr_Node with record
+      Decls   : Var_Decl_Array (1 .. Count);
       In_Body : Expr;
    end record;
 

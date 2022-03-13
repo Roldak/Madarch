@@ -6,6 +6,7 @@ with Ada.Characters.Latin_1;
 
 with Madarch.Components;
 with Madarch.Exprs;
+with Madarch.Exprs.Transformers;
 with Madarch.Values;
 
 with GPU_Types.Base;
@@ -267,14 +268,12 @@ package body Madarch.Scenes is
       overriding function Transform_Let
         (Self    : in out T;
          Orig    : Exprs.Expr;
-         Kind    : Values.Value_Kind;
-         Name    : Unbounded_String;
-         Value   : in out Exprs.Expr;
+         Decls   : in out Exprs.Var_Decl_Array;
          In_Body : in out Exprs.Expr) return Exprs.Expr;
 
       procedure Factorize
         (Name_Prefix : String;
-         E           : in out Exprs.Expr'Class;
+         E           : in out Exprs.Expr;
          Extra_Args  : Extra_Arg_Array;
          Res         : in out Unbounded_String);
    end Factoring;
@@ -299,37 +298,36 @@ package body Madarch.Scenes is
       function Generate_Factorized_Function
         (Self       : in out T;
          Fun_Name   : Unbounded_String;
-         Param_Type : Unbounded_String;
-         Param_Name : Unbounded_String;
+         Val_Params : Param_Array;
          Fun_Body   : Exprs.Expr) return Unbounded_String
       is
-         Params : Param_Array
-           (Self.Extra_Args'First .. Self.Extra_Args'Last + 1);
+         Extra_Params : Param_Array
+           (Self.Extra_Args'First .. Self.Extra_Args'Last);
       begin
          for I in Self.Extra_Args'Range loop
-            Params (I) := Self.Extra_Args (I).Param_Decl;
+            Extra_Params (I) := Self.Extra_Args (I).Param_Decl;
          end loop;
-         Params (Self.Extra_Args'Last + 1) :=
-           (Param_Type, Param_Name, To_Unbounded_String (""));
          return Function_Declaration
            (Values.To_GLSL (Fun_Body.Infer_Type),
             To_String (Fun_Name),
-            Params,
+            Extra_Params & Val_Params,
             Fun_Body);
       end Generate_Factorized_Function;
 
       overriding function Transform_Let
         (Self    : in out T;
          Orig    : Exprs.Expr;
-         Kind    : Values.Value_Kind;
-         Name    : Unbounded_String;
-         Value   : in out Exprs.Expr;
+         Decls   : in out Exprs.Var_Decl_Array;
          In_Body : in out Exprs.Expr) return Exprs.Expr
       is
          use type Expr_Name_Maps.Cursor;
 
          Known : Expr_Name_Maps.Cursor := Self.To_Refactor.Find (In_Body);
       begin
+         for Decl of Decls loop
+            Self.Transform (Decl.Value);
+         end loop;
+
          if Self.Discovering then
             if Self.Seen.Contains (In_Body) then
                if Known = Expr_Name_Maps.No_Element then
@@ -337,14 +335,22 @@ package body Madarch.Scenes is
                      Fun_Name : Unbounded_String :=
                        (Self.Name_Prefix & "_factored_"
                         & Count_String (Self.To_Refactor.Length));
+
+                     Val_Params : Param_Array (Decls'Range);
                   begin
+                     for I in Decls'Range loop
+                        Val_Params (I) :=
+                          (To_Unbounded_String
+                             (Values.To_GLSL (Decls (I).Kind)),
+                           Decls (I).Name,
+                           To_Unbounded_String (""));
+                     end loop;
                      Self.To_Refactor.Insert (In_Body, Fun_Name);
                      Self.Factorized.Append
                        (Generate_Factorized_Function
                           (Self,
                            Fun_Name,
-                           To_Unbounded_String (Values.To_GLSL (Kind)),
-                           Name,
+                           Val_Params,
                            In_Body));
                   end;
                end if;
@@ -358,22 +364,26 @@ package body Madarch.Scenes is
             if Known /= Expr_Name_Maps.No_Element then
                declare
                   Name : Unbounded_String := Expr_Name_Maps.Element (Known);
+
+                  Val_Args : Exprs.Expr_Array (Decls'Range);
                begin
+                  for I in Decls'Range loop
+                     Val_Args (I) := Decls (I).Value;
+                  end loop;
                   return Exprs.External_Call
                     (Name,
                      Extra_Struct_Args (Self.Extra_Args),
-                     (1 => Value));
+                     Val_Args);
                end;
             end if;
          end if;
-         Value.Transform (Self);
-         In_Body.Transform (Self);
+         Self.Transform (In_Body);
          return Orig;
       end Transform_Let;
 
       procedure Factorize
         (Name_Prefix : String;
-         E           : in out Exprs.Expr'Class;
+         E           : in out Exprs.Expr;
          Extra_Args  : Extra_Arg_Array;
          Res         : in out Unbounded_String)
       is
@@ -385,10 +395,10 @@ package body Madarch.Scenes is
               Discovering     => True,
               others          => <>);
       begin
-         E.Transform (Transformer);
+         Transformer.Transform (E);
          if not Transformer.Factorized.Is_Empty then
             Transformer.Discovering := False;
-            E.Transform (Transformer);
+            Transformer.Transform (E);
             for F of Transformer.Factorized loop
                Append (Res, F);
                Append (Res, DLF);
@@ -421,7 +431,7 @@ package body Madarch.Scenes is
    begin
       Factoring.Factorize
         (Name_Prefix => Fun_Name,
-         E           => Dist_Expr,
+         E           => Exprs.Expr (Dist_Expr),
          Extra_Args  => (1 => (Struct_Arg    => True,
                                Param_Decl    => Prim_Param,
                                Struct_Actual => Prim_Param_Expr)),
@@ -461,7 +471,7 @@ package body Madarch.Scenes is
    begin
       Factoring.Factorize
         (Name_Prefix => Fun_Name,
-         E           => Norm_Expr,
+         E           => Exprs.Expr (Norm_Expr),
          Extra_Args  => (1 => (Struct_Arg    => True,
                                Param_Decl    => Prim_Param,
                                Struct_Actual => Prim_Param_Expr)),
