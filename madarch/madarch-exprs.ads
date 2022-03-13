@@ -258,6 +258,8 @@ private
       Els  : Expr;
    end record;
 
+   function Infer_Type
+     (V : Condition; Ctx : Typing_Context) return Value_Kind;
    function Eval (V : Condition; Ctx : Eval_Context) return Value;
    procedure Transform
      (V : in out Condition; T : in out Transformers.Transformer'Class);

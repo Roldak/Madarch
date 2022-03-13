@@ -642,6 +642,11 @@ package body Madarch.Exprs is
 
    --  Condition
 
+   function Infer_Type
+     (V : Condition; Ctx : Typing_Context) return Value_Kind
+   is
+     (Infer_Type_One_Of ((V.Thn, V.Els), Ctx, "if expression"));
+
    function Eval (V : Condition; Ctx : Eval_Context) return Value is
       use GL.Types;
 
