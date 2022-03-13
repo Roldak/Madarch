@@ -121,11 +121,8 @@ package body Madarch.Exprs is
       end if;
    end Transform;
 
-   function Pre_GLSL (E : Expr) return String is
-     (E.Value.Pre_GLSL);
-
-   function To_GLSL (E : Expr) return String is
-     (E.Value.To_GLSL);
+   function To_GLSL (E : Expr; Pre : in out Unbounded_String) return String is
+     (E.Value.To_GLSL (Pre));
 
    function "+" (L, R : Expr) return Expr is
      (Value => new Bin_Op'(Bin_Add, L, R));
@@ -288,7 +285,7 @@ package body Madarch.Exprs is
    function Eval (I : Ident; Ctx : Eval_Context) return Value is
      (Get (Ctx, I));
 
-   function To_GLSL (I : Ident) return String is
+   function To_GLSL (I : Ident; Pre : in out Unbounded_String) return String is
      (To_String (I.Name));
 
    --  Lit
@@ -306,7 +303,7 @@ package body Madarch.Exprs is
 
    function Eval (L : Lit; Ctx : Eval_Context) return Value is (L.V);
 
-   function To_GLSL (L : Lit) return String is
+   function To_GLSL (L : Lit; Pre : in out Unbounded_String) return String is
    begin
       case L.V.Kind is
          when Vector3_Kind =>
@@ -362,16 +359,11 @@ package body Madarch.Exprs is
       B.Rhs.Transform (T);
    end Transform;
 
-   function Pre_GLSL (B : Bin_Op) return String is
-      Pre_LHS : String := B.Lhs.Pre_GLSL;
-      Pre_RHS : String := B.Rhs.Pre_GLSL;
-   begin
-      return Pre_LHS & Pre_RHS;
-   end Pre_GLSL;
-
-   function To_GLSL (B : Bin_Op) return String is
-      L_GLSL : String := B.Lhs.To_GLSL;
-      R_GLSL : String := B.Rhs.To_GLSL;
+   function To_GLSL
+     (B : Bin_Op; Pre : in out Unbounded_String) return String
+   is
+      L_GLSL : String := B.Lhs.To_GLSL (Pre);
+      R_GLSL : String := B.Rhs.To_GLSL (Pre);
       O_GLSL : String := (case B.Op is
          when Bin_Add => "+",
          when Bin_Sub => "-",
@@ -474,16 +466,9 @@ package body Madarch.Exprs is
       end loop;
    end Transform;
 
-   function Pre_GLSL (B : Builtin_Call) return String is
-      Res : Unbounded_String;
-   begin
-      for A of B.Args.all loop
-         Append (Res, A.Pre_GLSL);
-      end loop;
-      return To_String (Res);
-   end Pre_GLSL;
-
-   function To_GLSL (B : Builtin_Call) return String is
+   function To_GLSL
+     (B : Builtin_Call; Pre : in out Unbounded_String) return String
+   is
       Result : Unbounded_String;
 
       Builtin_Name : String :=
@@ -513,7 +498,7 @@ package body Madarch.Exprs is
       Append (Result, Builtin_Name);
       Append (Result, "(");
       for I in B.Args.all'Range loop
-         Append (Result, B.Args (I).To_GLSL);
+         Append (Result, B.Args (I).To_GLSL (Pre));
          if I /= B.Args.all'Last then
             Append (Result, ", ");
          end if;
@@ -542,11 +527,10 @@ package body Madarch.Exprs is
       P.E.Transform (T);
    end Transform;
 
-   function Pre_GLSL (P : Project_Axis) return String is
-     (P.E.Pre_GLSL);
-
-   function To_GLSL  (P : Project_Axis) return String is
-      E_GLSL : String := P.E.To_GLSL;
+   function To_GLSL
+     (P : Project_Axis; Pre : in out Unbounded_String) return String
+   is
+      E_GLSL : String := P.E.To_GLSL (Pre);
       A_GLSL : String := (case P.A is
          when GL.X => "x",
          when GL.Y => "y",
@@ -563,7 +547,9 @@ package body Madarch.Exprs is
       return Entities.Get (Ent, G.Suffix);
    end Eval;
 
-   function To_GLSL (G : Get_Component) return String is
+   function To_GLSL
+     (G : Get_Component; Pre : in out Unbounded_String) return String
+   is
       P_GLSL : String := To_String (G.Prefix.Name);
       S_GLSL : String := Get_Name (G.Suffix);
    begin
@@ -597,20 +583,18 @@ package body Madarch.Exprs is
       V.In_Body.Transform (T);
    end Transform;
 
-   function Pre_GLSL (V : Var_Body) return String is
-      Pre_Val  : String := V.Value.Pre_GLSL;
-      Var_Typ  : String := To_GLSL (V.Kind);
-      Var_Val  : String := V.Value.To_GLSL;
-      Var_Name : String := To_String (V.Name);
-      Pre_Body : String := V.In_Body.Pre_GLSL;
+   function To_GLSL
+     (V : Var_Body; Pre : in out Unbounded_String) return String
+   is
+      Val : String := V.Value.To_GLSL (Pre);
    begin
-      return
-         Pre_Val & Var_Typ & " " & Var_Name & " = " & Var_Val & ";" & Pre_Body;
-   end Pre_GLSL;
-
-   function To_GLSL  (V : Var_Body) return String is
-   begin
-      return V.In_Body.To_GLSL;
+      Append (Pre, To_GLSL (V.Kind));
+      Append (Pre, " ");
+      Append (Pre, To_String (V.Name));
+      Append (Pre, " = ");
+      Append (Pre, Val);
+      Append (Pre, ";");
+      return V.In_Body.To_GLSL (Pre);
    end To_GLSL;
 
    --  Condition
@@ -639,20 +623,21 @@ package body Madarch.Exprs is
       V.Els.Transform (T);
    end Transform;
 
-   function Pre_GLSL (V : Condition) return String is
+   function To_GLSL
+     (V : Condition; Pre : in out Unbounded_String) return String
+   is
+      Cond : String := V.Cond.To_GLSL (Pre);
+
+      Thn_Pre : Unbounded_String;
+      Thn_Val : String := V.Thn.To_GLSL (Thn_Pre);
+
+      Els_Pre : Unbounded_String;
+      Els_Val : String := V.Els.To_GLSL (Els_Pre);
    begin
-      if V.Thn.Pre_GLSL /= "" or else V.Els.Pre_GLSL /= "" then
+      if Thn_Pre /= "" or else Els_Pre /= "" then
          raise Program_Error with "Invalid branches for ternary operator";
       end if;
-      return V.Cond.Pre_GLSL;
-   end Pre_GLSL;
-
-   function To_GLSL  (V : Condition) return String is
-      Cond : String := V.Cond.To_GLSL;
-      Thn  : String := V.Thn.To_GLSL;
-      Els  : String := V.Els.To_GLSL;
-   begin
-      return "(" & Cond & ") ? (" & Thn & ") : (" & Els & ")";
+      return "(" & Cond & ") ? (" & Thn_Val & ") : (" & Els_Val & ")";
    end To_GLSL;
 
    --  Unchecked call
@@ -669,16 +654,9 @@ package body Madarch.Exprs is
       end loop;
    end Transform;
 
-   function Pre_GLSL (V : Unchecked_Call) return String is
-      Res : Unbounded_String;
-   begin
-      for A of V.Expr_Args loop
-         Append (Res, A.Pre_GLSL);
-      end loop;
-      return To_String (Res);
-   end Pre_GLSL;
-
-   function To_GLSL  (V : Unchecked_Call) return String is
+   function To_GLSL
+     (V : Unchecked_Call; Pre : in out Unbounded_String) return String
+   is
       Res : Unbounded_String;
    begin
       Append (Res, V.Callee);
@@ -688,7 +666,7 @@ package body Madarch.Exprs is
          Append (Res, ",");
       end loop;
       for A of V.Expr_Args loop
-         Append (Res, A.To_GLSL);
+         Append (Res, A.To_GLSL (Pre));
          Append (Res, ",");
       end loop;
       Replace_Element (Res, Length (Res), ')');

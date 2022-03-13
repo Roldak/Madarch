@@ -49,8 +49,7 @@ package Madarch.Exprs is
    procedure Transform
      (E : in out Expr; T : in out Transformers.Transformer'Class);
 
-   function Pre_GLSL (E : Expr) return String;
-   function To_GLSL  (E : Expr) return String;
+   function To_GLSL  (E : Expr; Pre : in out Unbounded_String) return String;
 
    function Literal (V : Value) return Expr;
 
@@ -162,8 +161,8 @@ private
    function Eval (E : Expr_Node; Ctx : Eval_Context) return Value is abstract;
    procedure Transform
      (E : in out Expr_Node; T : in out Transformers.Transformer'Class) is null;
-   function Pre_GLSL (E : Expr_Node) return String is ("");
-   function To_GLSL  (E : Expr_Node) return String is abstract;
+   function To_GLSL
+     (E : Expr_Node; Pre : in out Unbounded_String) return String is abstract;
 
    type Expr is tagged record
       Value : Expr_Access;
@@ -176,7 +175,7 @@ private
    end record;
 
    function Eval (I : Ident; Ctx : Eval_Context) return Value;
-   function To_GLSL (I : Ident) return String;
+   function To_GLSL (I : Ident; Pre : in out Unbounded_String) return String;
 
    type Lit is new Expr_Node with record
       V : Value;
@@ -184,7 +183,7 @@ private
 
    function Infer_Type (L : Lit; Ctx : Typing_Context) return Value_Kind;
    function Eval (L : Lit; Ctx : Eval_Context) return Value;
-   function To_GLSL (L : Lit) return String;
+   function To_GLSL (L : Lit; Pre : in out Unbounded_String) return String;
 
    type Bin_Op_Kind is (Bin_Add, Bin_Sub, Bin_Mul, Bin_Div,
                         Bin_Lt, Bin_Gt, Bin_Lte, Bin_Gte);
@@ -198,8 +197,7 @@ private
    function Eval (B : Bin_Op; Ctx : Eval_Context) return Value;
    procedure Transform
      (B : in out Bin_Op; T : in out Transformers.Transformer'Class);
-   function Pre_GLSL (B : Bin_Op) return String;
-   function To_GLSL  (B : Bin_Op) return String;
+   function To_GLSL  (B : Bin_Op; Pre : in out Unbounded_String) return String;
 
    type Builtin_Kind is (Builtin_Dot, Builtin_Cross,
                          Builtin_Min, Builtin_Max, Builtin_Clamp,
@@ -221,8 +219,8 @@ private
    function Eval (B : Builtin_Call; Ctx : Eval_Context) return Value;
    procedure Transform
      (B : in out Builtin_Call; T : in out Transformers.Transformer'Class);
-   function Pre_GLSL (B : Builtin_Call) return String;
-   function To_GLSL  (B : Builtin_Call) return String;
+   function To_GLSL
+     (B : Builtin_Call; Pre : in out Unbounded_String) return String;
 
    type Project_Axis is new Expr_Node with record
       E : Expr;
@@ -232,8 +230,8 @@ private
    function Eval (P : Project_Axis; Ctx : Eval_Context) return Value;
    procedure Transform
      (P : in out Project_Axis; T : in out Transformers.Transformer'Class);
-   function Pre_GLSL (P : Project_Axis) return String;
-   function To_GLSL  (P : Project_Axis) return String;
+   function To_GLSL
+     (P : Project_Axis; Pre : in out Unbounded_String) return String;
 
    type Struct_Expr is tagged record
       Name : Unbounded_String;
@@ -245,7 +243,8 @@ private
    end record;
 
    function Eval (G : Get_Component; Ctx : Eval_Context) return Value;
-   function To_GLSL  (G : Get_Component) return String;
+   function To_GLSL
+     (G : Get_Component; Pre : in out Unbounded_String) return String;
 
    type Var_Body is new Expr_Node with record
       Value   : Expr;
@@ -259,8 +258,8 @@ private
    function Eval (V : Var_Body; Ctx : Eval_Context) return Value;
    procedure Transform
      (V : in out Var_Body; T : in out Transformers.Transformer'Class);
-   function Pre_GLSL (V : Var_Body) return String;
-   function To_GLSL  (V : Var_Body) return String;
+   function To_GLSL
+     (V : Var_Body; Pre : in out Unbounded_String) return String;
 
    type Condition is new Expr_Node with record
       Cond : Expr;
@@ -271,8 +270,8 @@ private
    function Eval (V : Condition; Ctx : Eval_Context) return Value;
    procedure Transform
      (V : in out Condition; T : in out Transformers.Transformer'Class);
-   function Pre_GLSL (V : Condition) return String;
-   function To_GLSL  (V : Condition) return String;
+   function To_GLSL
+     (V : Condition; Pre : in out Unbounded_String) return String;
 
    type Unchecked_Call (S_Args, E_Args : Natural) is new Expr_Node with record
       Callee      : Unbounded_String;
@@ -283,6 +282,6 @@ private
    function Eval (C : Unchecked_Call; Ctx : Eval_Context) return Value;
    procedure Transform
      (V : in out Unchecked_Call; T : in out Transformers.Transformer'Class);
-   function Pre_GLSL (V : Unchecked_Call) return String;
-   function To_GLSL  (V : Unchecked_Call) return String;
+   function To_GLSL
+     (V : Unchecked_Call; Pre : in out Unbounded_String) return String;
 end Madarch.Exprs;

@@ -169,6 +169,19 @@ package body Madarch.Scenes is
       return Res;
    end Function_Declaration;
 
+   function Function_Declaration
+     (Ret_Type : String;
+      Fun_Name : String;
+      Params   : Param_Array;
+      Expr     : Exprs.Expr'Class) return Unbounded_String
+   is
+      Stmts : Unbounded_String;
+      Val   : String := Expr.To_GLSL (Stmts);
+   begin
+      return Function_Declaration
+        (Ret_Type, Fun_Name, Params, Val, To_String (Stmts));
+   end Function_Declaration;
+
    function Procedure_Declaration
      (Fun_Name : String;
       Params   : Param_Array;
@@ -302,8 +315,7 @@ package body Madarch.Scenes is
            (Values.To_GLSL (Fun_Body.Infer_Type),
             To_String (Fun_Name),
             Params,
-            Fun_Body.To_GLSL,
-            Fun_Body.Pre_GLSL);
+            Fun_Body);
       end Generate_Factorized_Function;
 
       overriding function Transform_Let
@@ -420,8 +432,7 @@ package body Madarch.Scenes is
          Fun_Name,
          (1 => Prim_Param,
           2 => Create ("vec3", Point_Param_Name)),
-         Dist_Expr.To_GLSL,
-         Dist_Expr.Pre_GLSL));
+         Dist_Expr));
 
       return Res;
    end Primitive_Dist_Function;
@@ -461,8 +472,7 @@ package body Madarch.Scenes is
          Fun_Name,
          (1 => Prim_Param,
           2 => Create ("vec3", Point_Param_Name)),
-         Norm_Expr.To_GLSL,
-         Norm_Expr.Pre_GLSL));
+         Norm_Expr));
 
       return Res;
    end Primitive_Normal_Function;
@@ -497,8 +507,7 @@ package body Madarch.Scenes is
       Stmts : Unbounded_String;
    begin
       Append (Stmts, "dir = ");
-      Append (Stmts, Position_Expr.Pre_GLSL);
-      Append (Stmts, Position_Expr.To_GLSL);
+      Append (Stmts, Position_Expr.To_GLSL (Stmts));
       Append (Stmts, " - pos;");
       Append (Stmts, LF);
       Append (Stmts, "dist = length(dir);");
@@ -506,16 +515,20 @@ package body Madarch.Scenes is
       Append (Stmts, "dir /= dist;");
       Append (Stmts, LF);
 
-      return Function_Declaration
-        ("vec3",
-         Light_Sample_Reference (Lit),
-         (1 => Create (Lights.Get_Name (Lit), Light_Param_Name),
-          2 => Create ("vec3", Pos_Param_Name),
-          3 => Create ("vec3", Normal_Param_Name),
-          4 => Create ("vec3", "dir", "out"),
-          5 => Create ("float", "dist", "out")),
-         Sample_Expr.To_GLSL,
-         To_String (Stmts) & Sample_Expr.Pre_GLSL);
+      declare
+         Expr : String := Sample_Expr.To_GLSL (Stmts);
+      begin
+         return Function_Declaration
+           ("vec3",
+            Light_Sample_Reference (Lit),
+            (1 => Create (Lights.Get_Name (Lit), Light_Param_Name),
+             2 => Create ("vec3", Pos_Param_Name),
+             3 => Create ("vec3", Normal_Param_Name),
+             4 => Create ("vec3", "dir", "out"),
+             5 => Create ("float", "dist", "out")),
+            Expr,
+            To_String (Stmts));
+      end;
    end Light_Sample_Function;
 
    function Scene_Description
@@ -647,12 +660,13 @@ package body Madarch.Scenes is
      (Prims_Count : Primitive_Count_Array) return Unbounded_String
    is
       function Get_Material
-        (Prim : Primitives.Primitive) return String
+        (Prim  : Primitives.Primitive;
+         Stmts : in out Unbounded_String) return String
       is
          Name : String := Prim_Array_Reference (Prim) & "[index]";
          Inst : Exprs.Struct_Expr := Exprs.Struct_Identifier (Name);
       begin
-         return Primitives.Get_Material_Expr (Prim, Inst).To_GLSL;
+         return Primitives.Get_Material_Expr (Prim, Inst).To_GLSL (Stmts);
       end Get_Material;
 
       Stmts : Unbounded_String;
@@ -670,8 +684,10 @@ package body Madarch.Scenes is
          Append (Stmts, "[index], pos);");
          Append (Stmts, LF);
 
-         Append (Stmts, "material_id = ");
-         Append (Stmts, Get_Material (Prim_Count.Prim));
+         Append
+           (Stmts,
+            "material_id = "
+            & Get_Material (Prim_Count.Prim, Stmts));
          Append (Stmts, ";");
          Append (Stmts, LF);
 
