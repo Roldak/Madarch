@@ -1,7 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Containers.Hashed_Sets;
 with Ada.Containers.Hashed_Maps;
-with Ada.Containers.Vectors;
+with Ada.Containers.Indefinite_Vectors;
 with Ada.Characters.Latin_1;
 
 with Madarch.Components;
@@ -239,9 +239,6 @@ package body Madarch.Scenes is
       package Expr_Name_Maps is new Ada.Containers.Hashed_Maps
         (Exprs.Expr, Unbounded_String, Exprs.Hash, Exprs."=");
 
-      package Unbounded_String_Vectors is new Ada.Containers.Vectors
-        (Positive, Unbounded_String);
-
       type Extra_Arg (Struct_Arg : Boolean := False) is record
          Param_Decl : Param;
          case Struct_Arg is
@@ -254,6 +251,15 @@ package body Madarch.Scenes is
 
       type Extra_Arg_Array is array (Positive range <>) of Extra_Arg;
 
+      type Factorizing_Request (Param_Count : Natural) is record
+         Fun_Name   : Unbounded_String;
+         Val_Params : Param_Array (1 .. Param_Count);
+         Fun_Body   : Exprs.Expr;
+      end record;
+
+      package Factorizing_Request_Vectors is
+         new Ada.Containers.Indefinite_Vectors (Positive, Factorizing_Request);
+
       type T (Extra_Arg_Count : Natural) is
          new Exprs.Transformers.Transformer
       with record
@@ -262,7 +268,7 @@ package body Madarch.Scenes is
          Discovering : Boolean;
          Seen        : Expr_Sets.Set;
          To_Refactor : Expr_Name_Maps.Map;
-         Factorized  : Unbounded_String_Vectors.Vector;
+         Factorized  : Factorizing_Request_Vectors.Vector;
       end record;
 
       overriding function Transform_Let
@@ -297,9 +303,7 @@ package body Madarch.Scenes is
 
       function Generate_Factorized_Function
         (Self       : in out T;
-         Fun_Name   : Unbounded_String;
-         Val_Params : Param_Array;
-         Fun_Body   : Exprs.Expr) return Unbounded_String
+         Request    : Factorizing_Request) return Unbounded_String
       is
          Extra_Params : Param_Array
            (Self.Extra_Args'First .. Self.Extra_Args'Last);
@@ -308,10 +312,10 @@ package body Madarch.Scenes is
             Extra_Params (I) := Self.Extra_Args (I).Param_Decl;
          end loop;
          return Function_Declaration
-           (Values.To_GLSL (Fun_Body.Infer_Type),
-            To_String (Fun_Name),
-            Extra_Params & Val_Params,
-            Fun_Body);
+           (Values.To_GLSL (Request.Fun_Body.Infer_Type),
+            To_String (Request.Fun_Name),
+            Extra_Params & Request.Val_Params,
+            Request.Fun_Body);
       end Generate_Factorized_Function;
 
       overriding function Transform_Let
@@ -347,11 +351,7 @@ package body Madarch.Scenes is
                      end loop;
                      Self.To_Refactor.Insert (In_Body, Fun_Name);
                      Self.Factorized.Append
-                       (Generate_Factorized_Function
-                          (Self,
-                           Fun_Name,
-                           Val_Params,
-                           In_Body));
+                       ((Val_Params'Length, Fun_Name, Val_Params, In_Body));
                   end;
                end if;
                --  Do not recurse on childs otherwise this will factor out
@@ -394,14 +394,21 @@ package body Madarch.Scenes is
               Name_Prefix     => To_Unbounded_String (Name_Prefix),
               Discovering     => True,
               others          => <>);
+
+         I : Natural;
       begin
          Transformer.Transform (E);
          if not Transformer.Factorized.Is_Empty then
             Transformer.Discovering := False;
             Transformer.Transform (E);
-            for F of Transformer.Factorized loop
-               Append (Res, F);
+            I := Transformer.Factorized.First_Index;
+            while I <= Transformer.Factorized.Last_Index loop
+               Transformer.Transform (Transformer.Factorized (I).Fun_Body);
+               Append (Res, Generate_Factorized_Function
+                 (Transformer,
+                  Transformer.Factorized (I)));
                Append (Res, DLF);
+               I := I + 1;
             end loop;
          end if;
       end Factorize;
