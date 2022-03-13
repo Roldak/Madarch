@@ -210,41 +210,47 @@ package body Bounding_Volume_Hierarchies is
          Partitions => Partitions);
    end Compute_BVH;
 
-   procedure Visit
-     (Root       : BVH;
-      Visit_Leaf : Leaf_Visitor;
-      Visit_Node : Node_Visitor)
-   is
-      Root_Node : BVH_Node_Access := Root.Root;
-   begin
-      case Root_Node.Is_Leaf is
-         when True =>
-            declare
-               First : constant Positive := Root_Node.Rng.First;
-               Last  : constant Positive := Root_Node.Rng.First;
-               Count : constant Positive := Last - First + 1;
-               Indices : Index_Array (1 .. Count);
-            begin
-               for I in Indices'Range loop
-                  Indices (I) := Root.Partitions (X) (I + First - 1);
-               end loop;
-               Visit_Leaf (Root_Node.BB, Indices);
-            end;
-         when False =>
-            Visit_Node
-              (Root_Node.BB,
-               Root_Node.Axis,
-               (Root => Root_Node.Left,  Partitions => Root.Partitions),
-               (Root => Root_Node.Right, Partitions => Root.Partitions));
-      end case;
-   end Visit;
+   package body Visitors is
+      function Visit
+        (Root       : BVH;
+         Visit_Leaf : Leaf_Visitor;
+         Visit_Node : Node_Visitor) return T
+      is
+         Root_Node : BVH_Node_Access := Root.Root;
+      begin
+         case Root_Node.Is_Leaf is
+            when True =>
+               declare
+                  First : constant Positive := Root_Node.Rng.First;
+                  Last  : constant Positive := Root_Node.Rng.First;
+                  Count : constant Positive := Last - First + 1;
+                  Indices : Index_Array (1 .. Count);
+               begin
+                  for I in Indices'Range loop
+                     Indices (I) := Root.Partitions (X) (I + First - 1);
+                  end loop;
+                  return Visit_Leaf (Root_Node.BB, Indices);
+               end;
+            when False =>
+               return Visit_Node
+                 (Root_Node.BB,
+                  Root_Node.Axis,
+                  (Root => Root_Node.Left,  Partitions => Root.Partitions),
+                  (Root => Root_Node.Right, Partitions => Root.Partitions));
+         end case;
+      end Visit;
+   end Visitors;
+
+   type Empty_Type is null record;
+
+   package Void_Visitors is new Visitors (Empty_Type);
 
    procedure Dump (Root : BVH) is
       Indent : Natural := 0;
 
-      procedure Visit_BVH_Leaf
+      function Visit_BVH_Leaf
         (BB      : Bounding_Box;
-         Indices : Index_Array)
+         Indices : Index_Array) return Empty_Type
       is
          Prefix : String := (1 .. Indent => ' ');
       begin
@@ -255,34 +261,39 @@ package body Bounding_Volume_Hierarchies is
             Put (I'Image);
          end loop;
          New_Line;
+         return (null record);
       end Visit_BVH_Leaf;
 
-      procedure Visit_BVH_Node
+      function Visit_BVH_Node
         (BB    : Bounding_Box;
          Axis  : Index_3D;
          Left  : BVH;
-         Right : BVH)
+         Right : BVH) return Empty_Type
       is
          Prefix : String := (1 .. Indent => ' ');
+         Dummy  : Empty_Type;
       begin
          Put_Line (Prefix & "Node");
          Put_Line (Prefix & "  BB : " & Image (BB));
          Indent := Indent + 2;
-         Visit
+         Dummy := Void_Visitors.Visit
            (Left,
             Visit_BVH_Leaf'Unrestricted_Access,
             Visit_BVH_Node'Unrestricted_Access);
-         Visit
+         Dummy := Void_Visitors.Visit
            (Right,
             Visit_BVH_Leaf'Unrestricted_Access,
             Visit_BVH_Node'Unrestricted_Access);
          Indent := Indent - 2;
+         return (null record);
       end Visit_BVH_Node;
-   begin
-      Visit
+
+      Dummy : Empty_Type := Void_Visitors.Visit
         (Root,
          Visit_BVH_Leaf'Unrestricted_Access,
          Visit_BVH_Node'Unrestricted_Access);
+   begin
+      null;
    end Dump;
 end Bounding_Volume_Hierarchies;
 

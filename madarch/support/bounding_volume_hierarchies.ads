@@ -22,24 +22,28 @@ package Bounding_Volume_Hierarchies is
 
    function Compute_BVH (Primitives : Primitive_Array) return BVH;
 
+   procedure Dump (Root : BVH);
+
    type Index_Array is array (Positive range <>) of Positive;
 
-   type Leaf_Visitor is access procedure
-     (BB      : Bounding_Box;
-      Indices : Index_Array);
+   generic
+      type T is private;
+   package Visitors is
+      type Leaf_Visitor is access function
+        (BB      : Bounding_Box;
+         Indices : Index_Array) return T;
 
-   type Node_Visitor is access procedure
-     (BB    : Bounding_Box;
-      Axis  : GL.Index_3D;
-      Left  : BVH;
-      Right : BVH);
+      type Node_Visitor is access function
+        (BB    : Bounding_Box;
+         Axis  : GL.Index_3D;
+         Left  : BVH;
+         Right : BVH) return T;
 
-   procedure Visit
-     (Root       : BVH;
-      Visit_Leaf : Leaf_Visitor;
-      Visit_Node : Node_Visitor);
-
-   procedure Dump (Root : BVH);
+      function Visit
+        (Root       : BVH;
+         Visit_Leaf : Leaf_Visitor;
+         Visit_Node : Node_Visitor) return T;
+   end Visitors;
 
 private
    type Partition_Range is record
