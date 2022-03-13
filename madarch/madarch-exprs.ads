@@ -129,6 +129,8 @@ package Madarch.Exprs is
 
    function Hash (E : Expr) return Ada.Containers.Hash_Type;
 
+   Type_Inference_Error : exception;
+
 private
    type Expr_Node is abstract tagged null record;
    type Expr_Access is access all Expr_Node'Class;
@@ -157,7 +159,7 @@ private
    type Typing_Context is null record;
 
    function Infer_Type (E : Expr_Node; Ctx : Typing_Context) return Value_Kind
-     is (raise Program_Error with "Could not infer type of expression.");
+     is (raise Type_Inference_Error with "Could not infer type of expression.");
    function Eval (E : Expr_Node; Ctx : Eval_Context) return Value is abstract;
    procedure Transform
      (E : in out Expr_Node; T : in out Transformers.Transformer'Class) is null;

@@ -280,6 +280,44 @@ package body Madarch.Exprs is
    function Hash (E : Expr) return Ada.Containers.Hash_Type is
      (Ada.Containers.Hash_Type (Convert (E.Value.all'Address)));
 
+   function Infer_Type_One_Of
+     (Exprs : Expr_Array;
+      Ctx   : Typing_Context;
+      Tag   : String) return Value_Kind
+   is
+      Result : Value_Kind;
+      Found  : Boolean := False;
+   begin
+      for E of Exprs loop
+         declare
+            Typ : Value_Kind;
+         begin
+            Typ := E.Value.Infer_Type (Ctx);
+
+            if Found then
+               pragma Warnings (Off, "referenced before it has a value");
+               if Typ /= Result then
+                  raise Type_Inference_Error
+                     with "Inferred multiple incompatible types for " & Tag;
+               end if;
+            end if;
+
+            Result := Typ;
+            Found  := True;
+         exception
+            when Type_Inference_Error =>
+               null;
+         end;
+      end loop;
+
+      if Found then
+         return Result;
+      else
+         raise Type_Inference_Error with
+            "Could not infer type of " & Tag;
+      end if;
+   end Infer_Type_One_Of;
+
    --  Ident
 
    function Eval (I : Ident; Ctx : Eval_Context) return Value is
@@ -318,14 +356,7 @@ package body Madarch.Exprs is
    --  Bin_Op
 
    function Infer_Type (B : Bin_Op; Ctx : Typing_Context) return Value_Kind is
-      L_Type : Value_Kind := B.Lhs.Value.Infer_Type (Ctx);
-      R_Type : Value_Kind := B.Rhs.Value.Infer_Type (Ctx);
-   begin
-      if L_Type /= R_Type then
-         raise Program_Error with "Could not infer type of binary operation";
-      end if;
-      return L_Type;
-   end Infer_Type;
+     (Infer_Type_One_Of ((B.Lhs, B.Rhs), Ctx, "binary operation"));
 
    function Eval (B : Bin_Op; Ctx : Eval_Context) return Value is
       L_Value : Value := B.Lhs.Eval (Ctx);
@@ -390,7 +421,7 @@ package body Madarch.Exprs is
          when Builtin_Cross | Builtin_Norm | Builtin_Vec3 =>
             return Vector3_Kind;
          when others =>
-            raise Program_Error with "Unimplemented";
+            raise Type_Inference_Error with "Unimplemented";
       end case;
    end Infer_Type;
 
