@@ -1,12 +1,8 @@
 with Madarch.Values;
 
-with GL.Types;
-
 package body Madarch.Exprs.Derivatives is
    use GL.Types;
    use Values;
-
-   Epsilon : constant Single := 0.000001;
 
    F_P_Name : constant Unbounded_String := To_Unbounded_String ("f_p");
    F_X_Name : constant Unbounded_String := To_Unbounded_String ("f_x");
@@ -14,9 +10,10 @@ package body Madarch.Exprs.Derivatives is
    F_Z_Name : constant Unbounded_String := To_Unbounded_String ("f_z");
 
    function Forward_Difference
-     (Exp   : Expr'Class;
-      Param : String;
-      Point : Expr'Class) return Expr'Class
+     (Exp     : Expr'Class;
+      Param   : String;
+      Point   : Expr'Class;
+      Epsilon : Single := 0.000001) return Expr'Class
    is
       H_X : constant Expr'Class := Literal (Vector3 ((Epsilon, 0.0, 0.0)));
       H_Y : constant Expr'Class := Literal (Vector3 ((0.0, Epsilon, 0.0)));
