@@ -1,4 +1,4 @@
-const float min_step_size = 0.005f;
+const float min_step_size = 0.05f;
 const int max_steps = 300;
 
 float softshadows(vec3 from, vec3 dir, float min_dist, float max_dist, float k) {
