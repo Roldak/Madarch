@@ -48,6 +48,7 @@ package Madarch.Values is
    function Normalize (V : Value) return Value;
    function Abs_Value (V : Value) return Value;
    function Sign (V : Value) return Value;
+   function Floor (V : Value) return Value;
 
    function Sin (V : Value) return Value;
    function Cos (V : Value) return Value;

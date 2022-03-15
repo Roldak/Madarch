@@ -186,6 +186,9 @@ package body Madarch.Exprs is
    function Sign (E : Expr) return Expr is
      (Builtin_Call_Single_Arg (Builtin_Sign, E));
 
+   function Floor (E : Expr) return Expr is
+     (Builtin_Call_Single_Arg (Builtin_Floor, E));
+
    function Sin (E : Expr) return Expr is
      (Builtin_Call_Single_Arg (Builtin_Sin, E));
 
@@ -416,6 +419,8 @@ package body Madarch.Exprs is
             return Float_Kind;
          when Builtin_Cross | Builtin_Norm | Builtin_Vec3 =>
             return Vector3_Kind;
+         when Builtin_Abs |  Builtin_Floor =>
+            return B.Args (1).Value.Infer_Type (Ctx);
          when others =>
             raise Type_Inference_Error with "Unimplemented";
       end case;
@@ -440,6 +445,8 @@ package body Madarch.Exprs is
             return Abs_Value (First);
          when Builtin_Sign =>
             return Sign (First);
+         when Builtin_Floor =>
+            return Floor (First);
          when Builtin_Sin =>
             return Sin (First);
          when Builtin_Cos =>
@@ -506,6 +513,7 @@ package body Madarch.Exprs is
            when Builtin_Abs   => "abs",
            when Builtin_Float => "float",
            when Builtin_Sign  => "sign",
+           when Builtin_Floor => "floor",
            when Builtin_Dot   => "dot",
            when Builtin_Cross => "cross",
            when Builtin_Min   => "min",

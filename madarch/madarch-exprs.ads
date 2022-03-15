@@ -77,6 +77,7 @@ package Madarch.Exprs is
    function Abs_Value (E : Expr) return Expr;
    function To_Float (E : Expr) return Expr;
    function Sign (E : Expr) return Expr;
+   function Floor (E : Expr) return Expr;
 
    function Sin (E : Expr) return Expr;
    function Cos (E : Expr) return Expr;
@@ -193,9 +194,9 @@ private
    function To_GLSL  (B : Bin_Op; Pre : in out Unbounded_String) return String;
 
    type Builtin_Kind is (Builtin_Dot, Builtin_Cross,
+                         Builtin_Abs, Builtin_Floor,
                          Builtin_Min, Builtin_Max, Builtin_Clamp,
-                         Builtin_Pow,
-                         Builtin_Neg, Builtin_Abs,
+                         Builtin_Pow, Builtin_Neg,
                          Builtin_Sin, Builtin_Cos, Builtin_Tan,
                          Builtin_Asin, Builtin_Acos, Builtin_Atan,
                          Builtin_Sqrt, Builtin_Dot2, Builtin_Len,

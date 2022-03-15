@@ -25,6 +25,10 @@ package Math_Utils is
      (Clamp (X, 0.0, 1.0))
       with Inline;
 
+   function Floor (X : Single) return Single is
+     (Single'Floor (X))
+      with Inline;
+
    package Single_Elementaries is
       new Ada.Numerics.Generic_Elementary_Functions (Single);
 
@@ -80,6 +84,10 @@ package Math_Utils is
 
    function Vec_Abs (V : Singles.Vector3) return Singles.Vector3 is
      ((abs V (GL.X), abs V (GL.Y), abs V (GL.Z)))
+     with Inline;
+
+   function Vec_Floor (V : Singles.Vector3) return Singles.Vector3 is
+     ((Floor (V (GL.X)), Floor (V (GL.Y)), Floor (V (GL.Z))))
      with Inline;
 
    function Reflect (Dir, Normal : Singles.Vector3) return Singles.Vector3;

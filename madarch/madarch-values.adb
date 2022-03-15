@@ -302,6 +302,18 @@ package body Madarch.Values is
       end case;
    end Sign;
 
+   function Floor (V : Value) return Value is
+   begin
+      case V.Kind is
+         when Vector3_Kind =>
+            return (Vector3_Kind, Vec_Floor (V.Vector3_Value));
+         when Float_Kind =>
+            return (Float_Kind, Floor (V.Float_Value));
+         when others =>
+            raise Program_Error with "floor not applicable to int";
+      end case;
+   end Floor;
+
    generic
       Name : String;
       with function Trig (X : GLT.Single) return GLT.Single;
